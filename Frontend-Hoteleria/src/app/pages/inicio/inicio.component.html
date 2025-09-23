@@ -1,0 +1,21 @@
+<app-header>
+</app-header>
+
+<div class="main-container">
+  <mat-card class="tabs-container">
+    <mat-tab-group [(selectedIndex)]="selectedTab">
+      <mat-tab label="Reservas">
+        <app-reservas (reservationSelected)="onReservationSelected($event)"></app-reservas>
+      </mat-tab>
+      <mat-tab label="Calendario">
+        <app-calendario (reservationSelected)="onReservationSelected($event)"></app-calendario>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+
+  <div class="detail-container" *ngIf="selectedReservation">
+    <mat-card>
+      <app-detalle-reserva [reserva]="selectedReservation" (reservationUpdated)="onReservationUpdated($event)"></app-detalle-reserva>
+    </mat-card>
+  </div>
+</div>

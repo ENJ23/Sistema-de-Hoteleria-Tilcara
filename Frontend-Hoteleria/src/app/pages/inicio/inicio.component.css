@@ -1,0 +1,27 @@
+.main-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tabs-container {
+  margin-bottom: 20px;
+}
+
+.detail-container {
+  margin-top: 20px;
+}
+
+mat-card {
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+mat-tab-group {
+  height: 600px;
+}
+
+mat-tab-body {
+  height: 550px;
+  overflow-y: auto;
+}

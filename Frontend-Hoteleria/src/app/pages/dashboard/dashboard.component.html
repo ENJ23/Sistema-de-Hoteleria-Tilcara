@@ -1,0 +1,238 @@
+<div class="dashboard-container">
+  <!-- Header del Dashboard -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">
+        <mat-icon>dashboard</mat-icon>
+        Dashboard de Ingresos
+      </h1>
+      <p class="dashboard-subtitle">Análisis de ingresos y reservas del mes</p>
+    </div>
+    
+    <!-- Navegación del mes -->
+    <div class="mes-navegacion">
+      <button mat-icon-button (click)="cambiarMes('anterior')" class="nav-btn">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      
+      <div class="mes-actual">
+        <h2>{{ obtenerNombreMes(mesActual.getMonth()) }} {{ mesActual.getFullYear() }}</h2>
+        <button mat-raised-button color="primary" (click)="irAHoy()" class="btn-hoy">
+          <mat-icon>today</mat-icon>
+          Hoy
+        </button>
+      </div>
+      
+      <button mat-icon-button (click)="cambiarMes('siguiente')" class="nav-btn">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando datos del dashboard...</p>
+  </div>
+
+  <!-- Contenido del Dashboard -->
+  <div *ngIf="!loading" class="dashboard-content">
+    
+    <!-- Tarjetas de Resumen Principal -->
+    <div class="resumen-principal">
+      <mat-card class="ingresos-card total">
+        <mat-card-content>
+          <div class="card-header">
+            <mat-icon>attach_money</mat-icon>
+            <h3>Ingresos Totales</h3>
+          </div>
+          <div class="card-value">{{ formatearPrecio(resumen.totalIngresos) }}</div>
+          <div class="card-subtitle">{{ resumen.totalReservas }} reservas</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="ingresos-card completos">
+        <mat-card-content>
+          <div class="card-header">
+            <mat-icon>check_circle</mat-icon>
+            <h3>Completamente Pagadas</h3>
+          </div>
+          <div class="card-value">{{ formatearPrecio(resumen.ingresosCompletos) }}</div>
+          <div class="card-subtitle">{{ resumen.reservasCompletas }} reservas</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="ingresos-card parciales">
+        <mat-card-content>
+          <div class="card-header">
+            <mat-icon>schedule</mat-icon>
+            <h3>Parcialmente Pagadas</h3>
+          </div>
+          <div class="card-value">{{ formatearPrecio(resumen.ingresosParciales) }}</div>
+          <div class="card-subtitle">{{ resumen.reservasParciales }} reservas</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="ingresos-card promedio">
+        <mat-card-content>
+          <div class="card-header">
+            <mat-icon>trending_up</mat-icon>
+            <h3>Promedio por Reserva</h3>
+          </div>
+          <div class="card-value">{{ formatearPrecio(resumen.promedioPorReserva) }}</div>
+          <div class="card-subtitle">Ingreso promedio</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Estadísticas Detalladas -->
+    <div class="estadisticas-detalladas">
+      <mat-card class="estadisticas-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>analytics</mat-icon>
+            Estadísticas de Pago
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="estadisticas-grid">
+            <div class="stat-item">
+              <div class="stat-icon completos">
+                <mat-icon>check_circle</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number">{{ resumen.reservasCompletas }}</div>
+                <div class="stat-label">Completamente Pagadas</div>
+                <div class="stat-percentage">
+                  {{ resumen.totalReservas > 0 ? ((resumen.reservasCompletas / resumen.totalReservas) * 100).toFixed(1) : 0 }}%
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon parciales">
+                <mat-icon>schedule</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number">{{ resumen.reservasParciales }}</div>
+                <div class="stat-label">Parcialmente Pagadas</div>
+                <div class="stat-percentage">
+                  {{ resumen.totalReservas > 0 ? ((resumen.reservasParciales / resumen.totalReservas) * 100).toFixed(1) : 0 }}%
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon sin-pago">
+                <mat-icon>cancel</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number">{{ resumen.reservasSinPago }}</div>
+                <div class="stat-label">Sin Pago</div>
+                <div class="stat-percentage">
+                  {{ resumen.totalReservas > 0 ? ((resumen.reservasSinPago / resumen.totalReservas) * 100).toFixed(1) : 0 }}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Ingresos por Tipo de Habitación -->
+      <mat-card class="tipo-habitacion-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>hotel</mat-icon>
+            Ingresos por Tipo de Habitación
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="tipo-habitacion-list" *ngIf="ingresosPorTipo.length > 0; else noData">
+            <div class="tipo-item" *ngFor="let tipo of ingresosPorTipo">
+              <div class="tipo-info">
+                <div class="tipo-nombre">{{ tipo.tipo }}</div>
+                <div class="tipo-cantidad">{{ tipo.cantidad }} reservas</div>
+              </div>
+              <div class="tipo-ingresos">
+                <div class="tipo-monto">{{ formatearPrecio(tipo.ingresos) }}</div>
+                <div class="tipo-porcentaje">{{ tipo.porcentaje.toFixed(1) }}%</div>
+              </div>
+              <div class="tipo-bar">
+                <div class="tipo-bar-fill" [style.width.%]="tipo.porcentaje"></div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noData>
+            <div class="no-data">
+              <mat-icon>info</mat-icon>
+              <p>No hay datos disponibles para este período</p>
+            </div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Reservas Recientes -->
+    <mat-card class="reservas-recientes-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>history</mat-icon>
+          Reservas Recientes
+        </mat-card-title>
+        <mat-card-subtitle>Últimas 5 reservas del mes</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="reservas-table" *ngIf="resumen.reservasRecientes.length > 0; else noReservas">
+          <div class="reserva-item" *ngFor="let reserva of resumen.reservasRecientes">
+            <div class="reserva-cliente">
+              <div class="cliente-nombre">{{ reserva.cliente.nombre }} {{ reserva.cliente.apellido }}</div>
+              <div class="cliente-documento">{{ reserva.cliente.documento }}</div>
+            </div>
+            
+            <div class="reserva-habitacion">
+              <div class="habitacion-numero" *ngIf="typeof reserva.habitacion === 'object'">
+                {{ getHabitacionNumero(reserva) }}
+              </div>
+              <div class="habitacion-tipo" *ngIf="typeof reserva.habitacion === 'object'">
+                {{ getHabitacionTipo(reserva) }}
+              </div>
+            </div>
+            
+            <div class="reserva-fechas">
+              <div class="fecha-entrada">{{ formatearFecha(reserva.fechaEntrada) }}</div>
+              <div class="fecha-salida">{{ formatearFecha(reserva.fechaSalida) }}</div>
+            </div>
+            
+            <div class="reserva-estado">
+              <mat-chip [style.background-color]="obtenerEstadoPago(reserva).color" [style.color]="'white'">
+                <mat-icon>{{ obtenerEstadoPago(reserva).icon }}</mat-icon>
+                {{ obtenerEstadoPago(reserva).texto }}
+              </mat-chip>
+            </div>
+            
+            <div class="reserva-ingresos">
+              <div class="ingresos-monto">{{ formatearPrecio(reserva.montoPagado || 0) }}</div>
+              <div class="ingresos-total">de {{ formatearPrecio(reserva.precioTotal || 0) }}</div>
+            </div>
+          </div>
+        </div>
+        <ng-template #noReservas>
+          <div class="no-data">
+            <mat-icon>info</mat-icon>
+            <p>No hay reservas recientes para este período</p>
+          </div>
+        </ng-template>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button color="primary" (click)="verReservas()">
+          <mat-icon>list</mat-icon>
+          Ver Todas las Reservas
+        </button>
+        <button mat-button (click)="actualizarDatos()">
+          <mat-icon>refresh</mat-icon>
+          Actualizar
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

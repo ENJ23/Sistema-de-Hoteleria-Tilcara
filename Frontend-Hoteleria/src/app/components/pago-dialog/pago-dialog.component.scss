@@ -1,0 +1,67 @@
+.pago-dialog {
+  min-width: 400px;
+  max-width: 500px;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1976d2;
+}
+
+mat-dialog-content {
+  padding: 24px;
+}
+
+.reserva-info {
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.reserva-info h3 {
+  margin: 0 0 12px 0;
+  color: #1976d2;
+}
+
+ .reserva-info p {
+   margin: 8px 0;
+   color: #333;
+ }
+
+ .reserva-info .restante {
+   color: #f44336;
+   font-weight: 600;
+ }
+
+.pago-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+mat-dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+@media (max-width: 600px) {
+  .pago-dialog {
+    min-width: 90vw;
+  }
+}

@@ -1,0 +1,651 @@
+.calendario-container {
+  padding: 20px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Header del Calendario */
+.calendario-header {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.calendario-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px 0;
+  color: #1976d2;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.calendario-title mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.calendario-subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+}
+
+.navegacion-mes {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-btn {
+  background: #f0f0f0;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  background: #e0e0e0;
+  transform: scale(1.05);
+}
+
+.mes-actual {
+  text-align: center;
+}
+
+.mes-actual h2 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.btn-hoy {
+  background: #4caf50;
+  color: white;
+  border-radius: 24px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-hoy:hover {
+  background: #45a049;
+}
+
+/* Calendario Principal */
+.calendario-principal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.calendario-dias-semana {
+  display: grid;
+  grid-template-columns: 200px repeat(7, 1fr);
+  background: #f8f9fa;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.dia-header {
+  padding: 16px 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #495057;
+  border-right: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dia-header:last-child {
+  border-right: none;
+}
+
+.habitacion-header {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 16px;
+  justify-content: flex-start;
+  padding-left: 20px;
+}
+
+/* Filas de Habitaciones */
+.calendario-filas {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.fila-habitacion {
+  display: grid;
+  grid-template-columns: 200px repeat(7, 1fr);
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.fila-habitacion:hover {
+  background: #f8f9fa;
+}
+
+.fila-habitacion:last-child {
+  border-bottom: none;
+}
+
+/* Celda de Habitación */
+.celda-habitacion {
+  padding: 16px 20px;
+  border-right: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background: #fafafa;
+}
+
+.celda-habitacion:hover {
+  background: #e3f2fd;
+}
+
+.habitacion-numero {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 4px;
+}
+
+.habitacion-tipo {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.habitacion-capacidad {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.habitacion-precio {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4caf50;
+}
+
+/* Celdas de Días */
+.celda-dia {
+  padding: 8px;
+  border-right: 1px solid #e9ecef;
+  min-height: 80px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.celda-dia:last-child {
+  border-right: none;
+}
+
+.celda-dia:hover {
+  background: #f0f8ff;
+}
+
+.celda-dia.otro-mes {
+  background: #f8f9fa;
+  color: #ccc;
+  cursor: default;
+}
+
+.celda-dia.hoy {
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+}
+
+.celda-dia.fin-semana {
+  background: #fafafa;
+}
+
+.numero-dia {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  align-self: flex-start;
+}
+
+/* Estados de Ocupación */
+.estados-ocupacion {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.estado-ocupacion {
+  width: 100%;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.estado-ocupacion:hover {
+  transform: scale(1.05);
+}
+
+.estado-ocupacion .icono-ocupacion {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+/* Estados divididos para transiciones */
+.estado-dividido {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.estado-mitad {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.estado-mitad.vacio {
+  background: transparent;
+}
+
+.mitad-diagonal {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Estados específicos para entrada y salida */
+.ocupacion-disponible.solo-entrada .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #4caf50 50%, #4caf50 100%);
+}
+
+.ocupacion-disponible.solo-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #4caf50 0%, #4caf50 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-ocupada.solo-entrada .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #f44336 50%, #f44336 100%);
+}
+
+.ocupacion-ocupada.solo-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #f44336 0%, #f44336 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-reservada.solo-entrada .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #ff9800 50%, #ff9800 100%);
+}
+
+.ocupacion-reservada.solo-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #ff9800 0%, #ff9800 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-limpieza.solo-entrada .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #2196f3 50%, #2196f3 100%);
+}
+
+.ocupacion-limpieza.solo-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #2196f3 0%, #2196f3 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-mantenimiento.solo-entrada .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #9c27b0 50%, #9c27b0 100%);
+}
+
+.ocupacion-mantenimiento.solo-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #9c27b0 0%, #9c27b0 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-fuera-servicio.solo-entrada .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #607d8b 50%, #607d8b 100%);
+}
+
+.ocupacion-fuera-servicio.solo-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #607d8b 0%, #607d8b 50%, transparent 50%, transparent 100%);
+}
+
+/* Estados para entrada y salida simultáneas */
+.ocupacion-disponible.entrada-salida .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #4caf50 50%, #4caf50 100%);
+}
+
+.ocupacion-disponible.entrada-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #4caf50 0%, #4caf50 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-ocupada.entrada-salida .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #f44336 50%, #f44336 100%);
+}
+
+.ocupacion-ocupada.entrada-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #f44336 0%, #f44336 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-reservada.entrada-salida .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #ff9800 50%, #ff9800 100%);
+}
+
+.ocupacion-reservada.entrada-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #ff9800 0%, #ff9800 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-limpieza.entrada-salida .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #2196f3 50%, #2196f3 100%);
+}
+
+.ocupacion-limpieza.entrada-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #2196f3 0%, #2196f3 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-mantenimiento.entrada-salida .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #9c27b0 50%, #9c27b0 100%);
+}
+
+.ocupacion-mantenimiento.entrada-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #9c27b0 0%, #9c27b0 50%, transparent 50%, transparent 100%);
+}
+
+.ocupacion-fuera-servicio.entrada-salida .mitad-diagonal.entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #607d8b 50%, #607d8b 100%);
+}
+
+.ocupacion-fuera-servicio.entrada-salida .mitad-diagonal.salida {
+  background: linear-gradient(135deg, #607d8b 0%, #607d8b 50%, transparent 50%, transparent 100%);
+}
+
+.estado-completo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Indicador de cliente */
+.cliente-indicador {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cliente-inicial {
+  font-size: 10px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Colores de estados */
+.ocupacion-disponible {
+  background: #4caf50;
+  --color-reserva: #4caf50;
+}
+
+.ocupacion-ocupada {
+  background: #f44336;
+  --color-reserva: #f44336;
+}
+
+.ocupacion-reservada {
+  background: #ff9800;
+  --color-reserva: #ff9800;
+}
+
+.ocupacion-limpieza {
+  background: #2196f3;
+  --color-reserva: #2196f3;
+}
+
+.ocupacion-mantenimiento {
+  background: #9c27b0;
+  --color-reserva: #9c27b0;
+}
+
+.ocupacion-fuera-servicio {
+  background: #607d8b;
+  --color-reserva: #607d8b;
+}
+
+.transicion-completa {
+  background: linear-gradient(135deg, #ff9800 0%, #ff9800 50%, #4caf50 50%, #4caf50 100%);
+}
+
+.transicion-entrada {
+  background: linear-gradient(135deg, transparent 0%, transparent 50%, #4caf50 50%, #4caf50 100%);
+}
+
+.transicion-salida {
+  background: linear-gradient(135deg, #ff9800 0%, #ff9800 50%, transparent 50%, transparent 100%);
+}
+
+/* Leyenda */
+.calendario-leyenda {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.calendario-leyenda h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.leyenda-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+.leyenda-item:hover {
+  background: #e9ecef;
+}
+
+.leyenda-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.leyenda-icon {
+  color: #666;
+  width: 20px;
+  height: 20px;
+}
+
+.leyenda-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Información Adicional */
+.calendario-info {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.info-stats {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.stat-item mat-icon {
+  color: #1976d2;
+  width: 20px;
+  height: 20px;
+}
+
+/* Estados de habitaciones en las filas */
+.fila-habitacion.estado-disponible .celda-habitacion {
+  border-left: 4px solid #4caf50;
+}
+
+.fila-habitacion.estado-ocupada .celda-habitacion {
+  border-left: 4px solid #f44336;
+}
+
+.fila-habitacion.estado-reservada .celda-habitacion {
+  border-left: 4px solid #ff9800;
+}
+
+.fila-habitacion.estado-limpieza .celda-habitacion {
+  border-left: 4px solid #2196f3;
+}
+
+.fila-habitacion.estado-mantenimiento .celda-habitacion {
+  border-left: 4px solid #9c27b0;
+}
+
+.fila-habitacion.estado-fuera-de-servicio .celda-habitacion {
+  border-left: 4px solid #607d8b;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .calendario-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .navegacion-mes {
+    justify-content: center;
+  }
+  
+  .calendario-dias-semana,
+  .fila-habitacion {
+    grid-template-columns: 150px repeat(7, 1fr);
+  }
+  
+  .celda-habitacion {
+    padding: 12px 16px;
+  }
+  
+  .habitacion-numero {
+    font-size: 16px;
+  }
+  
+  .habitacion-tipo,
+  .habitacion-capacidad,
+  .habitacion-precio {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendario-container {
+    padding: 12px;
+  }
+  
+  .calendario-header {
+    padding: 16px;
+  }
+  
+  .calendario-title {
+    font-size: 24px;
+  }
+  
+  .calendario-dias-semana,
+  .fila-habitacion {
+    grid-template-columns: 120px repeat(7, 1fr);
+  }
+  
+  .dia-header {
+    padding: 12px 4px;
+    font-size: 12px;
+  }
+  
+  .celda-dia {
+    min-height: 60px;
+    padding: 4px;
+  }
+  
+  .numero-dia {
+    font-size: 12px;
+  }
+  
+  .estado-ocupacion {
+    height: 20px;
+  }
+  
+  .estado-ocupacion .icono-ocupacion {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+  
+  .leyenda-grid {
+    grid-template-columns: 1fr;
+  }
+}

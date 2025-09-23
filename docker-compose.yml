@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Base de datos MongoDB
+  mongodb:
+    image: mongo:6.0
+    container_name: hoteleria-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: hoteleria
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./Backend-Hoteleria/scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - hoteleria-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./Backend-Hoteleria
+      dockerfile: Dockerfile
+    container_name: hoteleria-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/hoteleria?authSource=admin
+      JWT_SECRET: tu-jwt-secret-super-seguro-aqui
+      FRONTEND_URL: http://localhost:4200
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./Backend-Hoteleria/logs:/app/logs
+    networks:
+      - hoteleria-network
+
+  # Frontend Angular
+  frontend:
+    build:
+      context: ./Frontend-Hoteleria
+      dockerfile: Dockerfile
+    container_name: hoteleria-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - hoteleria-network
+
+  # Nginx Reverse Proxy (opcional)
+  nginx:
+    image: nginx:alpine
+    container_name: hoteleria-nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - hoteleria-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  hoteleria-network:
+    driver: bridge

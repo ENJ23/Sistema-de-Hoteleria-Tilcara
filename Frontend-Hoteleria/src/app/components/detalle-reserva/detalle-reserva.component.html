@@ -1,0 +1,273 @@
+<div class="detalle-reserva-container">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>
+      <mat-icon>hotel</mat-icon>
+      Reserva del Hostal
+    </h2>
+    <button mat-icon-button (click)="cerrar()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <!-- Información del Cliente - Simplificada -->
+    <mat-card class="info-card cliente-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="card-icon">person</mat-icon>
+          Cliente
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid" *ngIf="cliente">
+          <div class="info-item">
+            <strong>Nombre:</strong> 
+            <span class="cliente-nombre">{{ cliente.nombre }} {{ cliente.apellido }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Teléfono:</strong> 
+            <span class="cliente-telefono">{{ cliente.telefono }}</span>
+          </div>
+          <div class="info-item">
+            <strong>Documento:</strong> 
+            <span class="cliente-documento">{{ cliente.documento }}</span>
+          </div>
+        </div>
+        <div *ngIf="!cliente" class="loading-info">
+          <mat-spinner diameter="20"></mat-spinner>
+          Cargando cliente...
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información de la Habitación - Con estado visual -->
+    <mat-card class="info-card habitacion-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="card-icon">bed</mat-icon>
+          Habitación {{ habitacion?.numero }}
+        </mat-card-title>
+        <mat-card-subtitle>
+          <mat-chip 
+            [ngClass]="'estado-' + (habitacion?.estado?.toLowerCase() || 'disponible')"
+            class="estado-habitacion">
+            {{ habitacion?.estado || 'Disponible' }}
+          </mat-chip>
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid" *ngIf="habitacion">
+          <div class="info-item">
+            <strong>Tipo:</strong> {{ habitacion.tipo }}
+          </div>
+          <div class="info-item">
+            <strong>Capacidad:</strong> {{ habitacion.capacidad }} personas
+          </div>
+          <div class="info-item precio-item">
+            <strong>Precio por noche:</strong> 
+            <span class="precio">{{ habitacion.precioActual ? (habitacion.precioActual | currency) : 'Consultar' }}</span>
+          </div>
+        </div>
+        <div *ngIf="!habitacion" class="loading-info">
+          <mat-spinner diameter="20"></mat-spinner>
+          Cargando habitación...
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Fechas y Horarios - Más visuales -->
+    <mat-card class="info-card fechas-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="card-icon">schedule</mat-icon>
+          Fechas de Estancia
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="fechas-grid">
+          <div class="fecha-item entrada">
+            <div class="fecha-label">Entrada</div>
+            <div class="fecha-valor">
+              <mat-icon>login</mat-icon>
+              {{ form.get('fechaEntrada')?.value ? (form.get('fechaEntrada')?.value | date:'mediumDate') : 'Seleccionar' }}
+            </div>
+            <div class="hora-valor">{{ form.get('horaEntrada')?.value || '14:00' }}</div>
+          </div>
+          <div class="fecha-item salida">
+            <div class="fecha-label">Salida</div>
+            <div class="fecha-valor">
+              <mat-icon>logout</mat-icon>
+              {{ form.get('fechaSalida')?.value ? (form.get('fechaSalida')?.value | date:'mediumDate') : 'Seleccionar' }}
+            </div>
+            <div class="hora-valor">{{ form.get('horaSalida')?.value || '11:00' }}</div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información Financiera - Destacada -->
+    <mat-card class="info-card financiera-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="card-icon">attach_money</mat-icon>
+          Información de Pago
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="financiera-grid">
+          <div class="financiera-item">
+            <strong>Precio por noche:</strong>
+            <span class="precio-destacado">{{ getPrecioPorNoche() }}</span>
+          </div>
+          <div class="financiera-item total">
+            <strong>Total a pagar:</strong>
+            <span class="precio-total">{{ getPrecioTotal() }}</span>
+          </div>
+          <div class="financiera-item estado-pago">
+            <strong>Estado del pago:</strong>
+            <mat-chip 
+              [ngClass]="reserva?.pagado ? 'pagado' : 'pendiente'"
+              class="estado-pago-chip">
+              <mat-icon>{{ reserva?.pagado ? 'check_circle' : 'pending' }}</mat-icon>
+              {{ reserva?.pagado ? 'PAGADO' : 'PENDIENTE' }}
+            </mat-chip>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Acciones Rápidas para Hostal -->
+    <mat-card class="info-card acciones-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="card-icon">build</mat-icon>
+          Acciones Rápidas
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="acciones-grid">
+          <button 
+            mat-raised-button 
+            color="primary" 
+            class="accion-btn checkin-btn"
+            (click)="realizarCheckIn()"
+            [disabled]="cargando || reserva?.estado === 'En curso'">
+            <mat-icon>login</mat-icon>
+            CHECK-IN
+          </button>
+          <button 
+            mat-raised-button 
+            color="accent" 
+            class="accion-btn checkout-btn"
+            (click)="realizarCheckOut()"
+            [disabled]="cargando || reserva?.estado !== 'En curso'">
+            <mat-icon>logout</mat-icon>
+            CHECK-OUT
+          </button>
+          <button 
+            mat-raised-button 
+            color="warn" 
+            class="accion-btn cancelar-btn"
+            (click)="cancelarReserva()"
+            [disabled]="cargando || reserva?.estado === 'Cancelada'">
+            <mat-icon>cancel</mat-icon>
+            CANCELAR
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Formulario de Edición - Simplificado -->
+    <mat-card class="edit-card" *ngIf="enEdicion">
+      <mat-card-header>
+        <mat-card-title>Editar Reserva</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="form" class="edit-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Estado</mat-label>
+              <mat-select formControlName="estado">
+                <mat-option *ngFor="let estado of estadosReserva" [value]="estado">
+                  {{ estado }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Método de Pago</mat-label>
+              <mat-select formControlName="metodoPago">
+                <mat-option value="">Sin especificar</mat-option>
+                <mat-option *ngFor="let metodo of metodosPago" [value]="metodo">
+                  {{ metodo }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Observaciones</mat-label>
+              <textarea matInput formControlName="observaciones" rows="3" 
+                        placeholder="Notas sobre la reserva, preferencias del cliente, etc."></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row checkbox-row">
+            <mat-checkbox formControlName="pagado" class="checkbox-pagado">
+              <mat-icon>check_circle</mat-icon>
+              Reserva pagada
+            </mat-checkbox>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <!-- Botones principales para hostal -->
+    <div class="acciones-principales" *ngIf="!editando">
+      <button 
+        mat-raised-button 
+        color="primary" 
+        class="btn-principal"
+        (click)="enEdicion = !enEdicion">
+        <mat-icon>edit</mat-icon>
+        EDITAR
+      </button>
+      
+      <button 
+        mat-raised-button 
+        color="accent" 
+        class="btn-principal"
+        (click)="imprimirReserva()"
+        [disabled]="cargando">
+        <mat-icon>print</mat-icon>
+        IMPRIMIR
+      </button>
+    </div>
+
+    <!-- Acciones de edición -->
+    <div class="edit-actions" *ngIf="editando">
+      <button mat-button (click)="toggleEdicion()" [disabled]="cargando">
+        <mat-icon>cancel</mat-icon>
+        CANCELAR
+      </button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        (click)="guardar()"
+        [disabled]="cargando || !form.valid"
+        class="btn-guardar">
+        <mat-spinner diameter="20" *ngIf="cargando"></mat-spinner>
+        <mat-icon *ngIf="!cargando">save</mat-icon>
+        GUARDAR
+      </button>
+    </div>
+
+    <button mat-button (click)="cerrar()" class="btn-cerrar">
+      <mat-icon>close</mat-icon>
+      CERRAR
+    </button>
+  </mat-dialog-actions>
+</div> 

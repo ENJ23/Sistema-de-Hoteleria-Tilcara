@@ -1,0 +1,177 @@
+<div class="reservas-container">
+  <!-- Header con acciones -->
+  <div class="header-actions">
+    <div class="header-titulo">
+      <h1>Gestión de Reservas</h1>
+      <p>Administra las reservas del hotel</p>
+    </div>
+    
+    <div class="header-buttons">
+      <button 
+        mat-raised-button 
+        color="primary" 
+        (click)="nuevaReserva()"
+        matTooltip="Crear nueva reserva"
+      >
+        <mat-icon>add</mat-icon>
+        Nueva Reserva
+      </button>
+      
+      <button 
+        mat-button 
+        [color]="vistaCalendario ? 'primary' : ''"
+        (click)="toggleVista()"
+        matTooltip="Cambiar vista"
+      >
+        <mat-icon>{{ vistaCalendario ? 'list' : 'calendar_today' }}</mat-icon>
+        {{ vistaCalendario ? 'Vista Lista' : 'Vista Calendario' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <mat-card class="filtros-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>filter_list</mat-icon>
+        Filtros
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <form [formGroup]="formFiltros" class="filtros-form">
+        <div class="filtros-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="estado">
+              <mat-option value="">Todos los estados</mat-option>
+              <mat-option *ngFor="let estado of estadosReserva" [value]="estado">
+                {{ estado }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de inicio</mat-label>
+            <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio">
+            <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+            <mat-datepicker #pickerInicio></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de fin</mat-label>
+            <input matInput [matDatepicker]="pickerFin" formControlName="fechaFin">
+            <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
+            <mat-datepicker #pickerFin></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cliente</mat-label>
+            <input matInput formControlName="cliente" placeholder="Buscar por nombre">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Habitación</mat-label>
+            <input matInput formControlName="habitacion" placeholder="Número de habitación">
+          </mat-form-field>
+
+          <div class="filtros-actions">
+            <button 
+              mat-button 
+              color="warn" 
+              (click)="limpiarFiltros()"
+              type="button"
+            >
+              <mat-icon>clear</mat-icon>
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading spinner -->
+  <div *ngIf="cargando" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando reservas...</p>
+  </div>
+
+  <!-- Vista Calendario -->
+  <div *ngIf="!cargando && vistaCalendario" class="calendario-container">
+    <app-calendario></app-calendario>
+  </div>
+
+  <!-- Vista Lista -->
+  <div *ngIf="!cargando && !vistaCalendario" class="lista-container">
+    <div class="reservas-grid">
+      <mat-card 
+        *ngFor="let reserva of reservas; trackBy: trackByReserva" 
+        class="reserva-card"
+        [class.reserva-activa]="reserva.estado === 'Confirmada'"
+        [class.reserva-pendiente]="reserva.estado === 'Pendiente'"
+        [class.reserva-cancelada]="reserva.estado === 'Cancelada'"
+        [class.reserva-completada]="reserva.estado === 'Completada'"
+      >
+        <mat-card-header>
+          <mat-card-title>
+            {{ obtenerNombreCliente(reserva) }}
+          </mat-card-title>
+          <mat-card-subtitle>
+            {{ obtenerNumeroHabitacion(reserva) }}
+          </mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="reserva-info">
+            <div class="info-row">
+              <span class="label">Entrada:</span>
+              <span class="value">{{ formatearFecha(reserva.fechaEntrada) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Salida:</span>
+              <span class="value">{{ formatearFecha(reserva.fechaSalida) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Precio total:</span>
+              <span class="value precio">{{ formatearPrecio(reserva.precioTotal) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Estado:</span>
+              <mat-chip 
+                [style.background-color]="obtenerColorEstado(reserva.estado)"
+                color="primary"
+              >
+                {{ reserva.estado }}
+              </mat-chip>
+            </div>
+            <div class="info-row">
+              <span class="label">Pagado:</span>
+              <mat-chip [color]="reserva.pagado ? 'accent' : 'warn'">
+                {{ reserva.pagado ? 'Sí' : 'No' }}
+              </mat-chip>
+            </div>
+          </div>
+        </mat-card-content>
+        
+        <mat-card-actions align="end">
+          <button 
+            mat-button 
+            color="primary"
+            (click)="verDetalle(reserva)"
+          >
+            <mat-icon>visibility</mat-icon>
+            Ver Detalle
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- Mensaje cuando no hay reservas -->
+    <div *ngIf="reservas.length === 0" class="no-reservas">
+      <mat-icon>event_busy</mat-icon>
+      <h3>No se encontraron reservas</h3>
+      <p>No hay reservas que coincidan con los filtros aplicados.</p>
+    </div>
+  </div>
+</div> 

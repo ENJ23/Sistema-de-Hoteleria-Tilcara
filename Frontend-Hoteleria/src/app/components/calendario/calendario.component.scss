@@ -1,0 +1,288 @@
+.calendario-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Roboto', sans-serif;
+  overflow-x: auto;
+  
+  .calendario-header {
+    margin-bottom: 20px;
+    
+    .header-navegacion {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      
+      .header-titulo {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        
+        h2 {
+          margin: 0;
+          color: #3f51b5;
+        }
+      }
+    }
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    
+    p {
+      margin-top: 15px;
+      color: #666;
+    }
+  }
+  
+  .calendario-tabla {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    
+    .fila-cabecera {
+      display: flex;
+      background-color: #f5f5f5;
+      border-bottom: 1px solid #e0e0e0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      
+      .celda-cabecera {
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 500;
+        color: #616161;
+        min-width: 100px;
+        border-right: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        
+        &.celda-habitacion {
+          min-width: 150px;
+          background-color: #f0f0f0;
+          font-weight: 600;
+          position: sticky;
+          left: 0;
+          z-index: 11;
+        }
+        
+        .dia-numero {
+          font-size: 1.1em;
+          margin-bottom: 2px;
+        }
+        
+        .dia-nombre {
+          font-size: 0.8em;
+          opacity: 0.8;
+        }
+        
+        &.hoy {
+          background-color: #e3f2fd;
+          color: #1565c0;
+          font-weight: 600;
+          
+          .dia-numero {
+            background-color: #2196f3;
+            color: white;
+            width: 26px;
+            height: 26px;
+            line-height: 26px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+      }
+    }
+    
+    .contenedor-filas {
+      .sin-habitaciones {
+        padding: 20px;
+        text-align: center;
+        color: #757575;
+        font-style: italic;
+      }
+      
+      .fila-habitacion {
+        display: flex;
+        border-bottom: 1px solid #e0e0e0;
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        .celda-habitacion {
+          min-width: 150px;
+          padding: 12px 15px;
+          background-color: #f9f9f9;
+          border-right: 1px solid #e0e0e0;
+          font-weight: 500;
+          position: sticky;
+          left: 0;
+          z-index: 9;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          
+          small {
+            color: #757575;
+            font-size: 0.85em;
+          }
+        }
+        
+        .celda-dia {
+          min-width: 100px;
+          min-height: 70px;
+          padding: 5px;
+          border-right: 1px solid #f0f0f0;
+          position: relative;
+          cursor: pointer;
+          transition: background-color 0.2s;
+          
+          &:hover {
+            background-color: #f5f5f5;
+          }
+          
+          &.hoy {
+            background-color: #e3f2fd;
+          }
+          
+          .reserva {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border-radius: 3px;
+            padding: 3px 5px;
+            color: white;
+            font-size: 0.8em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            
+            &:hover {
+              box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+              z-index: 5;
+              transform: scale(1.02);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .leyenda {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    
+    h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #424242;
+    }
+    
+    .leyenda-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      
+      .leyenda-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.9em;
+        
+        .leyenda-color {
+          width: 20px;
+          height: 20px;
+          border-radius: 3px;
+          margin-right: 8px;
+          border: 1px solid rgba(0,0,0,0.1);
+        }
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .calendario-container {
+    padding: 10px;
+  }
+  
+  .calendario-header {
+    .header-navegacion {
+      padding: 10px 15px;
+      
+      .header-titulo {
+        h2 {
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+  
+  .dias-semana {
+    .dia-semana {
+      padding: 10px 5px;
+      font-size: 0.8rem;
+    }
+  }
+  
+  .dia-celda {
+    min-height: 80px;
+    padding: 5px;
+    
+    .dia-numero {
+      font-size: 0.9rem;
+    }
+  }
+  
+  .reserva-item {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+  
+  .leyenda {
+    padding: 15px;
+    
+    .leyenda-items {
+      gap: 10px;
+    }
+    
+    .leyenda-item {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .dias-calendario {
+    grid-template-rows: repeat(6, 80px);
+  }
+  
+  .dia-celda {
+    min-height: 70px;
+  }
+  
+  .reserva-item {
+    font-size: 0.65rem;
+    padding: 2px 4px;
+  }
+} 

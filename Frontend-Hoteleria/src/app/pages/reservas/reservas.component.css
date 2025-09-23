@@ -1,0 +1,409 @@
+/* Contenedor principal */
+.reservas-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Tarjeta de estadísticas */
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.stats-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Tarjeta de filtros */
+.filters-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filters-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.filters-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.filters-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filters-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+/* Tarjeta de tabla */
+.table-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+.table-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.table-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+/* Tabla de reservas */
+.reservas-table {
+  width: 100%;
+  min-width: 800px;
+}
+
+.reservas-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  color: #333;
+  padding: 15px 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.reservas-table td {
+  padding: 15px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+
+.reserva-row {
+  transition: background-color 0.2s ease;
+}
+
+.reserva-row:hover {
+  background-color: #f8f9fa;
+}
+
+.reserva-hoy {
+  background-color: #fff3cd !important;
+  border-left: 4px solid #ffc107;
+}
+
+/* Celdas específicas */
+.cliente-cell {
+  min-width: 150px;
+}
+
+.cliente-nombre {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.cliente-documento {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.habitacion-cell {
+  min-width: 100px;
+}
+
+.habitacion-numero {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.habitacion-tipo {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.habitacion-cell.no-data {
+  opacity: 0.6;
+}
+
+.habitacion-cell.no-data .habitacion-numero {
+  color: #e74c3c;
+}
+
+.habitacion-cell.no-data .habitacion-tipo {
+  color: #e74c3c;
+  font-style: italic;
+}
+
+.fechas-cell {
+  min-width: 120px;
+}
+
+.fecha-entrada,
+.fecha-salida {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.fecha-entrada mat-icon,
+.fecha-salida mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.dias-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dias-cell mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #666;
+}
+
+.pago-cell {
+  min-width: 120px;
+}
+
+.pago-monto {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+.precio-cell {
+  min-width: 100px;
+}
+
+.precio-total {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.precio-noche {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+.acciones-cell {
+  display: flex;
+  gap: 5px;
+  min-width: 120px;
+}
+
+.acciones-cell button {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+}
+
+/* Chips de estado */
+mat-chip {
+  font-size: 0.8rem;
+  font-weight: 500;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+mat-chip mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Paginador */
+mat-paginator {
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reservas-container {
+    padding: 10px;
+  }
+  
+  .stats-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .filters-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .acciones-cell {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .acciones-cell button {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .reservas-table {
+    min-width: 600px;
+  }
+  
+  .displayedColumns {
+    font-size: 0.8rem;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reservas-container > * {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Estados de carga */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Mejoras de accesibilidad */
+button:focus,
+mat-chip:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Mejoras de contraste */
+.reserva-hoy {
+  border-left-color: #e0a800;
+}
+
+.stat-item {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Hover effects mejorados */
+.reserva-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.acciones-cell button:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+
+

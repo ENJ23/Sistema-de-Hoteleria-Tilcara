@@ -1,0 +1,127 @@
+/* Estilos generales */
+.container {
+  padding: 20px;
+}
+
+/* Estilos para la tarjeta de detalle */
+.habitacion-detalle {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Estilos para los badges de estado */
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.badge-disponible {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-ocupada {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.badge-mantenimiento {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.badge-reservada {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+/* Estilos para la información de la habitación */
+.info-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item strong {
+  color: #555;
+  margin-right: 10px;
+}
+
+/* Estilos para la descripción */
+.descripcion {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 4px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+/* Estilos para los chips de servicios */
+mat-chip {
+  margin: 4px;
+}
+
+/* Estilos para el botón de cambiar estado */
+.estado-button {
+  min-width: 160px;
+  margin-left: 10px;
+}
+
+/* Estilos para el encabezado */
+mat-card-header {
+  margin-bottom: 20px;
+}
+
+mat-card-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+mat-card-title .badge {
+  margin-left: 10px;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+}
+
+/* Estilos para los botones de acción */
+mat-card-actions {
+  padding: 16px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 20px;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .d-flex {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .estado-button {
+    width: 100%;
+    margin: 5px 0;
+  }
+  
+  .info-item {
+    flex-direction: column;
+  }
+  
+  .info-item strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+}

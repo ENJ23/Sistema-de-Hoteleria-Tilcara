@@ -1,0 +1,233 @@
+/* Estilos generales del formulario */
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Estilos para la tarjeta */
+mat-card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+mat-card-header {
+  background-color: #f5f5f5;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+mat-card-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+mat-card-subtitle {
+  color: #666;
+  margin-top: 4px;
+}
+
+mat-card-content {
+  padding: 24px;
+}
+
+/* Estilos para los campos del formulario */
+mat-form-field {
+  width: 100%;
+  margin-bottom: 16px;
+  display: block;
+}
+
+/* Estilos para los checkboxes de servicios */
+.servicios-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0 24px;
+  padding: 12px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+.servicio-checkbox {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.servicio-checkbox:hover {
+  background-color: #f5f5f5;
+}
+
+/* Estilos para los botones de acción */
+.actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+/* Estilos para el spinner de carga */
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 200px;
+}
+
+/* Estilos para los mensajes de error */
+.error-message {
+  color: #d32f2f;
+  font-size: 12px;
+  margin-top: -8px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* Estilos para los badges de estado */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-disponible {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-ocupada {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-mantenimiento {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.status-reservada {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+/* Estilos para los iconos */
+mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  margin-right: 8px;
+}
+
+/* Estilos para los campos de entrada con prefijo de moneda */
+.mat-mdc-form-field-prefix,
+.mat-mdc-form-field-suffix {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .servicios-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .actions button {
+    width: 100%;
+    margin: 0;
+  }
+  
+  mat-card-content {
+    padding: 16px;
+  }
+}
+
+/* Estilos para el contador de caracteres */
+.character-counter {
+  font-size: 12px;
+  color: #666;
+  text-align: right;
+  margin-top: -12px;
+  margin-bottom: 8px;
+}
+
+/* Estilos para los mensajes de advertencia */
+.warning-message {
+  background-color: #fff8e1;
+  color: #ff8f00;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.warning-message mat-icon {
+  color: #ff8f00;
+}
+
+/* Estilos para los campos deshabilitados */
+:host ::ng-deep .mdc-text-field--disabled {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+/* Estilos para los tooltips */
+.mat-tooltip {
+  font-size: 12px;
+  padding: 6px 10px;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+/* Estilos para los campos de entrada */
+:host ::ng-deep .mat-mdc-form-field {
+  --mdc-filled-text-field-container-color: #fff;
+  --mdc-filled-text-field-focus-active-indicator-color: #3f51b5;
+  --mdc-filled-text-field-focus-label-text-color: #3f51b5;
+}
+
+/* Estilos para el contenedor de checkboxes de servicios */
+.servicios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
+}
+
+/* Estilos para el título de la sección de servicios */
+.section-title {
+  margin: 20px 0 10px;
+  color: #3f51b5;
+  font-weight: 500;
+}
+
+/* Estilos para el subtítulo de la sección de servicios */
+.section-subtitle {
+  color: #666;
+  margin-bottom: 15px;
+  font-size: 0.9em;
+}

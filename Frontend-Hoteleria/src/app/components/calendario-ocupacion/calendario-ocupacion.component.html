@@ -1,0 +1,179 @@
+<div class="calendario-container">
+  <!-- Header del Calendario -->
+  <div class="calendario-header">
+    <div class="header-content">
+      <h1 class="calendario-title">
+        <mat-icon>calendar_month</mat-icon>
+        Calendario de Ocupación
+      </h1>
+      <p class="calendario-subtitle">Vista mensual de disponibilidad por habitación</p>
+    </div>
+    
+    <!-- Navegación del mes -->
+    <div class="navegacion-mes">
+      <button mat-icon-button (click)="mesAnterior()" class="nav-btn">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      
+      <div class="mes-actual">
+        <h2>{{ obtenerNombreMes(mesActual.getMonth()) }} {{ mesActual.getFullYear() }}</h2>
+        <button mat-raised-button color="primary" (click)="irAHoy()" class="btn-hoy">
+          <mat-icon>today</mat-icon>
+          Hoy
+        </button>
+      </div>
+      
+      <button mat-icon-button (click)="mesSiguiente()" class="nav-btn">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Calendario Principal -->
+  <div class="calendario-principal">
+    <!-- Encabezados de días de la semana -->
+    <div class="calendario-dias-semana">
+      <div class="dia-header habitacion-header">Habitación</div>
+      <div class="dia-header" *ngFor="let dia of ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']">
+        {{ dia }}
+      </div>
+    </div>
+
+    <!-- Filas de habitaciones -->
+    <div class="calendario-filas">
+      <div 
+        *ngFor="let habitacion of habitaciones" 
+        class="fila-habitacion"
+        [ngClass]="'estado-' + habitacion.estado.toLowerCase()">
+        
+        <!-- Información de la habitación -->
+        <div class="celda-habitacion" (click)="seleccionarHabitacion(habitacion)">
+          <div class="habitacion-numero">{{ habitacion.numero }}</div>
+          <div class="habitacion-tipo">{{ habitacion.tipo }}</div>
+          <div class="habitacion-capacidad">{{ habitacion.capacidad }} pers.</div>
+          <div class="habitacion-precio">{{ habitacion.precioActual | currency }}</div>
+        </div>
+
+        <!-- Celdas de días para esta habitación -->
+        <div 
+          *ngFor="let dia of diasCalendario; let i = index" 
+          class="celda-dia"
+          [ngClass]="[
+            'dia-' + (i % 7),
+            { 
+              'hoy': dia.esHoy,
+              'fin-semana': dia.esFinDeSemana,
+              'otro-mes': !dia.esMesActual
+            }
+          ]"
+          (click)="dia.esMesActual ? seleccionarDia(dia) : null">
+          
+          <!-- Número del día -->
+          <div class="numero-dia" *ngIf="dia.esMesActual">{{ dia.numero }}</div>
+          
+          <!-- Estado de ocupación -->
+          <div 
+            *ngIf="dia.esMesActual && ocupacionCalendario[formatearFecha(dia.fecha)]"
+            class="estados-ocupacion">
+            
+            <div 
+              *ngFor="let ocupacion of ocupacionCalendario[formatearFecha(dia.fecha)] | filterByHabitacion:habitacion._id"
+              class="estado-ocupacion"
+              [ngClass]="getClaseOcupacion(ocupacion)"
+              [matTooltip]="obtenerTooltipOcupacion(ocupacion)"
+              matTooltipPosition="above">
+              
+              <!-- Estado dividido para transiciones -->
+              <div class="estado-dividido" *ngIf="ocupacion.esTransicion">
+                <div class="estado-mitad entrada">
+                  <div class="mitad-diagonal entrada"></div>
+                </div>
+                <div class="estado-mitad salida">
+                  <div class="mitad-diagonal salida"></div>
+                </div>
+              </div>
+              
+              <!-- Estado con división diagonal para entrada -->
+              <div class="estado-dividido" *ngIf="ocupacion.esDiaEntrada && !ocupacion.esDiaSalida">
+                <div class="estado-mitad entrada">
+                  <div class="mitad-diagonal entrada"></div>
+                </div>
+                <div class="estado-mitad vacio"></div>
+              </div>
+              
+              <!-- Estado con división diagonal para salida -->
+              <div class="estado-dividido" *ngIf="ocupacion.esDiaSalida && !ocupacion.esDiaEntrada">
+                <div class="estado-mitad vacio"></div>
+                <div class="estado-mitad salida">
+                  <div class="mitad-diagonal salida"></div>
+                </div>
+              </div>
+              
+              <!-- Estado simple (días intermedios) -->
+              <div class="estado-completo" *ngIf="!ocupacion.esDiaEntrada && !ocupacion.esDiaSalida">
+                <mat-icon 
+                  class="icono-ocupacion">
+                  {{ obtenerIconoOcupacion(ocupacion) }}
+                </mat-icon>
+              </div>
+              
+              <!-- Indicador de cliente -->
+              <div class="cliente-indicador" *ngIf="ocupacion.clienteNombre">
+                <span class="cliente-inicial">{{ ocupacion.clienteNombre.charAt(0) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leyenda de Estados -->
+  <div class="calendario-leyenda">
+    <h3>Leyenda de Estados</h3>
+    <div class="leyenda-grid">
+      <div class="leyenda-item" *ngFor="let estado of estadosOcupacion | keyvalue">
+        <div class="leyenda-color" [style.background-color]="estado.value.color"></div>
+        <mat-icon class="leyenda-icon">{{ estado.value.icon }}</mat-icon>
+        <span class="leyenda-label">{{ estado.value.label }}</span>
+      </div>
+      
+      <!-- Estados especiales -->
+      <div class="leyenda-item">
+        <div class="leyenda-color transicion-completa"></div>
+        <mat-icon class="leyenda-icon">swap_horiz</mat-icon>
+        <span class="leyenda-label">Entrada y Salida</span>
+      </div>
+      
+      <div class="leyenda-item">
+        <div class="leyenda-color transicion-entrada"></div>
+        <mat-icon class="leyenda-icon">login</mat-icon>
+        <span class="leyenda-label">Solo Entrada</span>
+      </div>
+      
+      <div class="leyenda-item">
+        <div class="leyenda-color transicion-salida"></div>
+        <mat-icon class="leyenda-icon">logout</mat-icon>
+        <span class="leyenda-label">Solo Salida</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información Adicional -->
+  <div class="calendario-info">
+    <div class="info-stats">
+      <div class="stat-item">
+        <mat-icon>hotel</mat-icon>
+        <span>{{ habitaciones.length }} Habitaciones</span>
+      </div>
+      <div class="stat-item">
+        <mat-icon>event</mat-icon>
+        <span>{{ obtenerNombreMes(mesActual.getMonth()) }} {{ mesActual.getFullYear() }}</span>
+      </div>
+      <div class="stat-item">
+        <mat-icon>info</mat-icon>
+        <span>Haz clic en una celda para ver detalles</span>
+      </div>
+    </div>
+  </div>
+</div>

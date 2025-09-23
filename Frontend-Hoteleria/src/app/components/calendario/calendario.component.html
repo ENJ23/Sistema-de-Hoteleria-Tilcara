@@ -1,0 +1,101 @@
+<div class="calendario-container">
+  <!-- Header del calendario -->
+  <div class="calendario-header">
+    <div class="header-navegacion">
+      <button mat-icon-button (click)="mesAnterior()" matTooltip="Mes anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      
+      <div class="header-titulo">
+        <h2>{{ meses[mesActual] }} {{ anioActual }}</h2>
+        <button mat-button (click)="irAHoy()" matTooltip="Ir a hoy">
+          Hoy
+        </button>
+      </div>
+      
+      <button mat-icon-button (click)="mesSiguiente()" matTooltip="Mes siguiente">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="cargando" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando reservas...</p>
+  </div>
+
+  <!-- Calendario -->
+  <div *ngIf="!cargando" class="calendario-tabla">
+    <!-- Cabecera con los días del mes -->
+    <div class="fila-cabecera">
+      <div class="celda-cabecera celda-habitacion">Habitación</div>
+      <div 
+        *ngFor="let dia of diasMes; trackBy: trackByDia" 
+        class="celda-cabecera"
+        [class.hoy]="dia.esHoy"
+      >
+        <div class="dia-numero">{{ dia.numero }}</div>
+        <div class="dia-nombre">{{ dia.nombreDia }}</div>
+      </div>
+    </div>
+
+    <!-- Filas de habitaciones -->
+    <div class="contenedor-filas">
+      <div *ngIf="habitaciones.length === 0" class="sin-habitaciones">
+        No hay habitaciones cargadas en el sistema
+      </div>
+      
+      <div *ngFor="let habitacion of habitaciones" class="fila-habitacion">
+        <div class="celda-habitacion" [matTooltip]="'Habitación ' + habitacion.numero">
+          {{ habitacion.numero }}
+          <small *ngIf="habitacion.tipo">({{ habitacion.tipo }})</small>
+        </div>
+        
+        <div 
+          *ngFor="let dia of diasMes; let i = index"
+          class="celda-dia"
+          [class.hoy]="dia.esHoy"
+          (click)="seleccionarFecha(dia.fecha)"
+        >
+          <div 
+            *ngIf="obtenerReservaParaHabitacionYDia(habitacion, dia.fecha) as reserva"
+            class="reserva"
+            [style.background-color]="obtenerColorReserva(reserva.estado, reserva.pagado)"
+            (click)="$event.stopPropagation(); abrirDetalleReserva(reserva)"
+            [matTooltip]="obtenerTooltipReserva(reserva)"
+          >
+            {{ obtenerNombreCliente(reserva) }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leyenda -->
+  <div class="leyenda">
+    <h4>Leyenda de Estados:</h4>
+    <div class="leyenda-items">
+      <div class="leyenda-item">
+        <div class="leyenda-color" style="background-color: #4caf50;"></div>
+        <span>Confirmada (Pagado)</span>
+      </div>
+      <div class="leyenda-item">
+        <div class="leyenda-color" style="background-color: #ff9800;"></div>
+        <span>Confirmada (Señado) / Pendiente</span>
+      </div>
+      <div class="leyenda-item">
+        <div class="leyenda-color" style="background-color: #f44336;"></div>
+        <span>Cancelada</span>
+      </div>
+      <div class="leyenda-item">
+        <div class="leyenda-color" style="background-color: #2196f3;"></div>
+        <span>Completada</span>
+      </div>
+      <div class="leyenda-item">
+        <div class="leyenda-color" style="background-color: #9e9e9e;"></div>
+        <span>No Show</span>
+      </div>
+    </div>
+  </div>
+</div> 

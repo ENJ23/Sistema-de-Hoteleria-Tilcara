@@ -1,0 +1,500 @@
+/* Contenedor principal */
+.dashboard-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Header del Dashboard */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-subtitle {
+  margin: 8px 0 0 0;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+/* Navegación del mes */
+.mes-navegacion {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-btn {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.mes-actual h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.btn-hoy {
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  backdrop-filter: blur(10px);
+}
+
+.btn-hoy:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  gap: 16px;
+}
+
+.loading-container p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+/* Contenido del Dashboard */
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Resumen Principal */
+.resumen-principal {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.ingresos-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.ingresos-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.ingresos-card.total {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.ingresos-card.completos {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.ingresos-card.parciales {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: white;
+}
+
+.ingresos-card.promedio {
+  background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+  color: white;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-header mat-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.card-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.card-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Estadísticas Detalladas */
+.estadisticas-detalladas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.estadisticas-card,
+.tipo-habitacion-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.estadisticas-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.stat-icon.completos {
+  background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.stat-icon.parciales {
+  background: linear-gradient(135deg, #ffc107, #fd7e14);
+}
+
+.stat-icon.sin-pago {
+  background: linear-gradient(135deg, #dc3545, #e83e8c);
+}
+
+.stat-icon mat-icon {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2c3e50;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 4px 0;
+}
+
+.stat-percentage {
+  font-size: 0.8rem;
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* Ingresos por Tipo de Habitación */
+.tipo-habitacion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tipo-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  position: relative;
+}
+
+.tipo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tipo-nombre {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.tipo-cantidad {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+.tipo-ingresos {
+  text-align: right;
+  min-width: 120px;
+}
+
+.tipo-monto {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.tipo-porcentaje {
+  font-size: 0.9rem;
+  color: #28a745;
+  font-weight: 600;
+}
+
+.tipo-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #e9ecef;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.tipo-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  transition: width 0.3s ease;
+}
+
+/* Reservas Recientes */
+.reservas-recientes-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.reservas-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reserva-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  transition: background-color 0.3s ease;
+}
+
+.reserva-item:hover {
+  background: #e9ecef;
+}
+
+.reserva-cliente {
+  min-width: 0;
+}
+
+.cliente-nombre {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.cliente-documento {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+.reserva-habitacion {
+  text-align: center;
+}
+
+.habitacion-numero {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.habitacion-tipo {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+.reserva-fechas {
+  text-align: center;
+}
+
+.fecha-entrada,
+.fecha-salida {
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.fecha-entrada {
+  font-weight: 600;
+}
+
+.fecha-salida {
+  color: #666;
+  margin-top: 2px;
+}
+
+.reserva-estado {
+  text-align: center;
+}
+
+.reserva-ingresos {
+  text-align: right;
+}
+
+.ingresos-monto {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.ingresos-total {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* No Data */
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #666;
+  text-align: center;
+}
+
+.no-data mat-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.no-data p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .estadisticas-detalladas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .mes-navegacion {
+    justify-content: center;
+  }
+
+  .resumen-principal {
+    grid-template-columns: 1fr;
+  }
+
+  .reserva-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .reserva-cliente,
+  .reserva-habitacion,
+  .reserva-fechas,
+  .reserva-estado,
+  .reserva-ingresos {
+    text-align: center;
+  }
+
+  .card-value {
+    font-size: 2rem;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 16px;
+  }
+
+  .header-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .mes-actual h2 {
+    font-size: 1.2rem;
+  }
+
+  .card-value {
+    font-size: 1.8rem;
+  }
+}
+

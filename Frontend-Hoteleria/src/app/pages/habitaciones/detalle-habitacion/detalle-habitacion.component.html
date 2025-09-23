@@ -1,0 +1,104 @@
+<div class="container mt-4">
+  <div *ngIf="loading" class="text-center py-5">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="mt-3">Cargando información de la habitación...</p>
+  </div>
+
+  <div *ngIf="!loading && habitacion" class="habitacion-detalle">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <button mat-button (click)="volver()" class="mb-3 mb-md-0">
+        <mat-icon>arrow_back</mat-icon> Volver
+      </button>
+      <div>
+        <button mat-raised-button color="primary" (click)="editarHabitacion()" class="me-2">
+          <mat-icon>edit</mat-icon> Editar
+        </button>
+        <button mat-raised-button [color]="getEstadoButtonColor(habitacion.estado)" (click)="cambiarEstado(getNextEstado(habitacion.estado))">
+          <mat-icon>{{ getEstadoIcon(habitacion.estado) }}</mat-icon>
+          {{ getNextEstadoText(habitacion.estado) }}
+        </button>
+      </div>
+    </div>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>
+          Habitación #{{ habitacion.numero }}
+          <span class="badge ms-2" [ngClass]="getBadgeClass(habitacion.estado)">
+            {{ habitacion.estado }}
+          </span>
+        </mat-card-title>
+        <mat-card-subtitle>{{ habitacion.tipo }} - Piso {{ habitacion.piso || 'N/A' }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-divider></mat-divider>
+
+      <mat-card-content class="mt-4">
+        <div class="row">
+          <div class="col-md-6">
+            <h4>Información Básica</h4>
+            <div class="info-item">
+              <strong>Tipo:</strong> {{ habitacion.tipo }}
+            </div>
+            <div class="info-item">
+              <strong>Número:</strong> {{ habitacion.numero }}
+            </div>
+            <div class="info-item">
+              <strong>Piso:</strong> {{ habitacion.piso || 'No especificado' }}
+            </div>
+            <div class="info-item">
+              <strong>Capacidad:</strong> {{ habitacion.capacidad }} personas
+            </div>
+            <div class="info-item">
+              <strong>Precio por noche:</strong> {{ habitacion.precioActual | currency }}
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <h4>Estado y Servicios</h4>
+            <div class="info-item">
+              <strong>Estado actual:</strong>
+              <span class="badge ms-2" [ngClass]="getBadgeClass(habitacion.estado)">
+                {{ habitacion.estado }}
+              </span>
+            </div>
+            
+            <div class="mt-3">
+              <strong>Servicios incluidos:</strong>
+              <div *ngIf="habitacion.servicios && habitacion.servicios.length > 0; else sinServicios">
+                <mat-chip-set>
+                  <mat-chip *ngFor="let servicio of habitacion.servicios" color="primary" selected>
+                    {{ servicio }}
+                  </mat-chip>
+                </mat-chip-set>
+              </div>
+              <ng-template #sinServicios>
+                <p class="text-muted">No se han especificado servicios para esta habitación.</p>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-4" *ngIf="habitacion.descripcion">
+          <div class="col-12">
+            <h4>Descripción</h4>
+            <p class="descripcion">{{ habitacion.descripcion }}</p>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions class="d-flex justify-content-end p-3">
+        <button mat-button (click)="volver()" class="me-2">
+          <mat-icon>arrow_back</mat-icon> Volver
+        </button>
+        <button mat-raised-button color="primary" (click)="editarHabitacion()">
+          <mat-icon>edit</mat-icon> Editar Habitación
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div *ngIf="!loading && !habitacion" class="alert alert-warning" role="alert">
+    No se encontró la habitación solicitada.
+  </div>
+</div>

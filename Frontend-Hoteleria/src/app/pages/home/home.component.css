@@ -1,0 +1,1550 @@
+/* Estilos generales */
+.home-container {
+  min-height: calc(100vh - 76px); /* Ajustar según la altura del header */
+  background-color: #f8f9fa;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 4rem 0;
+  margin-bottom: 2rem;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hero-section h1 {
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.hero-section p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+/* Feature Icons */
+.feature-icon {
+  font-size: 2.5rem;
+  color: #28a745;
+  margin-bottom: 1rem;
+}
+
+.feature-icon i {
+  background-color: #e8f5e9;
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.feature-icon i:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Cards */
+.card {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
+  padding: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.card p {
+  color: #6c757d;
+  flex-grow: 1;
+  margin-bottom: 1.5rem;
+}
+
+/* Dashboard Section */
+.dashboard-section {
+  background-color: #f8f9fa;
+  padding: 3rem 0;
+  border-radius: 20px 20px 0 0;
+  margin-top: 3rem;
+}
+
+.dashboard-section h2 {
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+/* Stats Cards */
+.stats-card {
+  border-radius: 10px;
+  color: white;
+  padding: 1.5rem;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card h5 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.stats-card .display-6 {
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+.stats-card a {
+  color: white;
+  text-decoration: none;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  display: inline-block;
+  margin-top: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.stats-card a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* Quick Actions */
+.btn-action {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-action i {
+  margin-right: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+  .hero-section {
+    padding: 3rem 0;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.2rem;
+  }
+  
+  .features-section {
+    padding: 2rem 0;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .hero-section {
+    padding: 2.5rem 0;
+    border-radius: 0 0 15px 15px;
+  }
+  
+  .hero-section h1 {
+    font-size: 2rem;
+  }
+  
+  .hero-section p {
+    font-size: 1.1rem;
+  }
+  
+  .feature-icon {
+    font-size: 2rem;
+  }
+  
+  .feature-icon i {
+    width: 70px;
+    height: 70px;
+    line-height: 70px;
+  }
+  
+  .card {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Efecto hover en botones */
+.btn-hover-effect {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.btn-hover-effect:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.1);
+  z-index: -2;
+}
+
+.btn-hover-effect:before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  z-index: -1;
+}
+
+.btn-hover-effect:hover:before {
+  width: 100%;
+}
+
+/* Dashboard del Hostal - Estilos optimizados para encargados */
+
+.dashboard-hostal {
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header del Dashboard */
+.dashboard-header {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+  padding: 30px;
+  border-radius: 16px;
+  margin-bottom: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-content mat-icon {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+}
+
+.dashboard-subtitle {
+  margin: 10px 0 0 0;
+  font-size: 18px;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+.header-actions {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.btn-nueva-reserva, .btn-gestionar-habitaciones, .btn-calendario {
+  height: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: 12px;
+  padding: 0 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.btn-nueva-reserva:hover, .btn-gestionar-habitaciones:hover, .btn-calendario:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Grid de Estadísticas */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: none;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.ocupacion {
+  border-left: 5px solid #4caf50;
+}
+
+.stat-card.reservas {
+  border-left: 5px solid #2196f3;
+}
+
+.stat-card.ingresos {
+  border-left: 5px solid #ff9800;
+}
+
+.stat-card.pendientes {
+  border-left: 5px solid #f44336;
+}
+
+.stat-card mat-card-content {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.stat-icon {
+  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon mat-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  color: #1976d2;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.stat-percentage, .stat-detail {
+  font-size: 14px;
+  color: #888;
+  font-weight: 400;
+}
+
+/* Contenido Principal */
+.main-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.content-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: none;
+  overflow: hidden;
+  background: white;
+}
+
+.content-card mat-card-header {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.content-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.content-card mat-card-subtitle {
+  color: #666;
+  margin: 5px 0 0 0;
+  font-size: 14px;
+}
+
+.content-card mat-card-content {
+  padding: 24px;
+}
+
+/* Calendario */
+.calendario-container {
+  width: 100%;
+}
+
+.calendario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.mes-actual {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.calendario-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dia-header {
+  text-align: center;
+  padding: 12px 8px;
+  font-weight: 600;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.dia-calendario {
+  aspect-ratio: 1;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: white;
+}
+
+.dia-calendario:hover {
+  background: #f8f9fa;
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+.dia-calendario.otro-mes {
+  background: #f8f9fa;
+  color: #ccc;
+}
+
+.dia-calendario.hoy {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  font-weight: 700;
+}
+
+.dia-calendario.con-reservas {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.numero-dia {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.indicadores-dia {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+}
+
+.indicador {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+}
+
+.indicador.ocupada {
+  background: #f44336;
+}
+
+.indicador.reservada {
+  background: #ff9800;
+}
+
+/* Acciones Rápidas */
+.acciones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 15px;
+}
+
+.accion-btn {
+  height: 80px;
+  border-radius: 12px;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.accion-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.accion-btn mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.accion-btn span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.accion-btn small {
+  font-size: 10px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.accion-btn.checkin {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+}
+
+.accion-btn.checkout {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+}
+
+.accion-btn.limpieza {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: white;
+}
+
+.accion-btn.pagos {
+  background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+  color: white;
+}
+
+.accion-btn.reportes {
+  background: linear-gradient(135deg, #607d8b, #455a64);
+  color: white;
+}
+
+.accion-btn.mantenimiento {
+  background: linear-gradient(135deg, #ff5722, #d84315);
+  color: white;
+}
+
+/* Lista de Reservas */
+.reservas-card {
+  margin-bottom: 30px;
+}
+
+.reservas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.reserva-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  gap: 20px;
+  align-items: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reserva-item:hover {
+  background: #e9ecef;
+  transform: translateX(5px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.reserva-hora {
+  text-align: center;
+  min-width: 80px;
+}
+
+.hora-derecha, .hora-izquierda {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.hora-derecha {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.hora-izquierda {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.reserva-info {
+  min-width: 200px;
+}
+
+.cliente-nombre {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.habitacion-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.reserva-estado {
+  min-width: 100px;
+}
+
+.estado-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+}
+
+.estado-confirmada {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+.estado-pendiente {
+  background-color: #ff9800 !important;
+  color: white !important;
+}
+
+.estado-cancelada {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+.reserva-pago {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reserva-pago mat-icon.pagado {
+  color: #4caf50;
+}
+
+.reserva-pago mat-icon.pendiente {
+  color: #ff9800;
+}
+
+.reserva-acciones {
+  display: flex;
+  gap: 8px;
+  min-width: 80px;
+}
+
+.sin-reservas {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.sin-reservas mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+.sin-reservas p {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+/* Notas */
+.notas-card {
+  margin-bottom: 30px;
+}
+
+.notas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.nota-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+}
+
+.nota-item .nota-icon {
+  color: #ff9800;
+  margin-right: 10px;
+}
+
+.nota-contenido {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.nota-texto {
+  font-size: 14px;
+  color: #333;
+}
+
+.nueva-nota {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+.nota-input {
+  flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-hostal {
+    padding: 15px;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .header-actions {
+    justify-content: center;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .calendario-grid {
+    gap: 1px;
+  }
+  
+  .dia-calendario {
+    padding: 4px;
+  }
+  
+  .numero-dia {
+    font-size: 14px;
+  }
+  
+  .reserva-item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .reserva-acciones {
+    justify-content: center;
+  }
+  
+  .nueva-nota {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Animaciones */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-card, .content-card {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* ===== CALENDARIO TIMELINE ===== */
+.calendario-timeline-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-btn:hover {
+  background: white;
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.mes-actual {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+/* Tabla de timeline */
+.timeline-table-container {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Encabezados de tabla */
+.timeline-table th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.habitacion-header, .tipo-header, .capacidad-header {
+  background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
+  min-width: 80px;
+}
+
+.dia-header {
+  min-width: 60px;
+  position: relative;
+}
+
+.dia-header.hoy {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
+  animation: pulse 2s infinite;
+}
+
+.dia-header.fin-semana {
+  background: linear-gradient(135deg, #a55eea 0%, #8b5cf6 100%) !important;
+}
+
+.dia-numero {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.dia-dia {
+  font-size: 10px;
+  opacity: 0.9;
+  text-transform: uppercase;
+}
+
+/* Filas de habitaciones */
+.habitacion-row {
+  transition: all 0.3s ease;
+}
+
+.habitacion-row:hover {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.habitacion-row td {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+/* Información de habitación */
+.habitacion-info {
+  text-align: left !important;
+  min-width: 100px;
+}
+
+.habitacion-numero {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.habitacion-estado {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.estado-disponible {
+  background: #d4edda;
+  color: #155724;
+}
+
+.estado-ocupada {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.estado-reservada {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.estado-limpieza {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.estado-mantenimiento {
+  background: #f5c6cb;
+  color: #721c24;
+}
+
+.habitacion-tipo {
+  font-weight: 600;
+  color: #495057;
+  min-width: 80px;
+}
+
+.habitacion-capacidad {
+  font-weight: 600;
+  color: #6c757d;
+  min-width: 60px;
+}
+
+/* Celdas de ocupación */
+.celda-ocupacion {
+  min-width: 60px;
+  height: 50px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  /* Mejorar área de toque para móvil */
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.celda-ocupacion.clickeable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
+/* Feedback visual mejorado para interacciones táctiles */
+.celda-ocupacion.clickeable:active {
+  transform: scale(0.95);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Efecto de ripple para feedback táctil */
+.celda-ocupacion.clickeable {
+  position: relative;
+  overflow: hidden;
+}
+
+.celda-ocupacion.clickeable::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.celda-ocupacion.clickeable:active::after {
+  width: 100px;
+  height: 100px;
+}
+
+.icono-ocupacion {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* Estados de ocupación */
+.ocupacion-disponible {
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #155724;
+}
+
+.ocupacion-ocupada {
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  color: #721c24;
+}
+
+.ocupacion-reservada {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  color: #856404;
+}
+
+.ocupacion-limpieza {
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  color: #0c5460;
+}
+
+.ocupacion-mantenimiento {
+  background: linear-gradient(135deg, #f5c6cb 0%, #f1b0b7 100%);
+  color: #721c24;
+}
+
+.ocupacion-finalizada {
+  background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+  color: #495057;
+}
+
+.ocupacion-transicion {
+  background: linear-gradient(180deg, var(--color-primera-reserva, #00ff88) 0%, var(--color-primera-reserva, #00ff88) 50%, var(--color-segunda-reserva, #ff4444) 50%, var(--color-segunda-reserva, #ff4444) 100%);
+  color: white;
+  font-weight: bold;
+  animation: pulse-transition 2s infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Línea divisoria horizontal para días de transición */
+.ocupacion-transicion::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateY(-50%);
+  z-index: 10;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.ocupacion-desconocida {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+/* Estados de pago para reservas ocupadas */
+.ocupacion-ocupada.completamente-pagado {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  font-weight: bold;
+}
+
+.ocupacion-ocupada.parcialmente-pagado {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: #212529;
+  font-weight: bold;
+}
+
+.ocupacion-ocupada.sin-pago {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+  font-weight: bold;
+}
+
+/* Estados de pago para reservas confirmadas */
+.ocupacion-reservada.completamente-pagado {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+  font-weight: bold;
+}
+
+.ocupacion-reservada.parcialmente-pagado {
+  background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+  color: white;
+  font-weight: bold;
+}
+
+.ocupacion-reservada.sin-pago {
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  color: white;
+  font-weight: bold;
+}
+
+/* Estados de pago para reservas finalizadas */
+.ocupacion-finalizada.completamente-pagado {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  font-weight: bold;
+}
+
+.ocupacion-finalizada.parcialmente-pagado {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: #212529;
+  font-weight: bold;
+}
+
+.ocupacion-finalizada.sin-pago {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  font-weight: bold;
+}
+
+/* Indicador especial para días de transición */
+.indicador-transicion {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Badge de múltiples reservas eliminado */
+
+/* Indicador de estado de pago */
+.indicador-pago {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  z-index: 15;
+  border: 1px solid white;
+}
+
+.indicador-pago.pagado {
+  background: #28a745;
+}
+
+.indicador-pago.parcial {
+  background: #ffc107;
+}
+
+.indicador-pago.sin-pago {
+  background: #dc3545;
+}
+
+/* Indicador de urgencia */
+.indicador-urgencia {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  background: #ff6b6b;
+  border-radius: 50%;
+  z-index: 15;
+  animation: pulse-urgencia 1s infinite;
+}
+
+.icono-transicion-multiple {
+  color: white;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  animation: pulse-icon 2s infinite;
+}
+
+@keyframes pulse-icon {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Animación pulse-badge eliminada */
+
+@keyframes pulse-urgencia {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.estado-completo {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* ===== ESTADOS DE TRANSICIÓN VISUALES ESPECÍFICOS - REMOVIDOS PARA USAR ESTILOS DINÁMICOS ===== */
+/* Los colores ahora se manejan completamente desde JavaScript usando [style.background] */
+
+/* Mitades diagonales para estados de pago - REMOVIDOS para usar estilos dinámicos */
+/* Los colores de pago ahora se manejan dinámicamente desde JavaScript */
+
+/* Estados para derecha y izquierda simultáneas - REMOVIDOS para usar estilos dinámicos */
+/* Los colores ahora se manejan dinámicamente desde JavaScript */
+
+/* Estados para derecha y izquierda simultáneas con estados de pago - REMOVIDOS para usar estilos dinámicos */
+/* Los colores ahora se manejan dinámicamente desde JavaScript */
+
+/* Estados de transición completos - REMOVIDOS PARA USAR ESTILOS DINÁMICOS */
+/* Los colores ahora se manejan completamente desde JavaScript */
+
+/* Leyenda */
+.timeline-leyenda {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.timeline-leyenda h4 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+.leyenda-section {
+  display: flex;
+  justify-content: flex-start;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.leyenda-section:last-child {
+  margin-bottom: 0;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.leyenda-item small {
+  font-size: 0.75em;
+  opacity: 0.8;
+  display: block;
+  margin-top: 2px;
+}
+
+.leyenda-item:hover {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.leyenda-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+/* Sistema de divisiones verticales eliminado - ahora solo usamos divisiones horizontales dinámicas */
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .timeline-table th,
+  .timeline-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+  
+  .dia-numero {
+    font-size: 14px;
+  }
+  
+  .dia-dia {
+    font-size: 9px;
+  }
+  
+  .habitacion-numero {
+    font-size: 14px;
+  }
+  
+  .icono-ocupacion {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .timeline-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .mes-actual {
+    font-size: 20px;
+  }
+  
+  .timeline-leyenda {
+    padding: 15px;
+  }
+  
+  .timeline-leyenda h4 {
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .leyenda-section {
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .leyenda-item {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+  
+  .leyenda-color {
+    width: 14px;
+    height: 14px;
+  }
+  
+  /* MEJORAR ÁREAS DE TOQUE PARA MÓVIL */
+  .celda-ocupacion {
+    min-width: 48px;  /* Aumentar de 60px a 48px mínimo */
+    height: 48px;     /* Aumentar de 50px a 48px */
+    padding: 6px;     /* Aumentar padding para área de toque */
+  }
+  
+  .celda-ocupacion.clickeable {
+    /* Área de toque efectiva: 48px + 12px padding = 60px */
+    min-height: 60px;
+    min-width: 60px;
+  }
+  
+  /* Botones de navegación más grandes */
+  .nav-btn {
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  /* Botones de acción más grandes */
+  .accion-btn {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Para pantallas muy pequeñas (móviles pequeños) */
+@media (max-width: 480px) {
+  .celda-ocupacion {
+    min-width: 44px;  /* Mínimo absoluto para accesibilidad */
+    height: 44px;
+    padding: 8px;     /* Más padding para compensar tamaño pequeño */
+  }
+  
+  .celda-ocupacion.clickeable {
+    /* Área de toque efectiva: 44px + 16px padding = 60px */
+    min-height: 60px;
+    min-width: 60px;
+  }
+  
+  /* Iconos más grandes para mejor visibilidad */
+  .icono-ocupacion {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Indicador de transición más grande */
+  .indicador-transicion {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .icono-transicion-multiple {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Modo oscuro eliminado */
+
+/* Animaciones */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Scrollbar personalizado */
+.timeline-table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.timeline-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.timeline-table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.timeline-table-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

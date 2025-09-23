@@ -1,0 +1,324 @@
+<div class="nueva-reserva-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <button mat-icon-button class="btn-back" (click)="cancelar()" matTooltip="Volver al dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-text">
+        <h1 class="page-title">
+          <mat-icon>add_circle</mat-icon>
+          Nueva Reserva
+        </h1>
+        <p class="page-subtitle">Crear una nueva reserva para el hostal</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div class="loading-container" *ngIf="cargando">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Cargando datos...</p>
+  </div>
+
+  <!-- Formulario de Reserva -->
+  <form [formGroup]="reservaForm" (ngSubmit)="guardarReserva()" class="reserva-form" *ngIf="!cargando">
+    
+    <!-- Información del Cliente -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>person</mat-icon>
+          Información del Cliente
+        </mat-card-title>
+        <mat-card-subtitle>Complete los datos del cliente para la reserva</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Nombre</mat-label>
+            <input type="text" matInput 
+                   formControlName="nombreCliente"
+                   placeholder="Nombre del cliente">
+            <mat-error *ngIf="isFieldInvalid('nombreCliente')">
+              {{ getErrorMessage('nombreCliente') }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Apellido</mat-label>
+            <input type="text" matInput 
+                   formControlName="apellidoCliente"
+                   placeholder="Apellido del cliente">
+            <mat-error *ngIf="isFieldInvalid('apellidoCliente')">
+              {{ getErrorMessage('apellidoCliente') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Email</mat-label>
+            <input type="email" matInput 
+                   formControlName="emailCliente"
+                   placeholder="email@ejemplo.com">
+            <mat-error *ngIf="isFieldInvalid('emailCliente')">
+              {{ getErrorMessage('emailCliente') }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Teléfono</mat-label>
+            <input type="tel" matInput 
+                   formControlName="telefonoCliente"
+                   placeholder="Número de teléfono">
+            <mat-error *ngIf="isFieldInvalid('telefonoCliente')">
+              {{ getErrorMessage('telefonoCliente') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Documento</mat-label>
+            <input type="text" matInput 
+                   formControlName="documentoCliente"
+                   placeholder="DNI, Pasaporte, etc.">
+            <mat-error *ngIf="isFieldInvalid('documentoCliente')">
+              {{ getErrorMessage('documentoCliente') }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Nacionalidad</mat-label>
+            <input type="text" matInput 
+                   formControlName="nacionalidadCliente"
+                   placeholder="País de origen">
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Dirección</mat-label>
+            <input type="text" matInput 
+                   formControlName="direccionCliente"
+                   placeholder="Dirección completa del cliente">
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información de la Habitación -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>bed</mat-icon>
+          Información de la Habitación
+        </mat-card-title>
+        <mat-card-subtitle>Seleccione la habitación para la reserva</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Habitación</mat-label>
+            <input type="text" matInput 
+                   [matAutocomplete]="autoHabitacion"
+                   formControlName="habitacion"
+                   (click)="onHabitacionClick()"
+                   placeholder="Haga clic para ver habitaciones o escriba para buscar">
+            <mat-autocomplete #autoHabitacion="matAutocomplete" 
+                             [displayWith]="mostrarNombreHabitacion"
+                             (optionSelected)="onHabitacionSeleccionada($event)"
+                             autoActiveFirstOption>
+              <mat-option *ngFor="let habitacion of habitacionesFiltradas | async" 
+                          [value]="habitacion._id">
+                {{ mostrarNombreHabitacion(habitacion) }}
+              </mat-option>
+            </mat-autocomplete>
+            <mat-error *ngIf="isFieldInvalid('habitacion')">
+              {{ getErrorMessage('habitacion') }}
+            </mat-error>
+            <mat-hint>Haga clic para ver todas las habitaciones o escriba para buscar</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Fechas y Horarios -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>event</mat-icon>
+          Fechas y Horarios
+        </mat-card-title>
+        <mat-card-subtitle>Defina las fechas de entrada y salida</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Fecha de Entrada</mat-label>
+            <input matInput [matDatepicker]="pickerEntrada" 
+                   formControlName="fechaEntrada"
+                   placeholder="Seleccione fecha de entrada">
+            <mat-datepicker-toggle matSuffix [for]="pickerEntrada"></mat-datepicker-toggle>
+            <mat-datepicker #pickerEntrada></mat-datepicker>
+            <mat-error *ngIf="isFieldInvalid('fechaEntrada')">
+              {{ getErrorMessage('fechaEntrada') }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Fecha de Salida</mat-label>
+            <input matInput [matDatepicker]="pickerSalida" 
+                   formControlName="fechaSalida"
+                   placeholder="Seleccione fecha de salida">
+            <mat-datepicker-toggle matSuffix [for]="pickerSalida"></mat-datepicker-toggle>
+            <mat-datepicker #pickerSalida></mat-datepicker>
+            <mat-error *ngIf="isFieldInvalid('fechaSalida')">
+              {{ getErrorMessage('fechaSalida') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Hora de Entrada</mat-label>
+            <input type="time" matInput formControlName="horaEntrada">
+            <mat-error *ngIf="isFieldInvalid('horaEntrada')">
+              {{ getErrorMessage('horaEntrada') }}
+            </mat-error>
+            <mat-hint>Hora de llegada del huésped</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Hora de Salida</mat-label>
+            <input type="time" matInput formControlName="horaSalida">
+            <mat-error *ngIf="isFieldInvalid('horaSalida')">
+              {{ getErrorMessage('horaSalida') }}
+            </mat-error>
+            <mat-hint>Hora de salida del huésped</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información de Precios -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>attach_money</mat-icon>
+          Información de Precios
+        </mat-card-title>
+        <mat-card-subtitle>Configuración de tarifas y cálculo automático</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Precio por Noche</mat-label>
+            <input type="number" matInput formControlName="precioPorNoche"
+                   placeholder="0.00">
+            <span matPrefix>$&nbsp;</span>
+            <mat-error *ngIf="isFieldInvalid('precioPorNoche')">
+              {{ getErrorMessage('precioPorNoche') }}
+            </mat-error>
+            <mat-hint>Precio por noche de la habitación</mat-hint>
+          </mat-form-field>
+
+          <div class="info-display form-field-half">
+            <div class="info-item">
+              <label>Número de Noches:</label>
+              <span class="info-value">{{ numeroNoches }}</span>
+            </div>
+            <div class="info-item total">
+              <label>Precio Total:</label>
+              <span class="info-value total-price">${{ precioTotal | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Estado y Pagos -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>settings</mat-icon>
+          Estado y Pagos
+        </mat-card-title>
+        <mat-card-subtitle>Configuración del estado de la reserva y método de pago</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Estado de la Reserva</mat-label>
+            <mat-select formControlName="estado">
+              <mat-option *ngFor="let estado of estadosReserva" [value]="estado">
+                {{ estado }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="isFieldInvalid('estado')">
+              {{ getErrorMessage('estado') }}
+            </mat-error>
+          </mat-form-field>
+
+          <div class="checkbox-field form-field-half">
+            <mat-checkbox formControlName="pagado" color="primary">
+              Reserva Pagada
+            </mat-checkbox>
+            <mat-hint>Marque si la reserva ya está pagada</mat-hint>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="reservaForm.get('pagado')?.value">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Método de Pago</mat-label>
+            <mat-select formControlName="metodoPago">
+              <mat-option *ngFor="let metodo of metodosPago" [value]="metodo">
+                {{ metodo }}
+              </mat-option>
+            </mat-select>
+            <mat-hint>Seleccione el método de pago utilizado</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Observaciones -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>note</mat-icon>
+          Observaciones
+        </mat-card-title>
+        <mat-card-subtitle>Información adicional sobre la reserva</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Observaciones</mat-label>
+            <textarea matInput formControlName="observaciones" 
+                      rows="4"
+                      placeholder="Agregue observaciones especiales, solicitudes del cliente, etc..."></textarea>
+            <mat-hint>Información adicional sobre la reserva</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Botones de Acción -->
+    <div class="form-actions">
+      <button type="button" mat-button class="btn-cancelar" (click)="cancelar()">
+        <mat-icon>cancel</mat-icon>
+        Cancelar
+      </button>
+      
+      <button type="submit" mat-raised-button color="primary" 
+              class="btn-guardar"
+              [disabled]="reservaForm.invalid || guardando">
+        <mat-icon *ngIf="!guardando">save</mat-icon>
+        <mat-spinner *ngIf="guardando" diameter="20"></mat-spinner>
+        {{ guardando ? 'Guardando...' : 'Crear Reserva' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,185 @@
+<div class="container mt-4">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>{{ isEditMode ? 'Editar Habitación' : 'Nueva Habitación' }}</mat-card-title>
+      <mat-card-subtitle>Complete el formulario para {{ isEditMode ? 'actualizar' : 'crear' }} la habitación</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="habitacionForm" (ngSubmit)="onSubmit()" class="mt-4">
+        <div class="row">
+          <!-- Columna Izquierda -->
+          <div class="col-md-6">
+            <!-- Número de Habitación -->
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Número de Habitación</mat-label>
+              <input matInput type="text" formControlName="numero" [readonly]="isEditMode" placeholder="Ej: 101, 202A">
+              <mat-hint>Ejemplos: 101, 202A, 305B</mat-hint>
+              <mat-error *ngIf="habitacionForm.get('numero')?.hasError('required')">
+                El número de habitación es requerido
+              </mat-error>
+              <mat-error *ngIf="habitacionForm.get('numero')?.hasError('pattern')">
+                Formato inválido. Use números y una letra opcional (ej: 101, 202A)
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Tipo de Habitación -->
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Tipo de Habitación</mat-label>
+              <mat-select formControlName="tipo" required>
+                <mat-option *ngFor="let tipo of tiposHabitacion" [value]="tipo">
+                  {{ tipo }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="habitacionForm.get('tipo')?.hasError('required')">
+                El tipo de habitación es requerido
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Piso -->
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Piso</mat-label>
+              <input matInput type="number" formControlName="piso" min="1" max="50">
+              <mat-error *ngIf="habitacionForm.get('piso')?.hasError('required')">
+                El piso es requerido
+              </mat-error>
+              <mat-error *ngIf="habitacionForm.get('piso')?.hasError('min') || habitacionForm.get('piso')?.hasError('max')">
+                El piso debe estar entre 1 y 50
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Capacidad -->
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Capacidad (personas)</mat-label>
+              <input matInput type="number" formControlName="capacidad" min="1" max="10">
+              <mat-error *ngIf="habitacionForm.get('capacidad')?.hasError('required')">
+                La capacidad es requerida
+              </mat-error>
+              <mat-error *ngIf="habitacionForm.get('capacidad')?.hasError('min') || habitacionForm.get('capacidad')?.hasError('max')">
+                La capacidad debe estar entre 1 y 10 personas
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Columna Derecha -->
+          <div class="col-md-6">
+            <!-- Precio Base -->
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Precio Base por Noche</mat-label>
+              <span matPrefix>$ &nbsp;</span>
+              <input matInput type="number" step="0.01" formControlName="precioBase" min="0" max="10000">
+              <mat-error *ngIf="habitacionForm.get('precioBase')?.hasError('required')">
+                El precio base es requerido
+              </mat-error>
+              <mat-error *ngIf="habitacionForm.get('precioBase')?.hasError('min')">
+                El precio debe ser mayor o igual a 0
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Precio Actual -->
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Precio Actual por Noche</mat-label>
+              <span matPrefix>$ &nbsp;</span>
+              <input matInput type="number" step="0.01" formControlName="precioActual" min="0" max="10000">
+              <mat-hint>Puede ser diferente del precio base por promociones</mat-hint>
+              <mat-error *ngIf="habitacionForm.get('precioActual')?.hasError('required')">
+                El precio actual es requerido
+              </mat-error>
+              <mat-error *ngIf="habitacionForm.get('precioActual')?.hasError('min')">
+                El precio debe ser mayor o igual a 0
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Estado -->
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Estado</mat-label>
+              <mat-select formControlName="estado">
+                <mat-option *ngFor="let estado of estados" [value]="estado">
+                  {{ estado }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="habitacionForm.get('estado')?.hasError('required')">
+                El estado es requerido
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Activa -->
+            <mat-checkbox formControlName="activa" class="w-100 mb-3">
+              Habitación activa
+            </mat-checkbox>
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="row">
+          <div class="col-12">
+            <mat-form-field appearance="outline" class="w-100 mb-3">
+              <mat-label>Descripción</mat-label>
+              <textarea 
+                matInput 
+                formControlName="descripcion" 
+                rows="3"
+                [maxlength]="MAX_LONGITUD_DESCRIPCION"
+                placeholder="Describa las características de la habitación">
+              </textarea>
+              <mat-hint align="end">
+                {{ habitacionForm.get('descripcion')?.value?.length || 0 }}/{{ MAX_LONGITUD_DESCRIPCION }}
+              </mat-hint>
+              <mat-error *ngIf="habitacionForm.get('descripcion')?.hasError('maxlength')">
+                La descripción no puede superar los {{ MAX_LONGITUD_DESCRIPCION }} caracteres
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Servicios -->
+        <div class="row">
+          <div class="col-12">
+            <h4>Servicios</h4>
+            <p class="text-muted">Seleccione hasta {{ MAX_SERVICIOS }} servicios disponibles en la habitación</p>
+            
+            <div class="row">
+              <div class="col-sm-6 col-md-4 col-lg-3 mb-2" *ngFor="let servicio of serviciosDisponibles">
+                <mat-checkbox 
+                  [checked]="isServicioSeleccionado(servicio)"
+                  (change)="toggleServicio(servicio)"
+                  [disabled]="!isServicioSeleccionado(servicio) && (habitacionForm.get('servicios')?.value?.length || 0) >= MAX_SERVICIOS">
+                  {{ servicio }}
+                </mat-checkbox>
+              </div>
+            </div>
+            
+            <div *ngIf="(habitacionForm.get('servicios')?.value?.length || 0) >= MAX_SERVICIOS" class="text-warning small">
+              <mat-icon>info</mat-icon> Has alcanzado el límite de {{ MAX_SERVICIOS }} servicios seleccionados.
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="row mt-4">
+          <div class="col-12 text-end">
+            <button 
+              type="button" 
+              mat-stroked-button 
+              color="warn" 
+              (click)="onCancel()" 
+              class="me-2"
+              [disabled]="submitting">
+              <mat-icon>cancel</mat-icon> Cancelar
+            </button>
+            
+            <button 
+              type="submit" 
+              mat-raised-button 
+              color="primary"
+              [disabled]="habitacionForm.invalid || submitting">
+              <mat-icon *ngIf="!submitting">{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+              <mat-spinner *ngIf="submitting" diameter="20" class="me-2"></mat-spinner>
+              {{ isEditMode ? 'Actualizar' : 'Guardar' }} Habitación
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

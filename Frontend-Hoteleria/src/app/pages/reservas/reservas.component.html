@@ -1,0 +1,221 @@
+<div class="reservas-container">
+  <!-- Header con estadísticas -->
+  <mat-card class="stats-card">
+    <div class="stats-header">
+      <h2>📋 Gestión de Reservas</h2>
+      <button mat-raised-button color="primary" (click)="nuevaReserva()">
+        <mat-icon>add</mat-icon>
+        Nueva Reserva
+      </button>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number">{{ totalReservas }}</div>
+        <div class="stat-label">Total Reservas</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ reservasFuturas }}</div>
+        <div class="stat-label">Futuras</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">{{ reservasHoy }}</div>
+        <div class="stat-label">Hoy</div>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Filtros -->
+  <mat-card class="filters-card">
+    <div class="filters-header">
+      <h3>🔍 Filtros</h3>
+      <div class="filters-actions">
+        <button mat-button (click)="limpiarFiltros()">
+          <mat-icon>clear</mat-icon>
+          Limpiar
+        </button>
+        <button mat-button (click)="exportarReservas()">
+          <mat-icon>download</mat-icon>
+          Exportar
+        </button>
+      </div>
+    </div>
+    
+    <form [formGroup]="filtrosForm" class="filters-form">
+      <div class="filters-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estado">
+            <mat-option value="">Todos los estados</mat-option>
+            <mat-option *ngFor="let estado of estadosReserva" [value]="estado.value">
+              {{ estado.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Habitación</mat-label>
+          <input matInput formControlName="habitacion" placeholder="Número de habitación">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cliente</mat-label>
+          <input matInput formControlName="cliente" placeholder="Nombre del cliente">
+        </mat-form-field>
+      </div>
+    </form>
+  </mat-card>
+
+  <!-- Tabla de reservas -->
+  <mat-card class="table-card">
+    <div class="table-header">
+      <h3>📊 Lista de Reservas</h3>
+      <div class="table-info">
+        <span *ngIf="!loading">Mostrando {{ dataSource.data.length }} reservas</span>
+        <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" class="reservas-table" matSort>
+        
+        <!-- Columna Cliente -->
+        <ng-container matColumnDef="cliente">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</th>
+          <td mat-cell *matCellDef="let reserva">
+            <div class="cliente-cell">
+              <div class="cliente-nombre">{{ reserva.cliente.nombre }} {{ reserva.cliente.apellido }}</div>
+              <div class="cliente-documento">{{ reserva.cliente.documento }}</div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Columna Habitación -->
+        <ng-container matColumnDef="habitacion">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Habitación</th>
+          <td mat-cell *matCellDef="let reserva">
+            <div class="habitacion-cell" *ngIf="reserva.habitacionDetalle; else noHabitacion">
+              <div class="habitacion-numero">{{ reserva.habitacionDetalle.numero }}</div>
+              <div class="habitacion-tipo">{{ reserva.habitacionDetalle.tipo }}</div>
+            </div>
+            <ng-template #noHabitacion>
+              <div class="habitacion-cell no-data">
+                <div class="habitacion-numero">N/A</div>
+                <div class="habitacion-tipo">Habitación no encontrada</div>
+              </div>
+            </ng-template>
+          </td>
+        </ng-container>
+
+        <!-- Columna Fechas -->
+        <ng-container matColumnDef="fechas">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Fechas</th>
+          <td mat-cell *matCellDef="let reserva">
+            <div class="fechas-cell">
+              <div class="fecha-entrada">
+                <mat-icon>login</mat-icon>
+                {{ formatearFecha(reserva.fechaEntrada) }}
+              </div>
+              <div class="fecha-salida">
+                <mat-icon>logout</mat-icon>
+                {{ formatearFecha(reserva.fechaSalida) }}
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Columna Días -->
+        <ng-container matColumnDef="dias">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Días</th>
+          <td mat-cell *matCellDef="let reserva">
+            <div class="dias-cell">
+              <mat-icon>schedule</mat-icon>
+              {{ reserva.diasEstancia }} días
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Columna Estado -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+          <td mat-cell *matCellDef="let reserva">
+            <mat-chip [style.background-color]="reserva.estadoColor" [style.color]="'white'">
+              <mat-icon>{{ reserva.estadoIcon }}</mat-icon>
+              {{ reserva.estado }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Columna Pago -->
+        <ng-container matColumnDef="pago">
+          <th mat-header-cell *matHeaderCellDef>Pago</th>
+          <td mat-cell *matCellDef="let reserva">
+            <div class="pago-cell">
+              <mat-chip [style.background-color]="obtenerEstadoPago(reserva).color" [style.color]="'white'">
+                <mat-icon>{{ obtenerEstadoPago(reserva).icon }}</mat-icon>
+                {{ obtenerEstadoPago(reserva).texto }}
+              </mat-chip>
+              <div class="pago-monto" *ngIf="reserva.montoPagado && reserva.montoPagado > 0">
+                {{ formatearPrecio(reserva.montoPagado) }}
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Columna Precio -->
+        <ng-container matColumnDef="precio">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Precio Total</th>
+          <td mat-cell *matCellDef="let reserva">
+            <div class="precio-cell">
+              <div class="precio-total">{{ formatearPrecio(reserva.precioTotal) }}</div>
+              <div class="precio-noche" *ngIf="reserva.diasEstancia">
+                {{ formatearPrecio(reserva.precioPorNoche) }}/noche
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Columna Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let reserva">
+            <div class="acciones-cell">
+              <button mat-icon-button 
+                      matTooltip="Ver detalles" 
+                      (click)="verDetalle(reserva)"
+                      color="primary">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              
+              <button mat-icon-button 
+                      matTooltip="Editar reserva" 
+                      (click)="editarReserva(reserva)"
+                      color="accent">
+                <mat-icon>edit</mat-icon>
+              </button>
+              
+              <button mat-icon-button 
+                      matTooltip="Eliminar reserva" 
+                      (click)="eliminarReserva(reserva)"
+                      color="warn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+            class="reserva-row"
+            [class.reserva-hoy]="esReservaHoy(row.fechaEntrada)">
+        </tr>
+      </table>
+    </div>
+
+    <!-- Paginador -->
+    <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" 
+                   showFirstLastButtons
+                   aria-label="Seleccionar página de reservas">
+    </mat-paginator>
+  </mat-card>
+</div>
