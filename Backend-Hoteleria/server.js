@@ -11,6 +11,9 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurar trust proxy para Render
+app.set('trust proxy', 1);
+
 // Aplicar middleware de seguridad
 app.use(securityMiddleware.helmet);
 app.use(securityMiddleware.compression);
