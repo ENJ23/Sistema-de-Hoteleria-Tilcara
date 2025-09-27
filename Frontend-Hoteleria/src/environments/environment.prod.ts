@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   // URL del backend - se configura desde variables de entorno en Vercel
-  apiUrl: process.env['NG_APP_API_URL'] || 'https://sistema-de-hoteleria-tilcara.onrender.com/api',
+  apiUrl: 'https://sistema-de-hoteleria-tilcara.onrender.com/api',
   appName: 'Sistema de Hostal',
   version: '1.0.0',
   // Configuración adicional para producción
