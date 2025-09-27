@@ -27,8 +27,23 @@ app.use(securityMiddleware.additionalHeaders);
 app.use('/api/', securityMiddleware.generalLimiter);
 
 // Middleware
+const allowedOrigins = [
+    'http://localhost:4200',
+    'https://sistema-de-hoteleria-tilcara.vercel.app',
+    'https://sistema-de-hoteleria-tilcara-3gxiv0prb-enj23s-projects.vercel.app'
+];
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    origin: function (origin, callback) {
+        // Permitir requests sin origin (como mobile apps o curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token'],
     credentials: true,
@@ -41,9 +56,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Configuración de cabeceras adicionales (solo si es necesario)
 app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    
     // Solo agregar cabeceras si no están ya establecidas por CORS
-    if (!res.getHeader('Access-Control-Allow-Origin')) {
-        res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:4200');
+    if (!res.getHeader('Access-Control-Allow-Origin') && allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
     }
     if (!res.getHeader('Access-Control-Allow-Methods')) {
         res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
