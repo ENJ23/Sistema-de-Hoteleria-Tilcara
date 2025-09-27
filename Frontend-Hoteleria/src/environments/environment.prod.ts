@@ -1,9 +1,7 @@
 export const environment = {
   production: true,
-  // Para Vercel, usar la URL de la API desplegada
-  apiUrl: 'https://tu-proyecto-backend.vercel.app/api',
-  // O si usas API routes en el mismo proyecto:
-  // apiUrl: '/api',
+  // URL del backend - se configura desde variables de entorno en Vercel
+  apiUrl: process.env['NG_APP_API_URL'] || 'https://sistema-de-hoteleria-tilcara-backen.vercel.app/api',
   appName: 'Sistema de Hostal',
   version: '1.0.0',
   // Configuración adicional para producción
