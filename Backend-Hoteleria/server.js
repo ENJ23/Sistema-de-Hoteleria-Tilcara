@@ -30,7 +30,8 @@ app.use('/api/', securityMiddleware.generalLimiter);
 const allowedOrigins = [
     'http://localhost:4200',
     'https://sistema-de-hoteleria-tilcara.vercel.app',
-    'https://sistema-de-hoteleria-tilcara-3gxiv0prb-enj23s-projects.vercel.app'
+    'https://sistema-de-hoteleria-tilcara-3gxiv0prb-enj23s-projects.vercel.app',
+    'https://sistema-de-hoteleria-tilcara-ph88hmdim-enj23s-projects.vercel.app'
 ];
 
 app.use(cors({
@@ -38,9 +39,21 @@ app.use(cors({
         // Permitir requests sin origin (como mobile apps o curl)
         if (!origin) return callback(null, true);
         
+        // Permitir localhost en desarrollo
+        if (origin.includes('localhost')) {
+            return callback(null, true);
+        }
+        
+        // Permitir todos los subdominios de vercel.app
+        if (origin.includes('.vercel.app')) {
+            return callback(null, true);
+        }
+        
+        // Verificar si está en la lista de orígenes permitidos
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
+            console.warn(`🚨 Origen no permitido por CORS: ${origin}`);
             callback(new Error('No permitido por CORS'));
         }
     },
@@ -59,9 +72,21 @@ app.use((req, res, next) => {
     const origin = req.headers.origin;
     
     // Solo agregar cabeceras si no están ya establecidas por CORS
-    if (!res.getHeader('Access-Control-Allow-Origin') && allowedOrigins.includes(origin)) {
-        res.header('Access-Control-Allow-Origin', origin);
+    if (!res.getHeader('Access-Control-Allow-Origin')) {
+        // Permitir localhost en desarrollo
+        if (origin && origin.includes('localhost')) {
+            res.header('Access-Control-Allow-Origin', origin);
+        }
+        // Permitir todos los subdominios de vercel.app
+        else if (origin && origin.includes('.vercel.app')) {
+            res.header('Access-Control-Allow-Origin', origin);
+        }
+        // Verificar si está en la lista de orígenes permitidos
+        else if (origin && allowedOrigins.includes(origin)) {
+            res.header('Access-Control-Allow-Origin', origin);
+        }
     }
+    
     if (!res.getHeader('Access-Control-Allow-Methods')) {
         res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     }
