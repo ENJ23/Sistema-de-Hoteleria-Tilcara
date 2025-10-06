@@ -303,8 +303,8 @@ export class ReservasComponent implements OnInit, AfterViewInit {
   editarReserva(reserva: ReservaConDetalles): void {
     this.router.navigate(['/nueva-reserva'], {
       queryParams: { 
-        edit: true, 
-        id: reserva._id 
+        modo: 'editar', 
+        reservaId: reserva._id 
       }
     });
   }

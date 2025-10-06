@@ -1019,6 +1019,17 @@ export class HomeComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error al cargar reservas para estadísticas pendientes:', error);
+        
+        // Manejo específico de errores
+        if (error.status === 400) {
+          console.warn('Error de validación en consulta de reservas pendientes:', error.error?.message);
+        } else if (error.status === 500) {
+          console.error('Error interno del servidor al cargar estadísticas');
+        } else if (error.status === 0) {
+          console.error('Error de conexión al cargar estadísticas');
+        }
+        
+        // Establecer valores por defecto
         this.estadisticas.reservasPendientes = 0;
         this.estadisticas.pagosPendientes = 0;
       }
@@ -1775,11 +1786,13 @@ ${habitacionesLimpieza.length > 0 ?
     console.log('=== EDITAR RESERVA ===');
     console.log('Reserva:', reserva);
     
-    // Por ahora mostrar un mensaje informativo
-    this.mostrarMensaje('Funcionalidad de edición en desarrollo. Se implementará próximamente.');
-    
-    // Aquí se podría abrir un modal de edición o navegar a una página de edición
-    // this.router.navigate(['/editar-reserva', reserva._id]);
+    // Navegar al formulario de edición con los parámetros correctos
+    this.router.navigate(['/nueva-reserva'], {
+      queryParams: { 
+        modo: 'editar', 
+        reservaId: reserva._id 
+      }
+    });
   }
 
   imprimirReserva(reserva: any): void {

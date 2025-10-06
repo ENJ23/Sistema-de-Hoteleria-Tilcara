@@ -99,8 +99,8 @@ router.post('/', [
     body('numero').notEmpty().withMessage('El número de habitación es obligatorio'),
     body('tipo').isIn(['Individual', 'Doble', 'Triple', 'Suite', 'Familiar']).withMessage('Tipo de habitación inválido'),
     body('capacidad').isInt({ min: 1, max: 10 }).withMessage('La capacidad debe estar entre 1 y 10'),
-    body('precioBase').isFloat({ min: 0 }).withMessage('El precio base debe ser mayor a 0'),
-    body('precioActual').isFloat({ min: 0 }).withMessage('El precio actual debe ser mayor a 0'),
+    body('precioBase').isFloat({ min: 0, max: 500000 }).withMessage('El precio base debe estar entre 0 y 500000'),
+    body('precioActual').isFloat({ min: 0, max: 500000 }).withMessage('El precio actual debe estar entre 0 y 500000'),
     body('piso').isInt({ min: 1 }).withMessage('El piso debe ser mayor a 0')
 ], async (req, res) => {
     try {
@@ -127,8 +127,8 @@ router.put('/:id', [
     body('numero').notEmpty().withMessage('El número de habitación es obligatorio'),
     body('tipo').isIn(['Individual', 'Doble', 'Triple', 'Suite', 'Familiar']).withMessage('Tipo de habitación inválido'),
     body('capacidad').isInt({ min: 1, max: 10 }).withMessage('La capacidad debe estar entre 1 y 10'),
-    body('precioBase').isFloat({ min: 0 }).withMessage('El precio base debe ser mayor a 0'),
-    body('precioActual').isFloat({ min: 0 }).withMessage('El precio actual debe ser mayor a 0'),
+    body('precioBase').isFloat({ min: 0, max: 500000 }).withMessage('El precio base debe estar entre 0 y 500000'),
+    body('precioActual').isFloat({ min: 0, max: 500000 }).withMessage('El precio actual debe estar entre 0 y 500000'),
     body('piso').isInt({ min: 1 }).withMessage('El piso debe ser mayor a 0')
 ], async (req, res) => {
     try {
@@ -160,7 +160,7 @@ router.put('/:id', [
 router.patch('/:id/precio', [
     verifyToken,
     isEncargado,
-    body('precioActual').isFloat({ min: 0 }).withMessage('El precio debe ser mayor a 0')
+    body('precioActual').isFloat({ min: 0, max: 500000 }).withMessage('El precio debe estar entre 0 y 500000')
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -205,6 +205,33 @@ router.patch('/:id/estado', [
         res.json(habitacion);
     } catch (error) {
         res.status(500).json({ message: 'Error al cambiar estado', error: error.message });
+    }
+});
+
+// GET - Verificar si existe una habitación por número
+router.get('/check-numero', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        const { numero, excludeId } = req.query;
+        
+        if (!numero) {
+            return res.status(400).json({ message: 'El número de habitación es requerido' });
+        }
+        
+        let query = { numero: numero, activa: true };
+        
+        // Excluir la habitación actual si se está editando
+        if (excludeId) {
+            query._id = { $ne: excludeId };
+        }
+        
+        const habitacionExistente = await Habitacion.findOne(query);
+        
+        res.json({ exists: !!habitacionExistente });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al verificar número de habitación', error: error.message });
     }
 });
 

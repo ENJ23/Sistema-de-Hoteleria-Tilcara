@@ -1,0 +1,14 @@
+{
+  "name": "sistema-hoteleria",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de reservas de hotel",
+  "scripts": {
+    "build": "cd Backend-Hoteleria && npm install",
+    "start": "cd Backend-Hoteleria && npm start",
+    "dev": "cd Backend-Hoteleria && npm run dev"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

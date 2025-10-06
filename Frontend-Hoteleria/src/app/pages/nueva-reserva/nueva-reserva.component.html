@@ -7,10 +7,10 @@
       </button>
       <div class="header-text">
         <h1 class="page-title">
-          <mat-icon>add_circle</mat-icon>
-          Nueva Reserva
+          <mat-icon>{{ modoEdicion ? 'edit' : 'add_circle' }}</mat-icon>
+          {{ tituloPagina }}
         </h1>
-        <p class="page-subtitle">Crear una nueva reserva para el hostal</p>
+        <p class="page-subtitle">{{ modoEdicion ? 'Modificar los datos de la reserva existente' : 'Crear una nueva reserva para el hostal' }}</p>
       </div>
     </div>
   </div>
@@ -315,9 +315,9 @@
       <button type="submit" mat-raised-button color="primary" 
               class="btn-guardar"
               [disabled]="reservaForm.invalid || guardando">
-        <mat-icon *ngIf="!guardando">save</mat-icon>
+        <mat-icon *ngIf="!guardando">{{ modoEdicion ? 'update' : 'save' }}</mat-icon>
         <mat-spinner *ngIf="guardando" diameter="20"></mat-spinner>
-        {{ guardando ? 'Guardando...' : 'Crear Reserva' }}
+        {{ guardando ? (modoEdicion ? 'Actualizando...' : 'Creando...') : textoBotonGuardar }}
       </button>
     </div>
   </form>

@@ -99,46 +99,42 @@ export class HabitacionService {
 
   // Obtener una habitación por ID
   getHabitacion(id: string): Observable<Habitacion> {
-    return this.http.get<ApiResponse<Habitacion>>(
+    return this.http.get<Habitacion>(
       `${this.apiUrl}/${id}`,
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(response => response.data!),
       catchError(this.handleError)
     );
   }
 
   // Crear una nueva habitación
   createHabitacion(habitacion: HabitacionCreate): Observable<Habitacion> {
-    return this.http.post<ApiResponse<Habitacion>>(
+    return this.http.post<Habitacion>(
       this.apiUrl, 
       habitacion,
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(response => response.data!),
       catchError(this.handleError)
     );
   }
 
   // Actualizar una habitación
   updateHabitacion(id: string, habitacion: HabitacionUpdate): Observable<Habitacion> {
-    return this.http.put<ApiResponse<Habitacion>>(
+    return this.http.put<Habitacion>(
       `${this.apiUrl}/${id}`, 
       habitacion,
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(response => response.data!),
       catchError(this.handleError)
     );
   }
 
   // Eliminar una habitación
   deleteHabitacion(id: string): Observable<void> {
-    return this.http.delete<ApiResponse<void>>(
+    return this.http.delete<void>(
       `${this.apiUrl}/${id}`,
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(() => undefined),
       catchError(this.handleError)
     );
   }
@@ -171,57 +167,54 @@ export class HabitacionService {
       .set('fechaInicio', fechaInicio)
       .set('fechaFin', fechaFin);
     
-    return this.http.get<ApiResponse<Habitacion[]>>(
+    return this.http.get<Habitacion[]>(
       `${this.apiUrl}/disponibles`, 
       { 
         params,
         headers: this.authService.getAuthHeaders() 
       }
     ).pipe(
-      map(response => response.data || []),
       catchError(this.handleError)
     );
   }
 
   // Actualizar el estado de una habitación
   updateEstado(id: string, estado: string): Observable<Habitacion> {
-    return this.http.patch<ApiResponse<Habitacion>>(
+    return this.http.patch<Habitacion>(
       `${this.apiUrl}/${id}/estado`, 
       { estado },
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(response => response.data!),
       catchError(this.handleError)
     );
   }
 
   // Actualizar el precio de una habitación
   updatePrecio(id: string, precio: number): Observable<Habitacion> {
-    return this.http.patch<ApiResponse<Habitacion>>(
+    return this.http.patch<Habitacion>(
       `${this.apiUrl}/${id}/precio`, 
       { precio },
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(response => response.data!),
       catchError(this.handleError)
     );
   }
 
   // Verificar si existe una habitación por número
-  checkNumeroExists(numero: number, excludeId?: string): Observable<boolean> {
-    let params = new HttpParams().set('numero', numero.toString());
+  checkNumeroExists(numero: string, excludeId?: string): Observable<boolean> {
+    let params = new HttpParams().set('numero', numero);
     if (excludeId) {
       params = params.set('excludeId', excludeId);
     }
     
-    return this.http.get<ApiResponse<{ exists: boolean }>>(
+    return this.http.get<{ exists: boolean }>(
       `${this.apiUrl}/check-numero`,
       { 
         params,
         headers: this.authService.getAuthHeaders() 
       }
     ).pipe(
-      map(response => response.data?.exists || false),
+      map(response => response.exists || false),
       catchError(error => {
         // Si el error es 404 (no encontrado), asumimos que el número no existe
         if (error.status === 404) {
@@ -235,11 +228,10 @@ export class HabitacionService {
 
   // Obtener estadísticas de habitaciones
   getEstadisticas(): Observable<any> {
-    return this.http.get<ApiResponse<any>>(
+    return this.http.get<any>(
       `${this.apiUrl}/estadisticas`,
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(response => response.data || {}),
       catchError(this.handleError)
     );
   }
@@ -256,11 +248,12 @@ export class HabitacionService {
 
   // Cambiar el estado de una habitación
   cambiarEstadoHabitacion(id: string, estado: EstadoHabitacion): Observable<Habitacion> {
-    return this.http.patch<ApiResponse<Habitacion>>(
+    return this.http.patch<Habitacion>(
       `${this.apiUrl}/${id}/estado`,
-      { estado }
+      { estado },
+      { headers: this.authService.getAuthHeaders() }
     ).pipe(
-      map(response => response.data!)
+      catchError(this.handleError)
     );
   }
 

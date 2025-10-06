@@ -124,8 +124,27 @@ const validarConsultaReservas = [
     
     query('estado', 'Estado inválido')
         .optional()
-        .isIn(['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'])
-        .withMessage('Estado de reserva inválido'),
+        .custom((value) => {
+            if (!value) return true;
+            
+            // Si es un string con múltiples estados separados por comas
+            if (typeof value === 'string' && value.includes(',')) {
+                const estados = value.split(',').map(e => e.trim());
+                const estadosValidos = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'];
+                const estadosInvalidos = estados.filter(e => !estadosValidos.includes(e));
+                if (estadosInvalidos.length > 0) {
+                    throw new Error(`Estados inválidos: ${estadosInvalidos.join(', ')}`);
+                }
+                return true;
+            }
+            
+            // Si es un solo estado
+            const estadosValidos = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'];
+            if (!estadosValidos.includes(value)) {
+                throw new Error('Estado de reserva inválido');
+            }
+            return true;
+        }),
     
     query('fechaInicio', 'Formato de fecha inválido')
         .optional()
@@ -175,7 +194,13 @@ router.get('/', [
         let query = {};
         
         if (estado) {
-            query.estado = estado;
+            // Si el estado contiene comas, es una lista de estados
+            if (typeof estado === 'string' && estado.includes(',')) {
+                const estados = estado.split(',').map(e => e.trim());
+                query.estado = { $in: estados };
+            } else {
+                query.estado = estado;
+            }
         }
         
         if (fechaInicio && fechaFin) {
@@ -224,8 +249,8 @@ router.get('/cliente/:clienteId', [
     verifyToken,
     // Middleware para verificar si el usuario es el dueño de las reservas o un empleado/administrador
     (req, res, next) => {
-        // Si el usuario es empleado o administrador, permitir
-        if (req.userId.rol === 'admin' || req.userId.rol === 'empleado') {
+        // Si el usuario es encargado, limpieza o mantenimiento, permitir
+        if (req.userId.rol === 'encargado' || req.userId.rol === 'limpieza' || req.userId.rol === 'mantenimiento') {
             return next();
         }
         // Si el usuario es el dueño de las reservas, permitir
@@ -281,17 +306,21 @@ router.get('/:id', verifyToken, async (req, res) => {
             reserva.historialPagos.reduce((sum, pago) => sum + pago.monto, 0) : 
             reserva.montoPagado || 0;
         
-        // Si el usuario es empleado o administrador, permitir
-        if (req.userId.rol === 'admin' || req.userId.rol === 'empleado') {
+        // Si el usuario es encargado, limpieza o mantenimiento, permitir acceso completo
+        if (req.userId.rol === 'encargado' || req.userId.rol === 'limpieza' || req.userId.rol === 'mantenimiento') {
+            console.log('✅ Usuario autorizado (rol:', req.userId.rol, ') - permitiendo acceso a reserva');
             return res.json(reservaObj);
         }
         
         // Si el usuario es el dueño de la reserva, permitir
         if (reserva.cliente.email === req.userId.email) {
+            console.log('✅ Usuario es dueño de la reserva - permitiendo acceso');
             return res.json(reservaObj);
         }
         
         // Si no, denegar acceso
+        console.log('❌ Usuario no autorizado - rol:', req.userId.rol, 'email:', req.userId.email);
+        console.log('❌ Reserva cliente email:', reserva.cliente.email);
         return res.status(403).json({ message: 'No tienes permiso para ver esta reserva' });
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener reserva', error: error.message });

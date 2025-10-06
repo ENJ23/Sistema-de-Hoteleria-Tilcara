@@ -1,233 +1,502 @@
-/* Estilos generales del formulario */
-.container {
-  padding: 20px;
+/* ===== FORMULARIO DE HABITACIONES - DISEÑO MEJORADO ===== */
+
+.form-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
 }
 
-/* Estilos para la tarjeta */
-mat-card {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+/* ===== HEADER DEL FORMULARIO ===== */
+.form-header {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
   overflow: hidden;
 }
 
-mat-card-header {
-  background-color: #f5f5f5;
-  padding: 16px 24px;
-  border-bottom: 1px solid #e0e0e0;
+.header-content {
+  padding: 24px 32px;
 }
 
-mat-card-title {
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: #333;
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: #1976d2;
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border-radius: 50%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title-text {
+  flex: 1;
+}
+
+.form-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.form-subtitle {
+  margin: 4px 0 0 0;
+  color: #666;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.progress-indicator {
+  margin-top: 16px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* ===== TARJETA DEL FORMULARIO ===== */
+.form-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: none;
+  overflow: hidden;
+}
+
+.form-content {
+  padding: 32px;
+}
+
+/* ===== SECCIONES DEL FORMULARIO ===== */
+.form-section {
+  margin-bottom: 40px;
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.form-section:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: #1976d2;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e3f2fd;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.section-icon {
+  color: #1976d2;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* ===== GRID DE CAMPOS ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.form-field-container {
+  position: relative;
+}
+
+.form-field-container.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ===== CAMPOS DE FORMULARIO ===== */
+.full-width {
+  width: 100%;
+}
+
+::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+::ng-deep .mat-mdc-form-field .mat-mdc-text-field-wrapper {
+  border-radius: 8px;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+::ng-deep .mat-mdc-form-field:hover .mat-mdc-text-field-wrapper {
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+}
+
+::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.2);
+}
+
+::ng-deep .mat-mdc-form-field .mat-mdc-form-field-outline {
+  border-radius: 8px;
+}
+
+::ng-deep .mat-mdc-form-field .mat-mdc-form-field-outline-thick {
+  border-width: 2px;
+}
+
+/* ===== ICONOS EN CAMPOS ===== */
+.currency-prefix {
+  color: #4caf50;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* ===== OPCIONES EN SELECTS ===== */
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.option-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #666;
+}
+
+/* ===== CHECKBOX PERSONALIZADO ===== */
+.checkbox-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.status-checkbox {
   margin: 0;
 }
 
-mat-card-subtitle {
-  color: #666;
-  margin-top: 4px;
-}
-
-mat-card-content {
-  padding: 24px;
-}
-
-/* Estilos para los campos del formulario */
-mat-form-field {
-  width: 100%;
-  margin-bottom: 16px;
-  display: block;
-}
-
-/* Estilos para los checkboxes de servicios */
-.servicios-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  margin: 16px 0 24px;
-  padding: 12px 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
-}
-
-.servicio-checkbox {
+.checkbox-content {
   display: flex;
   align-items: center;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.servicio-checkbox:hover {
-  background-color: #f5f5f5;
-}
-
-/* Estilos para los botones de acción */
-.actions {
-  margin-top: 24px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-}
-
-/* Estilos para el spinner de carga */
-.spinner-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  min-height: 200px;
-}
-
-/* Estilos para los mensajes de error */
-.error-message {
-  color: #d32f2f;
-  font-size: 12px;
-  margin-top: -8px;
-  margin-bottom: 12px;
-  display: block;
-}
-
-/* Estilos para los badges de estado */
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
+  gap: 8px;
   font-weight: 500;
-  text-transform: capitalize;
-  display: inline-flex;
+}
+
+.checkbox-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #4caf50;
+}
+
+.checkbox-hint {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+}
+
+/* ===== CONTADOR DE CARACTERES ===== */
+.character-count {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* ===== SERVICIOS ===== */
+.services-counter {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #1976d2;
+}
+
+.counter-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.service-item {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.service-item:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+}
+
+.service-checkbox {
+  width: 100%;
+  padding: 16px;
+  margin: 0;
+}
+
+.service-content {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
+  width: 100%;
 }
 
-.status-disponible {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.status-ocupada {
-  background-color: #ffebee;
-  color: #c62828;
-}
-
-.status-mantenimiento {
-  background-color: #fff3e0;
-  color: #ef6c00;
-}
-
-.status-reservada {
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-/* Estilos para los iconos */
-mat-icon {
+.service-icon {
   font-size: 20px;
   width: 20px;
   height: 20px;
-  line-height: 20px;
-  margin-right: 8px;
+  color: #1976d2;
 }
 
-/* Estilos para los campos de entrada con prefijo de moneda */
-.mat-mdc-form-field-prefix,
-.mat-mdc-form-field-suffix {
-  color: rgba(0, 0, 0, 0.6);
+.service-name {
+  font-weight: 500;
+  color: #333;
 }
 
-/* Ajustes responsivos */
+.services-limit-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 14px;
+}
+
+.warning-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #f39c12;
+}
+
+/* ===== BOTONES DE ACCIÓN ===== */
+.form-actions {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 2px solid #e3f2fd;
+}
+
+.actions-container {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.cancel-button,
+.submit-button {
+  min-width: 160px;
+  height: 48px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  text-transform: none;
+}
+
+.cancel-button {
+  border: 2px solid #f44336;
+  color: #f44336;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #f44336;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+.submit-button {
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+  border: none;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1565c0, #0d47a1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
+}
+
+.submit-button:disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== INFORMACIÓN DEL FORMULARIO ===== */
+.form-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  color: #1976d2;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* ===== RESPONSIVIDAD ===== */
 @media (max-width: 768px) {
-  .container {
-    padding: 12px;
+  .form-container {
+    padding: 16px;
   }
   
-  .servicios-container {
+  .form-content {
+    padding: 20px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .services-grid {
     grid-template-columns: 1fr;
   }
   
-  .actions {
+  .actions-container {
     flex-direction: column;
     gap: 12px;
   }
   
-  .actions button {
+  .cancel-button,
+  .submit-button {
     width: 100%;
-    margin: 0;
+    min-width: auto;
   }
   
-  mat-card-content {
+  .title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-title {
+    font-size: 24px;
+  }
+  
+  .form-subtitle {
+    font-size: 14px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+  }
+  
+  .form-section {
     padding: 16px;
   }
 }
 
-/* Estilos para el contador de caracteres */
-.character-counter {
-  font-size: 12px;
-  color: #666;
-  text-align: right;
-  margin-top: -12px;
-  margin-bottom: 8px;
+/* ===== ANIMACIONES ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Estilos para los mensajes de advertencia */
-.warning-message {
-  background-color: #fff8e1;
-  color: #ff8f00;
-  padding: 12px;
-  border-radius: 4px;
-  margin: 12px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
+.form-section {
+  animation: fadeInUp 0.6s ease-out;
 }
 
-.warning-message mat-icon {
-  color: #ff8f00;
+.form-section:nth-child(1) { animation-delay: 0.1s; }
+.form-section:nth-child(2) { animation-delay: 0.2s; }
+.form-section:nth-child(3) { animation-delay: 0.3s; }
+.form-section:nth-child(4) { animation-delay: 0.4s; }
+
+/* ===== ESTADOS DE VALIDACIÓN ===== */
+::ng-deep .mat-mdc-form-field.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+  border-color: #f44336;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.15);
 }
 
-/* Estilos para los campos deshabilitados */
-:host ::ng-deep .mdc-text-field--disabled {
-  background-color: #f5f5f5;
-  border-radius: 4px;
+::ng-deep .mat-mdc-form-field.mat-form-field-valid .mat-mdc-text-field-wrapper {
+  border-color: #4caf50;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
 }
 
-/* Estilos para los tooltips */
-.mat-tooltip {
-  font-size: 12px;
-  padding: 6px 10px;
-  color: rgba(0, 0, 0, 0.87);
+/* ===== LOADING STATES ===== */
+.form-container.loading {
+  pointer-events: none;
+  opacity: 0.7;
 }
 
-/* Estilos para los campos de entrada */
-:host ::ng-deep .mat-mdc-form-field {
-  --mdc-filled-text-field-container-color: #fff;
-  --mdc-filled-text-field-focus-active-indicator-color: #3f51b5;
-  --mdc-filled-text-field-focus-label-text-color: #3f51b5;
-}
-
-/* Estilos para el contenedor de checkboxes de servicios */
-.servicios-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-  margin: 15px 0;
-}
-
-/* Estilos para el título de la sección de servicios */
-.section-title {
-  margin: 20px 0 10px;
-  color: #3f51b5;
-  font-weight: 500;
-}
-
-/* Estilos para el subtítulo de la sección de servicios */
-.section-subtitle {
-  color: #666;
-  margin-bottom: 15px;
-  font-size: 0.9em;
+.form-container.loading::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 1000;
 }

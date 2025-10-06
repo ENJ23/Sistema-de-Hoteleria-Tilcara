@@ -13,6 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -21,9 +22,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Habitacion, HabitacionCreate, HabitacionUpdate, TipoHabitacion, EstadoHabitacion } from '../../../models/habitacion.model';
 import { HabitacionService } from '../../../services/habitacion.service';
 
-// Componentes
-import { HeaderComponent } from '../../../components/layout/header/header.component';
-import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
+// Componentes (removidos ya que no se usan en el template)
 
 @Component({
   selector: 'app-formulario-habitacion',
@@ -43,12 +42,10 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatChipsModule,
     MatSnackBarModule,
-    MatCheckboxModule,
-    // Componentes
-    HeaderComponent,
-    LoadingSpinnerComponent
+    MatCheckboxModule
   ]
 })
 export class FormularioHabitacionComponent implements OnInit {
@@ -120,12 +117,12 @@ export class FormularioHabitacionComponent implements OnInit {
       precioBase: [0, [
         Validators.required, 
         Validators.min(0), 
-        Validators.max(10000)
+        Validators.max(500000)
       ]],
       precioActual: [0, [
         Validators.required, 
         Validators.min(0), 
-        Validators.max(10000)
+        Validators.max(500000)
       ]],
       estado: ['Disponible', Validators.required],
       descripcion: ['', [
@@ -219,9 +216,8 @@ export class FormularioHabitacionComponent implements OnInit {
       servicios: Array.isArray(formValue.servicios) ? formValue.servicios : []
     };
 
-    // Convertir el número de habitación a número y verificar si ya existe
-    const numeroHabitacion = Number(habitacionData.numero);
-    this.habitacionService.checkNumeroExists(numeroHabitacion, this.habitacionId || undefined)
+    // Verificar si el número de habitación ya existe
+    this.habitacionService.checkNumeroExists(habitacionData.numero || '', this.habitacionId || undefined)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (exists) => {
@@ -376,4 +372,62 @@ export class FormularioHabitacionComponent implements OnInit {
 
   // Getters para acceder a los controles del formulario
   get f() { return this.habitacionForm.controls; }
+
+  /**
+   * Obtiene el icono correspondiente al tipo de habitación
+   */
+  getTipoIcon(tipo: TipoHabitacion): string {
+    const iconos: Record<TipoHabitacion, string> = {
+      'Individual': 'bed',
+      'Doble': 'hotel',
+      'Triple': 'home',
+      'Suite': 'star',
+      'Familiar': 'group'
+    };
+    return iconos[tipo] || 'room';
+  }
+
+  /**
+   * Obtiene el icono correspondiente al estado de la habitación
+   */
+  getEstadoIcon(estado: EstadoHabitacion): string {
+    const iconos: Record<EstadoHabitacion, string> = {
+      'Disponible': 'check_circle',
+      'Ocupada': 'event_busy',
+      'Mantenimiento': 'build',
+      'Reservada': 'event_available',
+      'Fuera de servicio': 'block'
+    };
+    return iconos[estado] || 'help';
+  }
+
+  /**
+   * Obtiene el icono correspondiente al servicio
+   */
+  getServicioIcon(servicio: string): string {
+    const iconos: Record<string, string> = {
+      'Aire acondicionado': 'ac_unit',
+      'TV por cable': 'tv',
+      'Minibar': 'local_bar',
+      'Caja fuerte': 'security',
+      'WiFi': 'wifi',
+      'Teléfono': 'phone',
+      'Secador de pelo': 'content_cut',
+      'Cafetera': 'local_cafe',
+      'Plancha': 'iron',
+      'Escritorio': 'desktop_windows',
+      'Caja de seguridad electrónica': 'lock',
+      'Servicio a la habitación': 'room_service',
+      'Bañera de hidromasaje': 'hot_tub',
+      'Frigobar': 'kitchen',
+      'Caja de seguridad': 'lock_outline',
+      'TV pantalla plana': 'tv',
+      'Canales premium': 'star',
+      'Escritorio de trabajo': 'work',
+      'Sala de estar': 'weekend',
+      'Vistas al mar': 'visibility',
+      'Terraza privada': 'balcony'
+    };
+    return iconos[servicio] || 'room_service';
+  }
 }

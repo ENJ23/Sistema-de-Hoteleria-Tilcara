@@ -21,7 +21,7 @@ import { Observable, Subject, of, debounceTime, distinctUntilChanged, switchMap,
 import { ReservaService } from '../../services/reserva.service';
 import { HabitacionService } from '../../services/habitacion.service';
 import { DateTimeService } from '../../services/date-time.service';
-import { ReservaCreate } from '../../models/reserva.model';
+import { ReservaCreate, ReservaUpdate, Reserva } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
 
 @Component({
@@ -59,6 +59,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   habitacionSeleccionada?: Habitacion;
   modoClic = false;
   
+  // Propiedades para modo de edición
+  modoEdicion = false;
+  reservaId?: string;
+  reservaOriginal?: Reserva;
+  
   // Estados y tipos
   estadosReserva = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'];
   metodosPago = ['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal'];
@@ -70,6 +75,16 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   
   // Destructor para observables
   private destroy$ = new Subject<void>();
+
+  // Getter para el título de la página
+  get tituloPagina(): string {
+    return this.modoEdicion ? 'Editar Reserva' : 'Nueva Reserva';
+  }
+
+  // Getter para el texto del botón de guardar
+  get textoBotonGuardar(): string {
+    return this.modoEdicion ? 'Actualizar Reserva' : 'Crear Reserva';
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -198,6 +213,15 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   private verificarParametrosRuta(): void {
     this.route.queryParams.subscribe(params => {
+      // Verificar si estamos en modo de edición
+      if (params['modo'] === 'editar' && params['reservaId']) {
+        this.modoEdicion = true;
+        this.reservaId = params['reservaId'];
+        this.cargarReservaParaEdicion(params['reservaId']);
+        return;
+      }
+      
+      // Modo de creación normal
       if (params['fecha']) {
         // CORRECCIÓN: Usar el servicio de fecha para manejar correctamente la zona horaria
         this.fechaSeleccionada = this.dateTimeService.parseDateFromString(params['fecha']);
@@ -219,6 +243,72 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  private cargarReservaParaEdicion(reservaId: string): void {
+    console.log('🔄 Cargando reserva para edición:', reservaId);
+    this.cargando = true;
+    
+    this.reservaService.getReserva(reservaId).subscribe({
+      next: (reserva) => {
+        console.log('✅ Reserva cargada para edición:', reserva);
+        this.reservaOriginal = reserva;
+        this.precargarDatosReserva(reserva);
+        this.cargando = false;
+      },
+      error: (error) => {
+        console.error('❌ Error al cargar reserva para edición:', error);
+        this.mostrarMensaje('Error al cargar la reserva para edición', 'error');
+        this.cargando = false;
+        // Redirigir a la página principal si no se puede cargar la reserva
+        this.router.navigate(['/']);
+      }
+    });
+  }
+
+  private precargarDatosReserva(reserva: Reserva): void {
+    console.log('📝 Precargando datos de la reserva en el formulario');
+    
+    // Precargar datos del cliente
+    this.reservaForm.patchValue({
+      nombreCliente: reserva.cliente.nombre,
+      apellidoCliente: reserva.cliente.apellido,
+      emailCliente: reserva.cliente.email,
+      telefonoCliente: reserva.cliente.telefono,
+      documentoCliente: reserva.cliente.documento,
+      direccionCliente: reserva.cliente.direccion || '',
+      nacionalidadCliente: reserva.cliente.nacionalidad || ''
+    });
+
+    // Precargar datos de la reserva
+    this.reservaForm.patchValue({
+      fechaEntrada: this.dateTimeService.parseDateFromString(reserva.fechaEntrada),
+      fechaSalida: this.dateTimeService.parseDateFromString(reserva.fechaSalida),
+      horaEntrada: reserva.horaEntrada,
+      horaSalida: reserva.horaSalida,
+      precioPorNoche: reserva.precioPorNoche,
+      estado: reserva.estado,
+      pagado: reserva.pagado,
+      metodoPago: reserva.metodoPago || '',
+      observaciones: reserva.observaciones || ''
+    });
+
+    // Configurar habitación
+    const habitacionId = typeof reserva.habitacion === 'string' ? reserva.habitacion : reserva.habitacion._id;
+    this.reservaForm.patchValue({
+      habitacion: habitacionId
+    });
+
+    // Buscar y configurar la habitación seleccionada
+    this.habitacionSeleccionada = this.habitaciones.find(h => h._id === habitacionId);
+    if (this.habitacionSeleccionada) {
+      console.log('🏨 Habitación encontrada para edición:', this.habitacionSeleccionada);
+    }
+
+    // Calcular precios
+    this.calcularPrecio();
+    
+    console.log('✅ Datos precargados correctamente');
   }
 
   private buscarYConfigurarHabitacion(habitacionId: string): void {
@@ -386,10 +476,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     
     if (habitacionId && fechaEntrada && fechaSalida) {
       try {
-        const disponible = await firstValueFrom(this.reservaService.verificarDisponibilidad(
+        // Usar el método checkDisponibilidad que está implementado en el servicio
+        const disponible = await firstValueFrom(this.reservaService.checkDisponibilidad(
           habitacionId, 
-          fechaEntrada, 
-          fechaSalida
+          fechaEntrada instanceof Date ? fechaEntrada.toISOString() : fechaEntrada,
+          fechaSalida instanceof Date ? fechaSalida.toISOString() : fechaSalida,
+          this.modoEdicion ? this.reservaId : undefined
         ));
         
         if (!disponible) {
@@ -412,7 +504,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       }
     }
     
-    return false;
+    return true; // Si no hay datos suficientes, permitir continuar
   }
 
   async guardarReserva(): Promise<void> {
@@ -425,8 +517,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Saltar verificación de disponibilidad por ahora (endpoint con problemas)
-    console.log('Saltando verificación de disponibilidad - endpoint con problemas en el backend');
+    // Verificar disponibilidad antes de crear/actualizar la reserva
+    const disponibilidadVerificada = await this.verificarDisponibilidad();
+    if (!disponibilidadVerificada) {
+      this.guardando = false;
+      return;
+    }
 
     this.guardando = true;
 
@@ -502,6 +598,19 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     console.log('Observaciones:', reservaData.observaciones);
     console.log('=== FIN DATOS ===');
 
+    if (this.modoEdicion && this.reservaId) {
+      // Modo de edición
+      this.actualizarReserva(reservaData);
+    } else {
+      // Modo de creación
+      this.crearReserva(reservaData);
+    }
+  }
+
+  private crearReserva(reservaData: ReservaCreate): void {
+    console.log('=== CREANDO NUEVA RESERVA ===');
+    console.log('Datos:', reservaData);
+
     this.reservaService.createReserva(reservaData).subscribe({
       next: (reserva) => {
         this.mostrarMensaje('Reserva creada exitosamente', 'success');
@@ -514,25 +623,80 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error al crear reserva:', error);
-        console.error('Error completo:', error);
-        console.error('Error details:', error.error);
-        
-        let mensajeError = 'Error al crear la reserva';
-        
-        if (error.error?.message) {
-          mensajeError = error.error.message;
-        }
-        
-        // Si hay errores de validación específicos, mostrarlos
-        if (error.error?.errors && Array.isArray(error.error.errors)) {
-          const erroresValidacion = error.error.errors.map((err: any) => `${err.field}: ${err.message}`).join(', ');
-          mensajeError = `Errores de validación: ${erroresValidacion}`;
-        }
-        
-        this.mostrarMensaje(mensajeError, 'error');
-        this.guardando = false;
+        this.manejarErrorReserva(error, 'crear');
       }
     });
+  }
+
+  private actualizarReserva(reservaData: ReservaCreate): void {
+    console.log('=== ACTUALIZANDO RESERVA ===');
+    console.log('ID:', this.reservaId);
+    console.log('Datos:', reservaData);
+
+    // Convertir ReservaCreate a ReservaUpdate
+    const reservaUpdateData: ReservaUpdate = {
+      cliente: reservaData.cliente,
+      habitacion: reservaData.habitacion,
+      fechaEntrada: reservaData.fechaEntrada,
+      fechaSalida: reservaData.fechaSalida,
+      horaEntrada: reservaData.horaEntrada,
+      horaSalida: reservaData.horaSalida,
+      precioPorNoche: reservaData.precioPorNoche,
+      estado: reservaData.estado,
+      pagado: reservaData.pagado,
+      metodoPago: reservaData.metodoPago,
+      observaciones: reservaData.observaciones
+    };
+
+    this.reservaService.updateReserva(this.reservaId!, reservaUpdateData).subscribe({
+      next: (reserva) => {
+        this.mostrarMensaje('Reserva actualizada exitosamente', 'success');
+        this.router.navigate(['/'], { 
+          queryParams: { 
+            reservaActualizada: reserva._id,
+            mensaje: 'Reserva actualizada exitosamente'
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al actualizar reserva:', error);
+        this.manejarErrorReserva(error, 'actualizar');
+      }
+    });
+  }
+
+  private manejarErrorReserva(error: any, accion: string): void {
+    console.error(`Error al ${accion} reserva:`, error);
+    console.error('Error completo:', error);
+    console.error('Error details:', error.error);
+    
+    let mensajeError = `Error al ${accion} la reserva`;
+    
+    // Manejo específico de diferentes tipos de errores
+    if (error.status === 400) {
+      // Error de validación
+      if (error.error?.message) {
+        mensajeError = error.error.message;
+      } else if (error.error?.errors && Array.isArray(error.error.errors)) {
+        const erroresValidacion = error.error.errors.map((err: any) => `${err.field}: ${err.message}`).join(', ');
+        mensajeError = `Errores de validación: ${erroresValidacion}`;
+      } else {
+        mensajeError = 'Los datos ingresados no son válidos. Por favor, revise la información.';
+      }
+    } else if (error.status === 404) {
+      mensajeError = 'No se encontró la reserva o habitación especificada.';
+    } else if (error.status === 409) {
+      mensajeError = 'Conflicto detectado: La habitación ya está reservada para esas fechas.';
+    } else if (error.status === 500) {
+      mensajeError = 'Error interno del servidor. Por favor, intente nuevamente.';
+    } else if (error.status === 0) {
+      mensajeError = 'Error de conexión. Verifique su conexión a internet.';
+    } else if (error.error?.message) {
+      mensajeError = error.error.message;
+    }
+    
+    this.mostrarMensaje(mensajeError, 'error');
+    this.guardando = false;
   }
 
   cancelar(): void {
