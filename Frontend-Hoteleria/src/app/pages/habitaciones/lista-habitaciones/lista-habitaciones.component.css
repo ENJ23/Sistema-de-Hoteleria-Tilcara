@@ -1,101 +1,689 @@
-/* Estilos para la tabla */
-table {
-  width: 100%;
-  margin-bottom: 1rem;
+/* ===== PÁGINA DE HABITACIONES - DISEÑO MODERNO ===== */
+
+.rooms-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px;
 }
 
-/* Estilos para los badges de estado */
-.badge {
-  padding: 0.35em 0.65em;
-  font-size: 0.75em;
+/* ===== HEADER SECTION ===== */
+.page-header {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px;
+}
+
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.header-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #667eea;
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border-radius: 50%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title-text {
+  flex: 1;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 36px;
   font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  margin: 8px 0 0 0;
+  color: #666;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.add-button {
+  min-width: 200px;
+  height: 56px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== STATS SECTION ===== */
+.stats-section {
+  margin-bottom: 32px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border-left: 4px solid;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.total {
+  border-left-color: #667eea;
+}
+
+.stat-card.available {
+  border-left-color: #4caf50;
+}
+
+.stat-card.occupied {
+  border-left-color: #f44336;
+}
+
+.stat-card.maintenance {
+  border-left-color: #ff9800;
+}
+
+.stat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: white;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-card.available .stat-icon {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+}
+
+.stat-card.occupied .stat-icon {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.stat-card.maintenance .stat-icon {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
   line-height: 1;
-  color: #fff;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: baseline;
-  border-radius: 0.25rem;
+  margin-bottom: 4px;
 }
 
-.badge-disponible {
-  background-color: #198754; /* Verde */
-}
-
-.badge-ocupada {
-  background-color: #dc3545; /* Rojo */
-}
-
-.badge-mantenimiento {
-  background-color: #fd7e14; /* Naranja */
-}
-
-.badge-reservada {
-  background-color: #0d6efd; /* Azul */
-}
-
-/* Estilos para los botones de acción */
-button[mat-icon-button] {
-  margin: 0 2px;
-}
-
-/* Estilos para el buscador */
-.mat-form-field {
+.stat-label {
   font-size: 14px;
-  width: 100%;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Estilos para el contenedor principal */
-.container {
-  padding: 20px;
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-/* Estilos para el título */
-h2 {
-  color: #333;
+/* ===== SEARCH SECTION ===== */
+.search-section {
+  margin-bottom: 24px;
+}
+
+.search-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.search-container {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.search-field {
+  flex: 1;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== ROOMS SECTION ===== */
+.rooms-section {
+  margin-bottom: 24px;
+}
+
+.rooms-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: none;
+  overflow: hidden;
+}
+
+.rooms-card mat-card-header {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  padding: 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.rooms-card mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.card-icon {
+  color: #667eea;
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.rooms-card mat-card-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* ===== LOADING STATE ===== */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 20px;
+}
+
+.loading-text {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* ===== ROOMS GRID ===== */
+.rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 24px;
+  padding: 24px;
+}
+
+.room-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.room-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  transition: all 0.3s ease;
+}
+
+.room-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+/* Room States */
+.room-disponible::before {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+}
+
+.room-ocupada::before {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.room-mantenimiento::before {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.room-reservada::before {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+}
+
+/* ===== ROOM HEADER ===== */
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-/* Estilos para la tarjeta */
-mat-card {
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.room-number {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* Estilos para la tabla responsiva */
-.table-responsive {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.room-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  color: #667eea;
 }
 
-/* Estilos para el mensaje de carga */
-.loading-message {
+.number-text {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.room-status {
+  flex-shrink: 0;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+}
+
+.status-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* ===== ROOM INFO ===== */
+.room-info {
+  margin-bottom: 24px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
+  flex: 1;
+}
+
+.price-row {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 16px 0 0 0;
+}
+
+.price-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #4caf50;
+}
+
+.price-period {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* ===== ROOM ACTIONS ===== */
+.room-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
   text-align: center;
-  padding: 20px;
+}
+
+.empty-icon {
+  font-size: 80px;
+  width: 80px;
+  height: 80px;
+  color: #ccc;
+  margin-bottom: 24px;
+}
+
+.empty-title {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 600;
   color: #666;
 }
 
-/* Estilos para los botones de acción */
-.action-buttons {
-  white-space: nowrap;
+.empty-subtitle {
+  margin: 0 0 32px 0;
+  font-size: 16px;
+  color: #999;
+  max-width: 400px;
 }
 
-/* Estilos para el paginador */
-mat-paginator {
-  margin-top: 20px;
-  background-color: transparent;
+.empty-action {
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Ajustes para móviles */@media (max-width: 768px) {
-  .container {
-    padding: 10px;
+/* ===== PAGINATION ===== */
+.pagination-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.custom-paginator {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+}
+
+/* ===== RESPONSIVIDAD ===== */
+@media (max-width: 1200px) {
+  .rooms-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .rooms-container {
+    padding: 16px;
   }
   
-  button[mat-icon-button] {
-    margin: 2px;
-    padding: 0 4px;
+  .header-content {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
   }
   
-  .mat-column-acciones {
-    min-width: 150px;
+  .title-section {
+    flex-direction: column;
+    gap: 16px;
   }
+  
+  .page-title {
+    font-size: 28px;
+  }
+  
+  .page-subtitle {
+    font-size: 16px;
+  }
+  
+  .add-button {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .rooms-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .search-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .filter-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .room-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .room-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rooms-container {
+    padding: 12px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .header-content {
+    padding: 20px;
+  }
+  
+  .room-card {
+    padding: 16px;
+  }
+  
+  .number-text {
+    font-size: 20px;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .stat-number {
+    font-size: 24px;
+  }
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.room-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.room-card:nth-child(1) { animation-delay: 0.1s; }
+.room-card:nth-child(2) { animation-delay: 0.2s; }
+.room-card:nth-child(3) { animation-delay: 0.3s; }
+.room-card:nth-child(4) { animation-delay: 0.4s; }
+.room-card:nth-child(5) { animation-delay: 0.5s; }
+.room-card:nth-child(6) { animation-delay: 0.6s; }
+
+.stat-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* ===== ESTADOS DE BADGE ===== */
+.badge-disponible {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+}
+
+.badge-ocupada {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.badge-mantenimiento {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.badge-reservada {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+}
+
+.badge-default {
+  background: linear-gradient(135deg, #9e9e9e, #757575);
+}
+
+/* ===== MATERIAL OVERRIDES ===== */
+::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+::ng-deep .mat-mdc-form-field .mat-mdc-text-field-wrapper {
+  border-radius: 8px;
+  background-color: white;
+}
+
+::ng-deep .mat-mdc-form-field .mat-mdc-form-field-outline {
+  border-radius: 8px;
+}
+
+::ng-deep .mat-mdc-form-field .mat-mdc-form-field-outline-thick {
+  border-width: 2px;
+}
+
+::ng-deep .mat-mdc-card {
+  border-radius: 16px;
+}
+
+::ng-deep .mat-mdc-button {
+  border-radius: 8px;
+}
+
+::ng-deep .mat-mdc-icon-button {
+  border-radius: 8px;
 }

@@ -1,0 +1,84 @@
+<div class="editar-pago-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>
+      <mat-icon>edit</mat-icon>
+      Editar Pago
+    </h2>
+    <button mat-icon-button (click)="cancelar()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <mat-card>
+      <mat-card-content>
+        <!-- Información del Pago Original -->
+        <div class="pago-info">
+          <h3>Información del Pago</h3>
+          <p><strong>Fecha Original:</strong> {{ data.pago.fechaPago | date:'dd/MM/yyyy HH:mm' }}</p>
+          <p><strong>Registrado por:</strong> {{ data.pago.registradoPor }}</p>
+        </div>
+
+        <!-- Información de la Reserva -->
+        <div class="reserva-info">
+          <h3>Información de la Reserva</h3>
+          <p><strong>Estado:</strong> {{ data.reserva.estado }}</p>
+          <p><strong>Precio Total:</strong> ${{ data.reserva.precioTotal }}</p>
+          <p><strong>Monto Pagado:</strong> ${{ data.reserva.montoPagado }}</p>
+          <p><strong>Monto Restante:</strong> ${{ data.reserva.montoRestante }}</p>
+        </div>
+
+        <!-- Formulario de Edición -->
+        <form [formGroup]="editarPagoForm" class="editar-form">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Método de Pago</mat-label>
+            <mat-select formControlName="metodoPago" required>
+              <mat-option value="Efectivo">Efectivo</mat-option>
+              <mat-option value="Tarjeta de Crédito">Tarjeta de Crédito</mat-option>
+              <mat-option value="Tarjeta de Débito">Tarjeta de Débito</mat-option>
+              <mat-option value="Transferencia">Transferencia</mat-option>
+              <mat-option value="PayPal">PayPal</mat-option>
+            </mat-select>
+            <mat-error *ngIf="editarPagoForm.get('metodoPago')?.hasError('required')">
+              El método de pago es requerido
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Monto</mat-label>
+            <input matInput type="number" formControlName="monto" required>
+            <span matPrefix>$&nbsp;</span>
+            <mat-hint>Monto actual: ${{ data.pago.monto }}</mat-hint>
+            <mat-error *ngIf="editarPagoForm.get('monto')?.hasError('required')">
+              El monto es requerido
+            </mat-error>
+            <mat-error *ngIf="editarPagoForm.get('monto')?.hasError('min')">
+              El monto debe ser mayor a 0
+            </mat-error>
+            <mat-error *ngIf="editarPagoForm.get('monto')?.hasError('max')">
+              El monto no puede exceder el total de la reserva
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Observaciones</mat-label>
+            <textarea matInput formControlName="observaciones" rows="3"></textarea>
+            <mat-hint>Observaciones adicionales sobre la edición del pago</mat-hint>
+          </mat-form-field>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="cancelar()">Cancelar</button>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      [disabled]="editarPagoForm.invalid || procesando"
+      (click)="confirmarEdicion()">
+      <mat-icon>save</mat-icon>
+      {{ procesando ? 'Guardando...' : 'Guardar Cambios' }}
+    </button>
+  </mat-dialog-actions>
+</div>

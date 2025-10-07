@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import { ReservaService } from '../../services/reserva.service';
 import { DateTimeService } from '../../services/date-time.service';
 import { PagoDialogComponent } from '../pago-dialog/pago-dialog.component';
+import { EditarPagoModalComponent } from '../editar-pago-modal/editar-pago-modal.component';
 import { AuthService } from '../../services/auth.service';
 
 export interface DetalleReservaData {
@@ -156,8 +157,29 @@ export interface DetalleReservaData {
                <div class="historial-pagos">
                  <div class="pago-item" *ngFor="let pago of data.reserva.historialPagos; let i = index">
                    <div class="pago-header">
-                     <span class="pago-numero">Pago #{{ i + 1 }}</span>
-                     <span class="pago-fecha">{{ pago.fechaPago | date:'dd/MM/yyyy HH:mm' }}</span>
+                     <div class="pago-info-header">
+                       <span class="pago-numero">Pago #{{ i + 1 }}</span>
+                       <span class="pago-fecha">{{ pago.fechaPago | date:'dd/MM/yyyy HH:mm' }}</span>
+                     </div>
+                     <!-- Botones de acción para pagos -->
+                     <div class="pago-actions" *ngIf="puedeEditarPagos()">
+                       <button 
+                         mat-mini-fab 
+                         class="action-btn edit-btn"
+                         (click)="editarPago(pago)"
+                         title="Editar pago"
+                         aria-label="Editar pago">
+                         <mat-icon>edit</mat-icon>
+                       </button>
+                       <button 
+                         mat-mini-fab 
+                         class="action-btn delete-btn"
+                         (click)="eliminarPago(pago)"
+                         title="Eliminar pago"
+                         aria-label="Eliminar pago">
+                         <mat-icon>delete</mat-icon>
+                       </button>
+                     </div>
                    </div>
                    <div class="pago-details">
                      <div class="pago-monto">
@@ -171,6 +193,14 @@ export interface DetalleReservaData {
                      </div>
                      <div class="pago-observaciones" *ngIf="pago.observaciones">
                        <small>{{ pago.observaciones }}</small>
+                     </div>
+                     <!-- Información de modificación si existe -->
+                     <div class="pago-modificado" *ngIf="pago.modificadoPor">
+                       <small class="modificado-info">
+                         <mat-icon class="modificado-icon">edit</mat-icon>
+                         Modificado por: {{ pago.modificadoPor }} 
+                         <span *ngIf="pago.fechaModificacion">el {{ pago.fechaModificacion | date:'dd/MM/yyyy HH:mm' }}</span>
+                       </small>
                      </div>
                    </div>
                  </div>
@@ -428,19 +458,29 @@ export interface DetalleReservaData {
      .pago-header {
        display: flex;
        justify-content: space-between;
-       align-items: center;
+       align-items: flex-start;
        margin-bottom: 8px;
        padding-bottom: 8px;
        border-bottom: 1px solid #e0e0e0;
+       gap: 12px;
+     }
+
+     .pago-info-header {
+       display: flex;
+       flex-direction: column;
+       gap: 4px;
+       flex: 1;
+       min-width: 0; /* Permite que el texto se trunque si es necesario */
      }
 
      .pago-numero {
        font-weight: 600;
        color: #1976d2;
+       font-size: 1em;
      }
 
      .pago-fecha {
-       font-size: 0.9em;
+       font-size: 0.85em;
        color: #666;
      }
 
@@ -471,6 +511,184 @@ export interface DetalleReservaData {
        padding: 4px 8px;
        background-color: #f0f0f0;
        border-radius: 4px;
+     }
+
+     .pago-actions {
+       display: flex;
+       gap: 8px;
+       flex-shrink: 0; /* Evita que los botones se compriman */
+       align-items: center;
+     }
+
+     .action-btn {
+       width: 40px;
+       height: 40px;
+       min-width: 40px;
+       min-height: 40px;
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       transition: all 0.2s ease;
+       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+     }
+
+     .action-btn.edit-btn {
+       background-color: #f5f5f5;
+       color: #666;
+       border: 1px solid #e0e0e0;
+     }
+
+     .action-btn.edit-btn:hover {
+       background-color: #e8f5e8;
+       color: #2e7d32;
+       border-color: #c8e6c9;
+       transform: translateY(-1px);
+       box-shadow: 0 4px 8px rgba(46, 125, 50, 0.15);
+     }
+
+     .action-btn.delete-btn {
+       background-color: #f5f5f5;
+       color: #666;
+       border: 1px solid #e0e0e0;
+     }
+
+     .action-btn.delete-btn:hover {
+       background-color: #ffebee;
+       color: #c62828;
+       border-color: #ffcdd2;
+       transform: translateY(-1px);
+       box-shadow: 0 4px 8px rgba(198, 40, 40, 0.15);
+     }
+
+     /* Mejoras para dispositivos táctiles */
+     .action-btn:active {
+       transform: translateY(0);
+       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+     }
+
+     /* Asegurar que los botones sean fácilmente clickeables en móviles */
+     @media (max-width: 768px) {
+       .action-btn {
+         width: 44px;
+         height: 44px;
+         min-width: 44px;
+         min-height: 44px;
+         /* Tamaño mínimo recomendado para touch targets */
+       }
+
+       .pago-actions {
+         gap: 12px;
+       }
+
+       .pago-header {
+         align-items: center;
+         gap: 16px;
+       }
+
+       .pago-info-header {
+         gap: 2px;
+       }
+
+       .pago-numero {
+         font-size: 0.95em;
+       }
+
+       .pago-fecha {
+         font-size: 0.8em;
+       }
+     }
+
+     /* Para pantallas muy pequeñas */
+     @media (max-width: 480px) {
+       .pago-header {
+         flex-direction: column;
+         align-items: stretch;
+         gap: 12px;
+       }
+
+       .pago-actions {
+         justify-content: center;
+         margin-top: 8px;
+       }
+
+       .action-btn {
+         width: 48px;
+         height: 48px;
+         min-width: 48px;
+         min-height: 48px;
+       }
+     }
+
+     /* Mejoras adicionales para accesibilidad y usabilidad */
+     .action-btn:focus {
+       outline: 2px solid #2196f3;
+       outline-offset: 2px;
+     }
+
+     .action-btn:focus:not(:focus-visible) {
+       outline: none;
+     }
+
+     /* Mejorar la visibilidad en modo oscuro */
+     @media (prefers-color-scheme: dark) {
+       .action-btn.edit-btn {
+         background-color: #2d2d2d;
+         color: #b0b0b0;
+         border-color: #404040;
+       }
+
+       .action-btn.edit-btn:hover {
+         background-color: #1b5e20;
+         color: #81c784;
+         border-color: #2e7d32;
+       }
+
+       .action-btn.delete-btn {
+         background-color: #2d2d2d;
+         color: #b0b0b0;
+         border-color: #404040;
+       }
+
+       .action-btn.delete-btn:hover {
+         background-color: #4a1a1a;
+         color: #ef9a9a;
+         border-color: #c62828;
+       }
+     }
+
+     /* Animación suave para mejor feedback visual */
+     .action-btn mat-icon {
+       transition: transform 0.2s ease;
+     }
+
+     .action-btn:hover mat-icon {
+       transform: scale(1.1);
+     }
+
+     .action-btn:active mat-icon {
+       transform: scale(0.95);
+     }
+
+     .pago-modificado {
+       margin-top: 8px;
+       padding: 4px 8px;
+       background-color: #fff3e0;
+       border-radius: 4px;
+       border-left: 3px solid #ff9800;
+     }
+
+     .modificado-info {
+       color: #e65100;
+       font-size: 0.85em;
+       display: flex;
+       align-items: center;
+       gap: 4px;
+     }
+
+     .modificado-icon {
+       font-size: 16px;
+       width: 16px;
+       height: 16px;
      }
 
     .modal-actions {
@@ -1418,6 +1636,168 @@ export class DetalleReservaModalComponent {
     }
     
     return 'Pago Pendiente';
+  }
+
+  // ===== MÉTODOS PARA GESTIÓN DE PAGOS =====
+
+  // Verificar si el usuario puede editar pagos
+  puedeEditarPagos(): boolean {
+    // Solo permitir edición si:
+    // 1. El usuario está autenticado
+    // 2. La reserva no está finalizada o cancelada
+    // 3. El usuario tiene permisos de encargado
+    if (!this.authService.isAuthenticated()) {
+      return false;
+    }
+
+    const estadoReserva = this.data.reserva.estado;
+    if (estadoReserva === 'Finalizada' || estadoReserva === 'Cancelada') {
+      return false;
+    }
+
+    // Verificar permisos de usuario (esto dependería de tu sistema de roles)
+    return true; // Por ahora permitir a todos los usuarios autenticados
+  }
+
+  // Editar un pago específico
+  editarPago(pago: any): void {
+    if (!this.puedeEditarPagos()) {
+      this.snackBar.open('❌ No tiene permisos para editar pagos', 'Cerrar', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    const dialogRef = this.dialog.open(EditarPagoModalComponent, {
+      width: '600px',
+      data: {
+        pago: pago,
+        reserva: this.data.reserva
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result && result.confirmado) {
+        console.log('Editando pago:', {
+          reservaId: this.data.reserva._id,
+          pagoId: pago._id,
+          datosEdicion: result.datosEdicion
+        });
+
+        this.reservaService.editarPago(
+          this.data.reserva._id,
+          pago._id,
+          result.datosEdicion
+        ).subscribe({
+          next: (reservaActualizada) => {
+            this.snackBar.open('✅ Pago editado exitosamente', 'Cerrar', {
+              duration: 4000,
+              panelClass: ['success-snackbar']
+            });
+            
+            // Actualizar los datos de la reserva en el modal
+            this.data.reserva = reservaActualizada;
+            
+            this.dialogRef.close({ 
+              action: 'pago-editado', 
+              reserva: reservaActualizada 
+            });
+          },
+          error: (error) => {
+            console.error('Error al editar pago:', error);
+            
+            let mensajeError = '❌ Error al editar el pago. Intente nuevamente.';
+            
+            if (error.status === 401) {
+              mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
+              this.authService.logout();
+            } else if (error.status === 403) {
+              mensajeError = '❌ No tiene permisos para editar pagos.';
+            } else if (error.status === 404) {
+              mensajeError = '❌ Pago no encontrado.';
+            } else if (error.error && error.error.message) {
+              mensajeError = `❌ ${error.error.message}`;
+            }
+            
+            this.snackBar.open(mensajeError, 'Cerrar', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // Eliminar un pago específico
+  eliminarPago(pago: any): void {
+    if (!this.puedeEditarPagos()) {
+      this.snackBar.open('❌ No tiene permisos para eliminar pagos', 'Cerrar', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    // Confirmación de eliminación
+    const confirmacion = confirm(
+      `¿Está seguro de que desea eliminar este pago?\n\n` +
+      `Monto: $${pago.monto}\n` +
+      `Método: ${pago.metodoPago}\n` +
+      `Fecha: ${new Date(pago.fechaPago).toLocaleDateString()}\n\n` +
+      `Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmacion) {
+      return;
+    }
+
+    console.log('Eliminando pago:', {
+      reservaId: this.data.reserva._id,
+      pagoId: pago._id
+    });
+
+    this.reservaService.eliminarPago(
+      this.data.reserva._id,
+      pago._id
+    ).subscribe({
+      next: (reservaActualizada) => {
+        this.snackBar.open('✅ Pago eliminado exitosamente', 'Cerrar', {
+          duration: 4000,
+          panelClass: ['success-snackbar']
+        });
+        
+        // Actualizar los datos de la reserva en el modal
+        this.data.reserva = reservaActualizada;
+        
+        this.dialogRef.close({ 
+          action: 'pago-eliminado', 
+          reserva: reservaActualizada 
+        });
+      },
+      error: (error) => {
+        console.error('Error al eliminar pago:', error);
+        
+        let mensajeError = '❌ Error al eliminar el pago. Intente nuevamente.';
+        
+        if (error.status === 401) {
+          mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
+          this.authService.logout();
+        } else if (error.status === 403) {
+          mensajeError = '❌ No tiene permisos para eliminar pagos.';
+        } else if (error.status === 404) {
+          mensajeError = '❌ Pago no encontrado.';
+        } else if (error.error && error.error.message) {
+          mensajeError = `❌ ${error.error.message}`;
+        }
+        
+        this.snackBar.open(mensajeError, 'Cerrar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
   }
 
   cerrar(): void {

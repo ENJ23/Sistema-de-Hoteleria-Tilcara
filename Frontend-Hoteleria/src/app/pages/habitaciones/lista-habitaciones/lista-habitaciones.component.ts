@@ -28,11 +28,7 @@ import {
 } from '../../../models/habitacion.model';
 import { HabitacionService, HabitacionResponse } from '../../../services/habitacion.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { AuthService } from '../../../services/auth.service';
-
-// Componentes
-import { HeaderComponent } from '../../../components/layout/header/header.component';
 
 @Component({
   selector: 'app-lista-habitaciones',
@@ -58,9 +54,7 @@ import { HeaderComponent } from '../../../components/layout/header/header.compon
     MatChipsModule,
     MatSnackBarModule,
     // Components
-    HeaderComponent,
-    ConfirmDialogComponent,
-    LoadingSpinnerComponent
+    ConfirmDialogComponent
   ]
 })
 export class ListaHabitacionesComponent implements OnInit {
@@ -316,6 +310,41 @@ export class ListaHabitacionesComponent implements OnInit {
       'Fuera de servicio': '#9e9e9e' // Gris
     };
     return colores[estado] || '#9e9e9e';
+  }
+
+  /**
+   * Obtiene el icono correspondiente al estado de la habitación
+   */
+  getEstadoIcon(estado: EstadoHabitacion): string {
+    const iconos: Record<EstadoHabitacion, string> = {
+      'Disponible': 'check_circle',
+      'Ocupada': 'event_busy',
+      'Mantenimiento': 'build',
+      'Reservada': 'event_available',
+      'Fuera de servicio': 'block'
+    };
+    return iconos[estado] || 'help';
+  }
+
+  /**
+   * Obtiene el número de habitaciones disponibles
+   */
+  getHabitacionesDisponibles(): number {
+    return this.dataSource.data.filter(h => h.estado === 'Disponible').length;
+  }
+
+  /**
+   * Obtiene el número de habitaciones ocupadas
+   */
+  getHabitacionesOcupadas(): number {
+    return this.dataSource.data.filter(h => h.estado === 'Ocupada').length;
+  }
+
+  /**
+   * Obtiene el número de habitaciones en mantenimiento
+   */
+  getHabitacionesMantenimiento(): number {
+    return this.dataSource.data.filter(h => h.estado === 'Mantenimiento').length;
   }
 
   /**

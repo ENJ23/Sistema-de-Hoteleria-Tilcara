@@ -5,6 +5,13 @@ const Habitacion = require('../models/Habitacion');
 const Cliente = require('../models/Cliente');
 const { body, validationResult, query } = require('express-validator');
 const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/authJwt');
+const { 
+    validateEditPayment, 
+    validateAddPayment, 
+    checkPaymentPermissions, 
+    validatePaymentLimits, 
+    logPaymentOperation 
+} = require('../middlewares/paymentValidation.middleware');
 const mongoose = require('mongoose'); // Importar mongoose para transacciones
 const pdfService = require('../services/pdf.service'); // Importar servicio de PDF
 
@@ -948,6 +955,167 @@ router.get('/:id/comprobante', [
         console.error('Error al generar comprobante:', error);
         res.status(500).json({ 
             message: 'Error al generar comprobante', 
+            error: error.message 
+        });
+    }
+});
+
+// PUT - Editar un pago específico de una reserva
+router.put('/:id/pagos/:pagoId', [
+    verifyToken,
+    checkPaymentPermissions,
+    validateEditPayment,
+    validatePaymentLimits,
+    logPaymentOperation('editar-pago')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        
+        const reserva = await Reserva.findById(req.params.id);
+        if (!reserva) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+        
+        const pagoId = req.params.pagoId;
+        const nuevosDatos = req.body;
+        const modificadoPor = req.userId ? req.userId.nombre : 'Encargado';
+        const motivoModificacion = req.body.motivo || 'Edición de pago por usuario autorizado';
+        
+        // Editar el pago usando el método del modelo
+        await reserva.editarPago(pagoId, nuevosDatos, modificadoPor, motivoModificacion);
+        
+        await reserva.populate('cliente');
+        await reserva.populate('habitacion');
+        
+        console.log('💰 Pago editado:', {
+            reservaId: reserva._id,
+            pagoId: pagoId,
+            nuevosDatos: nuevosDatos,
+            montoPagado: reserva.montoPagado,
+            montoRestante: reserva.calcularMontoRestante(),
+            pagado: reserva.pagado
+        });
+        
+        // Incluir información adicional de pagos
+        const respuesta = {
+            ...reserva.toObject(),
+            montoRestante: reserva.calcularMontoRestante(),
+            estaCompletamentePagado: reserva.estaCompletamentePagado(),
+            totalPagos: reserva.historialPagos.length
+        };
+        
+        res.json(respuesta);
+    } catch (error) {
+        console.error('Error al editar pago:', error);
+        res.status(400).json({ 
+            message: error.message || 'Error al editar pago', 
+            error: error.message 
+        });
+    }
+});
+
+// DELETE - Eliminar un pago específico de una reserva
+router.delete('/:id/pagos/:pagoId', [
+    verifyToken,
+    checkPaymentPermissions,
+    logPaymentOperation('eliminar-pago')
+], async (req, res) => {
+    try {
+        const reserva = await Reserva.findById(req.params.id);
+        if (!reserva) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+        
+        const pagoId = req.params.pagoId;
+        const eliminadoPor = req.userId ? req.userId.nombre : 'Encargado';
+        
+        // Obtener información del pago antes de eliminarlo para logging
+        const pagoAEliminar = reserva.historialPagos.find(pago => pago._id.toString() === pagoId);
+        if (!pagoAEliminar) {
+            return res.status(404).json({ message: 'Pago no encontrado' });
+        }
+        
+        // Eliminar el pago usando el método del modelo
+        await reserva.eliminarPago(pagoId, eliminadoPor);
+        
+        await reserva.populate('cliente');
+        await reserva.populate('habitacion');
+        
+        console.log('💰 Pago eliminado:', {
+            reservaId: reserva._id,
+            pagoId: pagoId,
+            pagoEliminado: {
+                monto: pagoAEliminar.monto,
+                metodoPago: pagoAEliminar.metodoPago,
+                fechaPago: pagoAEliminar.fechaPago
+            },
+            montoPagado: reserva.montoPagado,
+            montoRestante: reserva.calcularMontoRestante(),
+            pagado: reserva.pagado
+        });
+        
+        // Incluir información adicional de pagos
+        const respuesta = {
+            ...reserva.toObject(),
+            montoRestante: reserva.calcularMontoRestante(),
+            estaCompletamentePagado: reserva.estaCompletamentePagado(),
+            totalPagos: reserva.historialPagos.length
+        };
+        
+        res.json(respuesta);
+    } catch (error) {
+        console.error('Error al eliminar pago:', error);
+        res.status(400).json({ 
+            message: error.message || 'Error al eliminar pago', 
+            error: error.message 
+        });
+    }
+});
+
+// POST - Recalcular totales de pagos (útil para correcciones)
+router.post('/:id/recalcular-pagos', [
+    verifyToken,
+    checkPaymentPermissions,
+    logPaymentOperation('recalcular-pagos')
+], async (req, res) => {
+    try {
+        const reserva = await Reserva.findById(req.params.id);
+        if (!reserva) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+        
+        const montoAnterior = reserva.montoPagado;
+        
+        // Recalcular totales usando el método del modelo
+        await reserva.recalcularPagos();
+        
+        await reserva.populate('cliente');
+        await reserva.populate('habitacion');
+        
+        console.log('💰 Pagos recalculados:', {
+            reservaId: reserva._id,
+            montoAnterior: montoAnterior,
+            montoNuevo: reserva.montoPagado,
+            diferencia: reserva.montoPagado - montoAnterior,
+            pagado: reserva.pagado
+        });
+        
+        // Incluir información adicional de pagos
+        const respuesta = {
+            ...reserva.toObject(),
+            montoRestante: reserva.calcularMontoRestante(),
+            estaCompletamentePagado: reserva.estaCompletamentePagado(),
+            totalPagos: reserva.historialPagos.length
+        };
+        
+        res.json(respuesta);
+    } catch (error) {
+        console.error('Error al recalcular pagos:', error);
+        res.status(500).json({ 
+            message: 'Error al recalcular pagos', 
             error: error.message 
         });
     }

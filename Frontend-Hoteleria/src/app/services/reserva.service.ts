@@ -185,4 +185,25 @@ export class ReservaService {
   generarComprobantePago(id: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${id}/comprobante`, { responseType: 'blob' });
   }
+
+  // ===== MÉTODOS PARA GESTIÓN DE PAGOS INDIVIDUALES =====
+
+  // Editar un pago específico
+  editarPago(reservaId: string, pagoId: string, datosPago: {
+    monto?: number;
+    metodoPago?: string;
+    observaciones?: string;
+  }): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${reservaId}/pagos/${pagoId}`, datosPago);
+  }
+
+  // Eliminar un pago específico
+  eliminarPago(reservaId: string, pagoId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${reservaId}/pagos/${pagoId}`);
+  }
+
+  // Recalcular totales de pagos
+  recalcularPagos(reservaId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${reservaId}/recalcular-pagos`, {});
+  }
 } 

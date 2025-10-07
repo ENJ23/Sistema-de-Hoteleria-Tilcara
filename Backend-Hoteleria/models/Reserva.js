@@ -150,6 +150,17 @@ const reservaSchema = new mongoose.Schema({
         registradoPor: {
             type: String,
             default: 'Encargado'
+        },
+        // Campos de auditoría para ediciones
+        modificadoPor: {
+            type: String
+        },
+        fechaModificacion: {
+            type: Date
+        },
+        motivoModificacion: {
+            type: String,
+            trim: true
         }
     }],
     fechaPago: {
@@ -239,6 +250,76 @@ reservaSchema.methods.agregarPago = function(monto, metodoPago, observaciones = 
     this.pagado = this.estaCompletamentePagado();
     this.fechaPago = new Date();
     
+    return this.save();
+};
+
+// Método para editar un pago específico del historial
+reservaSchema.methods.editarPago = function(pagoId, nuevosDatos, modificadoPor = 'Encargado', motivoModificacion = '') {
+    // Validar que la reserva no esté en estado que impida edición
+    if (this.estado === 'Finalizada' || this.estado === 'Cancelada') {
+        throw new Error('No se pueden editar pagos de reservas finalizadas o canceladas');
+    }
+    
+    const pagoIndex = this.historialPagos.findIndex(pago => pago._id.toString() === pagoId);
+    if (pagoIndex === -1) {
+        throw new Error('Pago no encontrado');
+    }
+    
+    const pagoOriginal = { ...this.historialPagos[pagoIndex].toObject() };
+    
+    // Validar que el nuevo monto no exceda el total
+    const montoAnterior = pagoOriginal.monto;
+    const nuevoMonto = nuevosDatos.monto || pagoOriginal.monto;
+    const diferenciaMonto = nuevoMonto - montoAnterior;
+    const nuevoMontoPagado = this.montoPagado + diferenciaMonto;
+    
+    if (nuevoMontoPagado > this.precioTotal) {
+        throw new Error(`El monto total pagado ($${nuevoMontoPagado}) no puede exceder el precio total ($${this.precioTotal})`);
+    }
+    
+    // Actualizar el pago
+    this.historialPagos[pagoIndex].monto = nuevoMonto;
+    this.historialPagos[pagoIndex].metodoPago = nuevosDatos.metodoPago || pagoOriginal.metodoPago;
+    this.historialPagos[pagoIndex].observaciones = nuevosDatos.observaciones || pagoOriginal.observaciones;
+    this.historialPagos[pagoIndex].modificadoPor = modificadoPor;
+    this.historialPagos[pagoIndex].fechaModificacion = new Date();
+    this.historialPagos[pagoIndex].motivoModificacion = motivoModificacion || 'Edición de pago por usuario autorizado';
+    
+    // Recalcular totales
+    this.montoPagado = nuevoMontoPagado;
+    this.pagado = this.estaCompletamentePagado();
+    
+    return this.save();
+};
+
+// Método para eliminar un pago específico del historial
+reservaSchema.methods.eliminarPago = function(pagoId, eliminadoPor = 'Encargado') {
+    // Validar que la reserva no esté en estado que impida eliminación
+    if (this.estado === 'Finalizada' || this.estado === 'Cancelada') {
+        throw new Error('No se pueden eliminar pagos de reservas finalizadas o canceladas');
+    }
+    
+    const pagoIndex = this.historialPagos.findIndex(pago => pago._id.toString() === pagoId);
+    if (pagoIndex === -1) {
+        throw new Error('Pago no encontrado');
+    }
+    
+    const pagoEliminado = this.historialPagos[pagoIndex];
+    
+    // Recalcular totales
+    this.montoPagado -= pagoEliminado.monto;
+    this.pagado = this.estaCompletamentePagado();
+    
+    // Eliminar el pago del historial
+    this.historialPagos.splice(pagoIndex, 1);
+    
+    return this.save();
+};
+
+// Método para recalcular totales de pagos (útil para correcciones)
+reservaSchema.methods.recalcularPagos = function() {
+    this.montoPagado = this.historialPagos.reduce((total, pago) => total + pago.monto, 0);
+    this.pagado = this.estaCompletamentePagado();
     return this.save();
 };
 
