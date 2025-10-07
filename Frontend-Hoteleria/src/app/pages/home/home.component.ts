@@ -13,6 +13,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { DetalleReservaComponent } from '../../components/detalle-reserva/detalle-reserva.component';
 import { DetalleReservaModalComponent } from '../../components/detalle-reserva-modal/detalle-reserva-modal.component';
+import { SeleccionReservaSimpleComponent } from '../../components/seleccion-reserva-simple/seleccion-reserva-simple.component';
 import { HabitacionService } from '../../services/habitacion.service';
 import { ReservaService } from '../../services/reserva.service';
 import { ClienteService } from '../../services/cliente.service';
@@ -117,6 +118,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   private isInitializing = false;
   private initializationPromise: Promise<void> | null = null;
   
+  // Sistema de gestión de estilos dinámicos
+  private estilosDinamicos = new Set<string>();
+  private cacheEstilos = new Map<string, string>();
+  
   constructor(
     private router: Router,
     private snackBar: MatSnackBar,
@@ -164,8 +169,20 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.limpiarEstilosDinamicos();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private limpiarEstilosDinamicos(): void {
+    this.estilosDinamicos.forEach(id => {
+      const elemento = document.getElementById(id);
+      if (elemento) {
+        elemento.remove();
+      }
+    });
+    this.estilosDinamicos.clear();
+    this.cacheEstilos.clear();
   }
 
   // Sistema de inicialización controlada
@@ -593,71 +610,134 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // Función para detectar si un día es de transición (salida de una reserva + entrada de otra)
   private detectarDiaTransicion(reservas: any[], fecha: Date): boolean {
-    if (reservas.length < 2) {
+    if (!reservas || reservas.length < 2) {
       return false;
     }
     
     const fechaStr = this.dateTimeService.formatDateToLocalString(fecha);
     
-    // Verificar si hay una reserva que termina este día Y otra reserva diferente que comienza este día
-    const reservaQueTermina = reservas.find(r => {
-      const fechaSalida = r.fechaSalida.split('T')[0];
-      return fechaSalida === fechaStr;
+    // Filtrar reservas válidas (con fechas y ID)
+    const reservasValidas = reservas.filter(r => 
+      r && r._id && r.fechaEntrada && r.fechaSalida
+    );
+    
+    if (reservasValidas.length < 2) {
+      return false;
+    }
+    
+    // Buscar reserva que termina este día
+    const reservaQueTermina = reservasValidas.find(r => {
+      try {
+        const fechaSalida = this.extraerFechaString(r.fechaSalida);
+        return fechaSalida === fechaStr;
+      } catch (error) {
+        console.warn('Error al procesar fecha de salida:', error);
+        return false;
+      }
     });
     
-    const reservaQueComienza = reservas.find(r => {
-      const fechaEntrada = r.fechaEntrada.split('T')[0];
-      return fechaEntrada === fechaStr;
+    // Buscar reserva que comienza este día
+    const reservaQueComienza = reservasValidas.find(r => {
+      try {
+        const fechaEntrada = this.extraerFechaString(r.fechaEntrada);
+        return fechaEntrada === fechaStr;
+      } catch (error) {
+        console.warn('Error al procesar fecha de entrada:', error);
+        return false;
+      }
     });
     
     // Solo es transición si hay dos reservas diferentes: una que termina y otra que comienza
-    return reservaQueTermina && reservaQueComienza && reservaQueTermina._id !== reservaQueComienza._id;
+    return !!(reservaQueTermina && reservaQueComienza && 
+             reservaQueTermina._id !== reservaQueComienza._id);
+  }
+
+  private extraerFechaString(fecha: string | Date): string {
+    if (typeof fecha === 'string') {
+      return fecha.split('T')[0];
+    }
+    return this.dateTimeService.formatDateToLocalString(fecha);
   }
 
   // Método para obtener el color de una reserva según su estado y pago
   obtenerColorReserva(reserva: any): string {
-    if (!reserva) return '#6c757d'; // Color por defecto
-    
-    // Determinar el estado de pago
-    const montoPagado = reserva.montoPagado || 0;
-    const precioTotal = reserva.precioTotal || reserva.precioPorNoche || 0;
-    const estaCompletamentePagado = montoPagado >= precioTotal;
-    const tienePagoParcial = montoPagado > 0 && montoPagado < precioTotal;
-    
-    // Mapear el estado de la reserva al tipo de ocupación
-    const tipoOcupacion = this.mapearEstadoReserva(reserva.estado);
-    
-    // Determinar el color según el tipo de ocupación y pago
-    if (tipoOcupacion === 'ocupada') {
-      if (estaCompletamentePagado) {
-        return '#28a745'; // Verde para completamente pagado
-      } else if (tienePagoParcial) {
-        return '#ffc107'; // Amarillo para parcialmente pagado
-      } else {
-        return '#dc3545'; // Rojo para sin pago
-      }
-    } else if (tipoOcupacion === 'reservada') {
-      if (estaCompletamentePagado) {
-        return '#17a2b8'; // Cyan para reservada y pagada
-      } else if (tienePagoParcial) {
-        return '#fd7e14'; // Naranja para reservada y parcialmente pagada
-      } else {
-        return '#6f42c1'; // Morado para reservada sin pago
-      }
-    } else if (tipoOcupacion === 'finalizada') {
-      if (estaCompletamentePagado) {
-        return '#007bff'; // Azul para finalizada y pagada
-      } else if (tienePagoParcial) {
-        return '#ffc107'; // Amarillo para finalizada y parcialmente pagada
-      } else {
-        return '#6c757d'; // Gris para finalizada sin pago
-      }
-    } else if (tipoOcupacion === 'disponible') {
-      return '#d4edda'; // Verde claro para disponible
+    // Validación de entrada
+    if (!reserva || typeof reserva !== 'object') {
+      return this.COLORES_POR_DEFECTO.desconocido;
     }
     
-    return '#6c757d'; // Color por defecto
+    // Validación de estado
+    if (!reserva.estado || typeof reserva.estado !== 'string') {
+      return this.COLORES_POR_DEFECTO.desconocido;
+    }
+    
+    try {
+      // Validación de montos
+      const montoPagado = this.validarMonto(reserva.montoPagado);
+      const precioTotal = this.validarMonto(reserva.precioTotal || reserva.precioPorNoche);
+      
+      if (montoPagado === null || precioTotal === null) {
+        return this.COLORES_POR_DEFECTO.desconocido;
+      }
+      
+      const estaCompletamentePagado = montoPagado >= precioTotal;
+      const tienePagoParcial = montoPagado > 0 && montoPagado < precioTotal;
+      
+      // Mapear el estado de la reserva al tipo de ocupación
+      const tipoOcupacion = this.mapearEstadoReserva(reserva.estado);
+      
+      return this.obtenerColorPorTipoYEstado(tipoOcupacion, estaCompletamentePagado, tienePagoParcial);
+      
+    } catch (error) {
+      console.warn('Error al obtener color de reserva:', error);
+      return this.COLORES_POR_DEFECTO.error;
+    }
   }
+
+  private validarMonto(valor: any): number | null {
+    if (valor === null || valor === undefined) return 0;
+    const num = Number(valor);
+    return isNaN(num) || num < 0 ? null : num;
+  }
+
+  private obtenerColorPorTipoYEstado(tipoOcupacion: string, estaCompletamentePagado: boolean, tienePagoParcial: boolean): string {
+    switch (tipoOcupacion) {
+      case 'ocupada':
+        if (estaCompletamentePagado) {
+          return '#28a745'; // Verde para completamente pagado
+        } else if (tienePagoParcial) {
+          return '#ffc107'; // Amarillo para parcialmente pagado
+        } else {
+          return '#dc3545'; // Rojo para sin pago
+        }
+      case 'reservada':
+        if (estaCompletamentePagado) {
+          return '#17a2b8'; // Cyan para reservada y pagada
+        } else if (tienePagoParcial) {
+          return '#fd7e14'; // Naranja para reservada y parcialmente pagada
+        } else {
+          return '#6f42c1'; // Morado para reservada sin pago
+        }
+      case 'finalizada':
+        if (estaCompletamentePagado) {
+          return '#007bff'; // Azul para finalizada y pagada
+        } else if (tienePagoParcial) {
+          return '#ffc107'; // Amarillo para finalizada y parcialmente pagada
+        } else {
+          return '#6c757d'; // Gris para finalizada sin pago
+        }
+      case 'disponible':
+        return '#d4edda'; // Verde claro para disponible
+      default:
+        return this.COLORES_POR_DEFECTO.desconocido;
+    }
+  }
+
+  private readonly COLORES_POR_DEFECTO = {
+    desconocido: '#6c757d',
+    disponible: '#d4edda',
+    error: '#dc3545'
+  };
 
   // Método para verificar si es check-out hoy (para indicador de urgencia)
   esCheckOutHoy(fecha: Date, estado: EstadoOcupacion): boolean {
@@ -681,16 +761,33 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Crear un ID único para esta combinación de colores
     const idUnico = `transicion-${colorPrimeraReserva.replace('#', '')}-${colorSegundaReserva.replace('#', '')}`;
     
-    // Verificar si ya existe este estilo
-    if (document.getElementById(idUnico)) return;
+    // Verificar cache primero
+    if (this.cacheEstilos.has(idUnico)) {
+      estado.claseDinamica = idUnico;
+      return;
+    }
     
+    // Verificar si ya existe en DOM
+    if (document.getElementById(idUnico)) {
+      this.cacheEstilos.set(idUnico, idUnico);
+      estado.claseDinamica = idUnico;
+      return;
+    }
+    
+    // Generar nuevo estilo
+    this.crearEstiloDinamico(idUnico, colorPrimeraReserva, colorSegundaReserva);
+    this.cacheEstilos.set(idUnico, idUnico);
+    estado.claseDinamica = idUnico;
+  }
+
+  private crearEstiloDinamico(idUnico: string, colorPrimeraReserva: string, colorSegundaReserva: string): void {
     // Crear el elemento style
     const style = document.createElement('style');
     style.id = idUnico;
     style.textContent = `
       .${idUnico} {
-        --color-primera-reserva: ${colorPrimeraReserva};
-        --color-segunda-reserva: ${colorSegundaReserva};
+        --color-entrada: ${colorPrimeraReserva};
+        --color-salida: ${colorSegundaReserva};
         background: linear-gradient(180deg, ${colorPrimeraReserva} 0%, ${colorPrimeraReserva} 50%, ${colorSegundaReserva} 50%, ${colorSegundaReserva} 100%);
         color: white;
         font-weight: bold;
@@ -715,56 +812,56 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Agregar al documento
     document.head.appendChild(style);
     
-    // Agregar la clase dinámica al estado
-    estado.claseDinamica = idUnico;
+    // Registrar estilo para limpieza
+    this.estilosDinamicos.add(idUnico);
   }
 
   // Métodos para aplicar colores dinámicos usando CSS variables
-  private aplicarColoresTransicionMultiple(estado: EstadoOcupacion): void {
+  private aplicarColoresTransicionMultiple(estado: EstadoOcupacion, fecha: Date, habitacionNumero: string): void {
     if (!estado.reservaEntrada || !estado.reservaSalida) return;
     
     const colorEntrada = this.obtenerColorReserva(estado.reservaEntrada);
     const colorSalida = this.obtenerColorReserva(estado.reservaSalida);
     
-    // Aplicar CSS variables al elemento
-    const elemento = document.querySelector(`[data-habitacion="${estado.reservaPrincipal?.habitacion?.numero}"][data-fecha="${this.formatearFecha(new Date())}"]`);
+    // Aplicar CSS variables al elemento específico
+    const elemento = document.querySelector(`[data-habitacion="${habitacionNumero}"][data-fecha="${this.formatearFecha(fecha)}"]`);
     if (elemento) {
       (elemento as HTMLElement).style.setProperty('--color-entrada', colorEntrada);
       (elemento as HTMLElement).style.setProperty('--color-salida', colorSalida);
     }
   }
 
-  private aplicarColorTransicionEntrada(estado: EstadoOcupacion): void {
+  private aplicarColorTransicionEntrada(estado: EstadoOcupacion, fecha: Date, habitacionNumero: string): void {
     if (!estado.reservaPrincipal) return;
     
     const colorEntrada = this.obtenerColorReserva(estado.reservaPrincipal);
     
-    // Aplicar CSS variable al elemento
-    const elemento = document.querySelector(`[data-habitacion="${estado.reservaPrincipal?.habitacion?.numero}"][data-fecha="${this.formatearFecha(new Date())}"]`);
+    // Aplicar CSS variable al elemento específico
+    const elemento = document.querySelector(`[data-habitacion="${habitacionNumero}"][data-fecha="${this.formatearFecha(fecha)}"]`);
     if (elemento) {
       (elemento as HTMLElement).style.setProperty('--color-entrada', colorEntrada);
     }
   }
 
-  private aplicarColorTransicionSalida(estado: EstadoOcupacion): void {
+  private aplicarColorTransicionSalida(estado: EstadoOcupacion, fecha: Date, habitacionNumero: string): void {
     if (!estado.reservaPrincipal) return;
     
     const colorSalida = this.obtenerColorReserva(estado.reservaPrincipal);
     
-    // Aplicar CSS variable al elemento
-    const elemento = document.querySelector(`[data-habitacion="${estado.reservaPrincipal?.habitacion?.numero}"][data-fecha="${this.formatearFecha(new Date())}"]`);
+    // Aplicar CSS variable al elemento específico
+    const elemento = document.querySelector(`[data-habitacion="${habitacionNumero}"][data-fecha="${this.formatearFecha(fecha)}"]`);
     if (elemento) {
       (elemento as HTMLElement).style.setProperty('--color-salida', colorSalida);
     }
   }
 
-  private aplicarColorTransicionMismaReserva(estado: EstadoOcupacion): void {
+  private aplicarColorTransicionMismaReserva(estado: EstadoOcupacion, fecha: Date, habitacionNumero: string): void {
     if (!estado.reservaPrincipal) return;
     
     const colorReserva = this.obtenerColorReserva(estado.reservaPrincipal);
     
-    // Aplicar CSS variables al elemento (mismo color para ambas mitades)
-    const elemento = document.querySelector(`[data-habitacion="${estado.reservaPrincipal?.habitacion?.numero}"][data-fecha="${this.formatearFecha(new Date())}"]`);
+    // Aplicar CSS variables al elemento específico (mismo color para ambas mitades)
+    const elemento = document.querySelector(`[data-habitacion="${habitacionNumero}"][data-fecha="${this.formatearFecha(fecha)}"]`);
     if (elemento) {
       (elemento as HTMLElement).style.setProperty('--color-entrada', colorReserva);
       (elemento as HTMLElement).style.setProperty('--color-salida', colorReserva);
@@ -773,89 +870,119 @@ export class HomeComponent implements OnInit, OnDestroy {
 
 
 
-  obtenerClaseOcupacion(estado: EstadoOcupacion): string {
-    let clase = '';
+  obtenerClaseOcupacion(estado: EstadoOcupacion, fecha?: Date, habitacionNumero?: string): string {
+    const clases: string[] = [];
     
-    // Clase base según el tipo
-    switch (estado.tipo) {
-      case 'disponible': clase = 'ocupacion-disponible'; break;
-      case 'ocupada': clase = 'ocupacion-ocupada'; break;
-      case 'reservada': clase = 'ocupacion-reservada'; break;
-      case 'limpieza': clase = 'ocupacion-limpieza'; break;
-      case 'mantenimiento': clase = 'ocupacion-mantenimiento'; break;
-      case 'finalizada': clase = 'ocupacion-finalizada'; break;
-      case 'transicion': 
-        clase = 'ocupacion-transicion';
-        // Para días de transición, generar estilos dinámicos
-        if (estado.esDiaTransicion && estado.reservaEntrada && estado.reservaSalida) {
-          this.generarEstilosTransicionDinamica(estado);
-        }
-        break;
-      default: clase = 'ocupacion-desconocida'; break;
+    // 1. Clase base según el tipo (prioridad 1)
+    clases.push(this.obtenerClaseBase(estado.tipo));
+    
+    // 2. Clases de transición (prioridad 2)
+    if (estado.tipo === 'transicion') {
+      clases.push(...this.obtenerClasesTransicion(estado, fecha, habitacionNumero));
+    } else {
+      clases.push(...this.obtenerClasesEntradaSalida(estado));
     }
     
-    // Agregar clases específicas para transiciones visuales
+    // 3. Clases de pago (prioridad 3)
+    clases.push(...this.obtenerClasesPago(estado));
+    
+    return clases.filter(clase => clase).join(' ');
+  }
+
+  private obtenerClaseBase(tipo: string): string {
+    switch (tipo) {
+      case 'disponible': return 'ocupacion-disponible';
+      case 'ocupada': return 'ocupacion-ocupada';
+      case 'reservada': return 'ocupacion-reservada';
+      case 'limpieza': return 'ocupacion-limpieza';
+      case 'mantenimiento': return 'ocupacion-mantenimiento';
+      case 'finalizada': return 'ocupacion-finalizada';
+      case 'transicion': return 'ocupacion-transicion';
+      default: return 'ocupacion-desconocida';
+    }
+  }
+
+  private obtenerClasesTransicion(estado: EstadoOcupacion, fecha?: Date, habitacionNumero?: string): string[] {
+    const clases: string[] = [];
+    
+    // Generar estilos dinámicos para días de transición
+    if (estado.esDiaTransicion && estado.reservaEntrada && estado.reservaSalida) {
+      this.generarEstilosTransicionDinamica(estado);
+    }
+    
+    // Aplicar colores dinámicos según el tipo de transición
     if (estado.esDiaEntrada || estado.esDiaSalida) {
       if (estado.esDiaTransicion) {
-        // Transición múltiple: entrada y salida de diferentes reservas
-        clase += ' transicion-multiple-visual';
-        // Aplicar colores dinámicos usando CSS variables
-        this.aplicarColoresTransicionMultiple(estado);
+        clases.push('transicion-multiple');
+        if (fecha && habitacionNumero) {
+          this.aplicarColoresTransicionMultiple(estado, fecha, habitacionNumero);
+        }
       } else if (estado.esDiaEntrada && !estado.esDiaSalida) {
-        // Solo entrada
-        clase += ' transicion-entrada-unica';
-        this.aplicarColorTransicionEntrada(estado);
+        clases.push('solo-entrada');
+        if (fecha && habitacionNumero) {
+          this.aplicarColorTransicionEntrada(estado, fecha, habitacionNumero);
+        }
       } else if (estado.esDiaSalida && !estado.esDiaEntrada) {
-        // Solo salida
-        clase += ' transicion-salida-unica';
-        this.aplicarColorTransicionSalida(estado);
+        clases.push('solo-salida');
+        if (fecha && habitacionNumero) {
+          this.aplicarColorTransicionSalida(estado, fecha, habitacionNumero);
+        }
       } else if (estado.esDiaEntrada && estado.esDiaSalida) {
-        // Entrada y salida de la misma reserva
-        clase += ' transicion-multiple-visual';
-        this.aplicarColorTransicionMismaReserva(estado);
+        clases.push('entrada-salida');
+        if (fecha && habitacionNumero) {
+          this.aplicarColorTransicionMismaReserva(estado, fecha, habitacionNumero);
+        }
       }
     }
     
-    // Agregar clases específicas para entrada y salida (mantener compatibilidad)
-    if (estado.esDiaTransicion) {
-      // Día de transición: entrada y salida de diferentes reservas
-      clase += ' transicion-multiple';
-      // Si hay clase dinámica, agregarla
-      if (estado.claseDinamica) {
-        clase += ' ' + estado.claseDinamica;
-      }
-    } else if (estado.esDiaEntrada && estado.esDiaSalida) {
-      // Entrada y salida de la misma reserva
-      clase += ' entrada-salida';
+    // Agregar clase dinámica si existe
+    if (estado.claseDinamica) {
+      clases.push(estado.claseDinamica);
+    }
+    
+    return clases;
+  }
+
+  private obtenerClasesEntradaSalida(estado: EstadoOcupacion): string[] {
+    const clases: string[] = [];
+    
+    if (estado.esDiaEntrada && estado.esDiaSalida) {
+      clases.push('entrada-salida');
     } else if (estado.esDiaEntrada) {
-      clase += ' solo-entrada';
+      clases.push('solo-entrada');
     } else if (estado.esDiaSalida) {
-      clase += ' solo-salida';
+      clases.push('solo-salida');
     }
     
-    // Agregar clases para transiciones (mantener compatibilidad)
+    // Clases de transición legacy (mantener compatibilidad)
     if (estado.esTransicion) {
       if (estado.checkIn && estado.checkOut) {
-        clase += ' transicion-completa';
+        clases.push('transicion-completa');
       } else if (estado.checkOut) {
-        clase += ' transicion-checkout';
+        clases.push('transicion-checkout');
       } else if (estado.checkIn) {
-        clase += ' transicion-checkin';
+        clases.push('transicion-checkin');
       }
     }
     
-    // Agregar clases específicas para estado de pago (solo para reservas ocupadas)
-    if (estado.tipo === 'ocupada' || estado.tipo === 'reservada') {
+    return clases;
+  }
+
+  private obtenerClasesPago(estado: EstadoOcupacion): string[] {
+    const clases: string[] = [];
+    
+    // Aplicar clases de pago para reservas ocupadas, reservadas o finalizadas
+    if (estado.tipo === 'ocupada' || estado.tipo === 'reservada' || estado.tipo === 'finalizada') {
       if (estado.estaCompletamentePagado) {
-        clase += ' completamente-pagado';
+        clases.push('completamente-pagado');
       } else if (estado.montoPagado && estado.montoPagado > 0) {
-        clase += ' parcialmente-pagado';
+        clases.push('parcialmente-pagado');
       } else {
-        clase += ' sin-pago';
+        clases.push('sin-pago');
       }
     }
     
-    return clase;
+    return clases;
   }
 
   obtenerIconoOcupacion(estado: EstadoOcupacion): string {
@@ -1117,8 +1244,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (ocupacionHabitacion && ocupacionHabitacion.ocupacionPorDia[fechaStr]) {
         const estadoOcupacion = ocupacionHabitacion.ocupacionPorDia[fechaStr];
         
-        // Si hay una reserva (ocupada o reservada), mostrar el detalle
-        if (estadoOcupacion.tipo === 'ocupada' || estadoOcupacion.tipo === 'reservada') {
+        // Si hay una reserva (ocupada, reservada, finalizada o transición), mostrar el detalle
+        if (estadoOcupacion.tipo === 'ocupada' || estadoOcupacion.tipo === 'reservada' || estadoOcupacion.tipo === 'finalizada' || estadoOcupacion.tipo === 'transicion') {
           // Si hay múltiples reservas, mostrar opciones
           if (estadoOcupacion.reservas && estadoOcupacion.reservas.length > 1) {
             this.mostrarOpcionesMultiplesReservas(estadoOcupacion.reservas, habitacion, dia);
@@ -1849,45 +1976,34 @@ ${habitacionesLimpieza.length > 0 ?
 
   // Función para mostrar opciones cuando hay múltiples reservas en el mismo día
   mostrarOpcionesMultiplesReservas(reservas: any[], habitacion: Habitacion, dia: DiaCalendario): void {
-    const fechaStr = this.dateTimeService.formatDateForDisplay(dia.fecha);
-    
-    // Crear lista de opciones
-    const opciones = reservas.map((reserva, index) => {
-      const cliente = `${reserva.cliente.nombre} ${reserva.cliente.apellido}`;
-      const estado = reserva.estado;
-      const esEntrada = this.esFechaCheckIn(dia.fecha, reserva.fechaEntrada);
-      const esSalida = this.esFechaCheckOut(dia.fecha, reserva.fechaSalida);
-      
-      let tipoDia = '';
-      if (esEntrada && esSalida) {
-        tipoDia = ' (Entrada y Salida)';
-      } else if (esEntrada) {
-        tipoDia = ' (Entrada)';
-      } else if (esSalida) {
-        tipoDia = ' (Salida)';
+    const dialogRef = this.dialog.open(SeleccionReservaSimpleComponent, {
+      width: '500px',
+      maxWidth: '90vw',
+      data: { 
+        reservas: reservas, 
+        habitacion: habitacion, 
+        dia: dia.fecha 
       }
-      
-      return `${index + 1}. ${cliente} - ${estado}${tipoDia}`;
     });
-    
-    const mensaje = `Múltiples reservas para habitación ${habitacion.numero} el ${fechaStr}:\n\n${opciones.join('\n')}\n\nSeleccione una opción (1-${reservas.length}):`;
-    
-    const seleccion = prompt(mensaje);
-    
-    if (seleccion) {
-      const index = parseInt(seleccion) - 1;
-      if (index >= 0 && index < reservas.length) {
-        const reservaSeleccionada = reservas[index];
-        
-        // Verificar si es día de entrada para check-in
-        if ((reservaSeleccionada.estado === 'Confirmada' || reservaSeleccionada.estado === 'Pendiente') && 
-            this.esFechaCheckIn(dia.fecha, reservaSeleccionada.fechaEntrada)) {
-          this.mostrarOpcionesCheckIn(reservaSeleccionada);
-        } else {
-          this.verDetalleReserva(reservaSeleccionada);
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        switch (result.accion) {
+          case 'verDetalle':
+            // Verificar si es día de entrada para check-in
+            if ((result.reserva.estado === 'Confirmada' || result.reserva.estado === 'Pendiente') && 
+                this.esFechaCheckIn(dia.fecha, result.reserva.fechaEntrada)) {
+              this.mostrarOpcionesCheckIn(result.reserva);
+            } else {
+              this.verDetalleReserva(result.reserva);
+            }
+            break;
+          case 'cancelar':
+            // No hacer nada
+            break;
         }
       }
-    }
+    });
   }
 
   // Obtener número de habitación
@@ -1898,3 +2014,4 @@ ${habitacionesLimpieza.length > 0 ?
     return habitacion?.numero || 'N/A';
   }
 }
+

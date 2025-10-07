@@ -147,7 +147,7 @@
                     *ngFor="let dia of diasCalendario" 
                     class="celda-ocupacion"
                     [ngClass]="[
-                      obtenerClaseOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]),
+                      obtenerClaseOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)], dia.fecha, ocupacion.habitacion.numero),
                       'clickeable'
                     ]"
                     [style.--color-reserva]="obtenerColorReserva(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)].reservaPrincipal)"

@@ -1,0 +1,63 @@
+<div class="seleccion-reserva-simple">
+  <!-- Header -->
+  <div class="modal-header">
+    <h2 mat-dialog-title>
+      <mat-icon>hotel</mat-icon>
+      Múltiples Reservas
+    </h2>
+    <p class="modal-subtitle">
+      Habitación {{ habitacion.numero }} - {{ fechaFormateada }}
+    </p>
+  </div>
+
+  <!-- Content -->
+  <mat-dialog-content class="modal-content">
+    <div class="reservas-container">
+      <div class="reservas-buttons">
+        <button 
+          *ngFor="let reserva of reservas; let i = index" 
+          mat-raised-button 
+          class="reserva-button"
+          [style.background-color]="obtenerColorEstado(reserva.estado)"
+          [style.color]="'white'"
+          (click)="seleccionarReserva(reserva)">
+          
+          <div class="button-content">
+            <div class="button-header">
+              <mat-icon class="estado-icon">{{ obtenerIconoEstado(reserva.estado) }}</mat-icon>
+              <span class="cliente-nombre">{{ reserva.cliente.nombre }} {{ reserva.cliente.apellido }}</span>
+            </div>
+            
+            <div class="button-details">
+              <mat-chip 
+                class="tipo-dia-chip"
+                [style.background-color]="obtenerColorTipoDia(obtenerTipoDia(reserva))"
+                [style.color]="'white'">
+                <mat-icon class="chip-icon">event</mat-icon>
+                {{ obtenerTipoDia(reserva) }}
+              </mat-chip>
+              
+              <div class="precio-pago">
+                <span class="precio">{{ formatearPrecio(reserva.precioTotal) }}</span>
+                <mat-icon 
+                  class="pago-icon"
+                  [style.color]="obtenerEstadoPago(reserva).color">
+                  {{ obtenerEstadoPago(reserva).icon }}
+                </mat-icon>
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+    </div>
+  </mat-dialog-content>
+
+  <!-- Actions -->
+  <mat-dialog-actions align="end" class="modal-actions">
+    <button mat-button (click)="cancelar()" class="btn-cancelar">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+  </mat-dialog-actions>
+</div>

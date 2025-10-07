@@ -1,0 +1,161 @@
+.seleccion-reserva-simple {
+  .modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+    
+    h2 {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 0;
+      color: #1976d2;
+      font-weight: 500;
+    }
+    
+    .modal-subtitle {
+      margin: 8px 0 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
+  .modal-content {
+    padding: 0 24px;
+    min-width: 400px;
+  }
+
+  .reservas-container {
+    .reservas-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+
+      .reserva-button {
+        width: 100%;
+        height: auto;
+        padding: 16px;
+        border-radius: 8px;
+        text-align: left;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .button-content {
+          width: 100%;
+
+          .button-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+
+            .estado-icon {
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+            }
+
+            .cliente-nombre {
+              font-size: 16px;
+              font-weight: 500;
+              flex: 1;
+            }
+          }
+
+          .button-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .tipo-dia-chip {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+              font-size: 12px;
+              font-weight: 500;
+              height: 24px;
+
+              .chip-icon {
+                font-size: 14px;
+                width: 14px;
+                height: 14px;
+              }
+            }
+
+            .precio-pago {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              .precio {
+                font-size: 14px;
+                font-weight: 500;
+              }
+
+              .pago-icon {
+                font-size: 16px;
+                width: 16px;
+                height: 16px;
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  .modal-actions {
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 20px;
+
+    .btn-cancelar {
+      color: #666;
+      
+      .mat-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .seleccion-reserva-simple {
+    .modal-content {
+      padding: 0 16px;
+      min-width: 320px;
+    }
+
+    .modal-actions {
+      padding: 16px;
+    }
+  }
+}
+
+// Animaciones
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reserva-button {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.reserva-button:nth-child(1) { animation-delay: 0.1s; }
+.reserva-button:nth-child(2) { animation-delay: 0.2s; }
+.reserva-button:nth-child(3) { animation-delay: 0.3s; }
