@@ -98,7 +98,7 @@ class PDFService {
            .text(`Número de Reserva: ${reserva._id}`, 50, 160, { align: 'center' });
         
         // Fecha de emisión
-        doc.text(`Fecha de Emisión: ${new Date().toLocaleDateString('es-ES')}`, 50, 180, { align: 'center' });
+        doc.text(`Fecha de Emisión: ${this.formatDateDDMMYYYY(new Date())}`, 50, 180, { align: 'center' });
         
         doc.moveDown(2);
     }
@@ -183,8 +183,8 @@ class PDFService {
         const fechaSalida = new Date(reserva.fechaSalida);
         
         const fechasInfo = [
-            `Fecha de Entrada: ${fechaEntrada.toLocaleDateString('es-ES')} a las ${reserva.horaEntrada}`,
-            `Fecha de Salida: ${fechaSalida.toLocaleDateString('es-ES')} a las ${reserva.horaSalida}`,
+            `Fecha de Entrada: ${this.formatDateDDMMYYYY(fechaEntrada)} a las ${reserva.horaEntrada}`,
+            `Fecha de Salida: ${this.formatDateDDMMYYYY(fechaSalida)} a las ${reserva.horaSalida}`,
             `Duración: ${reserva.calcularDias ? reserva.calcularDias() : Math.ceil((fechaSalida - fechaEntrada) / (1000 * 60 * 60 * 24))} días`
         ];
         
@@ -277,7 +277,7 @@ class PDFService {
             doc.text(`  Método: ${pago.metodoPago}`, 90, doc.y);
             doc.moveDown(0.2);
             
-            doc.text(`  Fecha: ${new Date(pago.fechaPago).toLocaleString('es-ES')}`, 90, doc.y);
+            doc.text(`  Fecha: ${this.formatDateDDMMYYYY(new Date(pago.fechaPago))}`, 90, doc.y);
             doc.moveDown(0.2);
             
             if (pago.observaciones) {
@@ -326,7 +326,7 @@ class PDFService {
         
         doc.text('Para consultas contactar al hostal al +54 11 1234-5678', 50, doc.y + 10, { align: 'center' });
         
-        doc.text(`Generado el ${new Date().toLocaleString('es-ES')}`, 50, doc.y + 10, { align: 'center' });
+        doc.text(`Generado el ${this.formatDateDDMMYYYY(new Date())}`, 50, doc.y + 10, { align: 'center' });
     }
 
     /**
@@ -412,6 +412,16 @@ class PDFService {
                 reject(error);
             }
         });
+    }
+
+    /**
+     * Método auxiliar para formatear fechas en DD/MM/YYYY
+     */
+    formatDateDDMMYYYY(date) {
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
     }
 }
 

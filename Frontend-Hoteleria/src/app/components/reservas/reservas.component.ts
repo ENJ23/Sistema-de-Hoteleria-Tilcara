@@ -8,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -18,6 +18,19 @@ import { Subject, takeUntil } from 'rxjs';
 import { ReservaService } from '../../services/reserva.service';
 import { Reserva } from '../../models/reserva.model';
 import { CalendarioComponent } from '../calendario/calendario.component';
+
+// Configuración de formato de fecha DD/MM/YYYY
+export const DD_MM_YYYY_FORMAT = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
 
 @Component({
   selector: 'app-reservas',
@@ -40,7 +53,11 @@ import { CalendarioComponent } from '../calendario/calendario.component';
     CalendarioComponent
   ],
   templateUrl: './reservas.component.html',
-  styleUrls: ['./reservas.component.scss']
+  styleUrls: ['./reservas.component.scss'],
+  providers: [
+    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_FORMAT },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
+  ]
 })
 export class ReservasComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
@@ -189,7 +206,11 @@ export class ReservasComponent implements OnInit, OnDestroy {
   }
 
   formatearFecha(fecha: string): string {
-    return new Date(fecha).toLocaleDateString('es-ES');
+    const date = new Date(fecha);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   formatearPrecio(precio: number): string {

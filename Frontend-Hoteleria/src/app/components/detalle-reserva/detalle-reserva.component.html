@@ -89,7 +89,7 @@
             <div class="fecha-label">Entrada</div>
             <div class="fecha-valor">
               <mat-icon>login</mat-icon>
-              {{ form.get('fechaEntrada')?.value ? (form.get('fechaEntrada')?.value | date:'mediumDate') : 'Seleccionar' }}
+              {{ form.get('fechaEntrada')?.value ? (form.get('fechaEntrada')?.value | date:'dd/MM/yyyy') : 'Seleccionar' }}
             </div>
             <div class="hora-valor">{{ form.get('horaEntrada')?.value || '14:00' }}</div>
           </div>
@@ -97,7 +97,7 @@
             <div class="fecha-label">Salida</div>
             <div class="fecha-valor">
               <mat-icon>logout</mat-icon>
-              {{ form.get('fechaSalida')?.value ? (form.get('fechaSalida')?.value | date:'mediumDate') : 'Seleccionar' }}
+              {{ form.get('fechaSalida')?.value ? (form.get('fechaSalida')?.value | date:'dd/MM/yyyy') : 'Seleccionar' }}
             </div>
             <div class="hora-valor">{{ form.get('horaSalida')?.value || '11:00' }}</div>
           </div>

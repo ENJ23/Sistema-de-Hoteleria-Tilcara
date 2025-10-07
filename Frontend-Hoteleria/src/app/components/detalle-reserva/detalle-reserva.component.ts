@@ -14,7 +14,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -27,6 +27,19 @@ import { ReservaCreate, ReservaUpdate } from '../../models/reserva.model';
 import { Cliente } from '../../models/cliente.model';
 import { Habitacion } from '../../models/habitacion.model';
 import { Reserva } from '../../models/reserva.model';
+
+// Configuración de formato de fecha DD/MM/YYYY
+export const DD_MM_YYYY_FORMAT = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
 
 @Component({
   selector: 'app-detalle-reserva',
@@ -52,7 +65,11 @@ import { Reserva } from '../../models/reserva.model';
     ReactiveFormsModule,
     DatePipe
   ],
-  standalone: true
+  standalone: true,
+  providers: [
+    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_FORMAT },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
+  ]
 })
 export class DetalleReservaComponent implements OnInit {
   form: FormGroup;
@@ -589,8 +606,8 @@ export class DetalleReservaComponent implements OnInit {
       Habitación: ${this.habitacion?.numero} (${this.habitacion?.tipo})
       Capacidad: ${this.habitacion?.capacidad} personas
       
-      Entrada: ${this.form.get('fechaEntrada')?.value ? this.datePipe.transform(this.form.get('fechaEntrada')?.value, 'mediumDate') : 'N/A'} a las ${this.form.get('horaEntrada')?.value || '14:00'}
-      Salida: ${this.form.get('fechaSalida')?.value ? this.datePipe.transform(this.form.get('fechaSalida')?.value, 'mediumDate') : 'N/A'} a las ${this.form.get('horaSalida')?.value || '11:00'}
+      Entrada: ${this.form.get('fechaEntrada')?.value ? this.datePipe.transform(this.form.get('fechaEntrada')?.value, 'dd/MM/yyyy') : 'N/A'} a las ${this.form.get('horaEntrada')?.value || '14:00'}
+      Salida: ${this.form.get('fechaSalida')?.value ? this.datePipe.transform(this.form.get('fechaSalida')?.value, 'dd/MM/yyyy') : 'N/A'} a las ${this.form.get('horaSalida')?.value || '11:00'}
       
       Precio por noche: ${this.getPrecioPorNoche()}
       Total: ${this.getPrecioTotal()}
@@ -598,7 +615,7 @@ export class DetalleReservaComponent implements OnInit {
       Estado: ${this.reserva?.estado}
       Pagado: ${this.reserva?.pagado ? 'SÍ' : 'NO'}
       
-      Fecha de impresión: ${new Date().toLocaleString('es-AR')}
+      Fecha de impresión: ${this.formatDateDDMMYYYY(new Date())}
       ========================================
     `;
     
@@ -624,5 +641,13 @@ export class DetalleReservaComponent implements OnInit {
       ventanaImpresion.document.close();
       ventanaImpresion.print();
     }
+  }
+
+  // Método auxiliar para formatear fechas en DD/MM/YYYY
+  private formatDateDDMMYYYY(date: Date): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 }

@@ -1453,7 +1453,7 @@ export class DetalleReservaModalComponent {
           </div>
           <div class="info-row">
             <span class="info-label">Fecha de Emisión:</span>
-            <span class="info-value">${new Date().toLocaleDateString('es-ES')}</span>
+            <span class="info-value">${this.formatDateDDMMYYYY(new Date())}</span>
           </div>
         </div>
         
@@ -1509,11 +1509,11 @@ export class DetalleReservaModalComponent {
           <h3>📅 FECHAS Y HORARIOS</h3>
           <div class="info-row">
             <span class="info-label">Fecha de Entrada:</span>
-            <span class="info-value">${fechaEntrada.toLocaleDateString('es-ES')} a las ${reserva.horaEntrada}</span>
+            <span class="info-value">${this.formatDateDDMMYYYY(fechaEntrada)} a las ${reserva.horaEntrada}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Fecha de Salida:</span>
-            <span class="info-value">${fechaSalida.toLocaleDateString('es-ES')} a las ${reserva.horaSalida}</span>
+            <span class="info-value">${this.formatDateDDMMYYYY(fechaSalida)} a las ${reserva.horaSalida}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Duración:</span>
@@ -1571,7 +1571,7 @@ export class DetalleReservaModalComponent {
               <div class="pago-item">
                 <strong>Pago #${index + 1}</strong><br>
                 Monto: $${pago.monto} | Método: ${pago.metodoPago}<br>
-                Fecha: ${new Date(pago.fechaPago).toLocaleString('es-ES')}<br>
+                Fecha: ${this.formatDateDDMMYYYY(new Date(pago.fechaPago))}<br>
                 ${pago.observaciones ? `Observaciones: ${pago.observaciones}<br>` : ''}
                 Registrado por: ${pago.registradoPor}
               </div>
@@ -1590,7 +1590,7 @@ export class DetalleReservaModalComponent {
         <div class="footer">
           <p>Este documento es generado automáticamente por el Sistema de Gestión Hotelera</p>
           <p>Para consultas contactar al hostal al +54 11 1234-5678</p>
-          <p>Generado el ${new Date().toLocaleString('es-ES')}</p>
+          <p>Generado el ${this.formatDateDDMMYYYY(new Date())}</p>
         </div>
       </body>
       </html>
@@ -1745,7 +1745,7 @@ export class DetalleReservaModalComponent {
       `¿Está seguro de que desea eliminar este pago?\n\n` +
       `Monto: $${pago.monto}\n` +
       `Método: ${pago.metodoPago}\n` +
-      `Fecha: ${new Date(pago.fechaPago).toLocaleDateString()}\n\n` +
+      `Fecha: ${this.formatDateDDMMYYYY(new Date(pago.fechaPago))}\n\n` +
       `Esta acción no se puede deshacer.`
     );
 
@@ -1869,6 +1869,14 @@ export class DetalleReservaModalComponent {
         });
       }
     });
+  }
+
+  // Método auxiliar para formatear fechas en DD/MM/YYYY
+  private formatDateDDMMYYYY(date: Date): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 }
 

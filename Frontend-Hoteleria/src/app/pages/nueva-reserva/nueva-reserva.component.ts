@@ -9,13 +9,16 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatChipsModule } from '@angular/material/chips';
+import { SelectorHabitacionesDialogComponent, SelectorHabitacionesData } from '../../shared/components/selector-habitaciones-dialog/selector-habitaciones-dialog.component';
 import { Observable, Subject, of, debounceTime, distinctUntilChanged, switchMap, takeUntil, firstValueFrom } from 'rxjs';
 
 import { ReservaService } from '../../services/reserva.service';
@@ -23,6 +26,19 @@ import { HabitacionService } from '../../services/habitacion.service';
 import { DateTimeService } from '../../services/date-time.service';
 import { ReservaCreate, ReservaUpdate, Reserva } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
+
+// Configuración de formato de fecha DD/MM/YYYY
+export const DD_MM_YYYY_FORMAT = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
 
 @Component({
   selector: 'app-nueva-reserva',
@@ -42,10 +58,16 @@ import { Habitacion } from '../../models/habitacion.model';
     MatProgressSpinnerModule,
     MatDividerModule,
     MatTooltipModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatDialogModule,
+    MatChipsModule
   ],
   templateUrl: './nueva-reserva.component.html',
-  styleUrls: ['./nueva-reserva.component.scss']
+  styleUrls: ['./nueva-reserva.component.scss'],
+  providers: [
+    { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_FORMAT },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
+  ]
 })
 export class NuevaReservaComponent implements OnInit, OnDestroy {
   reservaForm: FormGroup;
@@ -75,6 +97,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   
   // Destructor para observables
   private destroy$ = new Subject<void>();
+  
+  // Referencia al dialog
+  private dialogRef?: any;
+  
+  // Flag para prevenir múltiples aperturas
+  private abriendoDialog = false;
 
   // Getter para el título de la página
   get tituloPagina(): string {
@@ -93,7 +121,8 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     private reservaService: ReservaService,
     private habitacionService: HabitacionService,
     private dateTimeService: DateTimeService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {
     this.reservaForm = this.fb.group({
       // Información del cliente (opcional para facilitar carga rápida)
@@ -368,6 +397,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Método para obtener el texto de la habitación seleccionada
+  getHabitacionSeleccionadaTexto(): string {
+    if (this.habitacionSeleccionada) {
+      return `${this.habitacionSeleccionada.numero} - ${this.habitacionSeleccionada.tipo} (${this.habitacionSeleccionada.estado})`;
+    }
+    return '';
+  }
+
   // Métodos para autocompletado
   mostrarNombreHabitacion(habitacion: Habitacion | string): string {
     // Si las habitaciones aún no están cargadas, retornar string vacío
@@ -381,7 +418,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       if (habitacionCompleta) {
         return `${habitacionCompleta.numero} - ${habitacionCompleta.tipo} (${habitacionCompleta.estado})`;
       }
-      return habitacion; // Retornar el ID si no se encuentra
+      // Si no se encuentra, intentar con la habitación seleccionada
+      if (this.habitacionSeleccionada && this.habitacionSeleccionada._id === habitacion) {
+        return `${this.habitacionSeleccionada.numero} - ${this.habitacionSeleccionada.tipo} (${this.habitacionSeleccionada.estado})`;
+      }
+      return ''; // Retornar string vacío si no se encuentra
     }
     
     if (habitacion && habitacion._id) {
@@ -391,24 +432,26 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  // Método para mostrar todas las habitaciones
+  mostrarTodasHabitaciones(): void {
+    console.log('🔄 Mostrando todas las habitaciones');
+    this.habitacionesFiltradas = of(this.habitaciones);
+  }
+
   // Método para manejar el clic en el campo de habitación
   onHabitacionClick(): void {
     console.log('=== CLIC EN CAMPO HABITACIÓN ===');
-    console.log('Habitaciones disponibles:', this.habitaciones);
-    console.log('Número de habitaciones:', this.habitaciones.length);
+    console.log('Habitaciones disponibles:', this.habitaciones.length);
     
     // Activar modo clic para evitar que el observador sobrescriba
     this.modoClic = true;
-    console.log('Modo clic activado:', this.modoClic);
     
     // Mostrar todas las habitaciones cuando se hace clic
-    this.habitacionesFiltradas = of(this.habitaciones);
-    console.log('Habitaciones filtradas configuradas');
+    this.mostrarTodasHabitaciones();
     
     // Desactivar modo clic después de un breve delay
     setTimeout(() => {
       this.modoClic = false;
-      console.log('Modo clic desactivado:', this.modoClic);
       console.log('=== FIN CLIC ===');
     }, 100);
   }
@@ -422,31 +465,97 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     
     const habitacionId = event.option.value;
     console.log('Habitación ID extraído:', habitacionId);
-    console.log('¿Es undefined?', habitacionId === undefined);
-    console.log('¿Es null?', habitacionId === null);
-    console.log('¿Es string vacío?', habitacionId === '');
-    console.log('Tipo de dato:', typeof habitacionId);
     
-    // Buscar la habitación completa para verificar
+    // Buscar la habitación completa
     const habitacionCompleta = this.habitaciones.find(h => h._id === habitacionId);
     console.log('Habitación encontrada:', habitacionCompleta);
-    console.log('¿Se encontró la habitación?', !!habitacionCompleta);
     
-    // Actualizar el precio de la habitación seleccionada
-    this.actualizarPrecioHabitacion(habitacionId);
+    if (habitacionCompleta) {
+      // Configurar la habitación seleccionada
+      this.habitacionSeleccionada = habitacionCompleta;
+      
+      // Actualizar el precio de la habitación seleccionada
+      this.actualizarPrecioHabitacion(habitacionId);
+      
+      // Asegurar que el formulario tenga el valor correcto
+      this.reservaForm.patchValue({
+        habitacion: habitacionId
+      });
+      
+      console.log('✅ Habitación seleccionada y configurada:', habitacionCompleta);
+    }
     
-    // Verificar el valor del formulario después de la selección
+    // Cerrar el autocompletado después de un breve delay
     setTimeout(() => {
-      const valorFormulario = this.reservaForm.get('habitacion')?.value;
-      console.log('Valor del formulario después de selección:', valorFormulario);
+      this.habitacionesFiltradas = of([]);
       console.log('=== FIN SELECCIÓN ===');
     }, 100);
-    
-    // Cerrar el autocompletado
-    this.habitacionesFiltradas = of([]);
   }
 
+  // Métodos para el dialog de selección de habitaciones
+  abrirSelectorHabitaciones(): void {
+    // Evitar abrir múltiples dialogs
+    if (this.dialogRef || this.abriendoDialog) {
+      console.log('⚠️ Dialog ya está abierto o abriéndose, ignorando nueva apertura');
+      return;
+    }
 
+    this.abriendoDialog = true;
+    console.log('🔍 Abriendo selector de habitaciones');
+    console.log('Habitaciones disponibles:', this.habitaciones.length);
+    
+    const dialogData: SelectorHabitacionesData = {
+      habitaciones: this.habitaciones,
+      habitacionSeleccionada: this.habitacionSeleccionada
+    };
+    
+    this.dialogRef = this.dialog.open(SelectorHabitacionesDialogComponent, {
+      width: '800px',
+      maxHeight: '80vh',
+      disableClose: false,
+      data: dialogData
+    });
+
+    this.dialogRef.afterClosed().subscribe((result: Habitacion | undefined) => {
+      console.log('Dialog cerrado con resultado:', result);
+      this.dialogRef = null; // Limpiar referencia
+      this.abriendoDialog = false; // Resetear flag
+      if (result) {
+        this.confirmarSeleccionHabitacion(result);
+      }
+    });
+  }
+
+  cerrarSelectorHabitaciones(): void {
+    if (this.dialogRef) {
+      this.dialogRef.close();
+      this.dialogRef = null; // Limpiar referencia
+      this.abriendoDialog = false; // Resetear flag
+    }
+  }
+
+  seleccionarHabitacion(habitacion: Habitacion): void {
+    console.log('🏨 Seleccionando habitación:', habitacion);
+    this.habitacionSeleccionada = habitacion;
+  }
+
+  confirmarSeleccionHabitacion(habitacion: Habitacion): void {
+    console.log('✅ Confirmando selección de habitación:', habitacion);
+    
+    // Configurar la habitación seleccionada
+    this.habitacionSeleccionada = habitacion;
+    
+    // Actualizar el formulario
+    this.reservaForm.patchValue({
+      habitacion: habitacion._id
+    });
+    
+    // Actualizar el precio
+    this.actualizarPrecioHabitacion(habitacion._id);
+    
+    // Mostrar mensaje de confirmación
+    this.mostrarMensaje(`Habitación ${habitacion.numero} seleccionada`, 'success');
+  }
 
   // Validaciones
   validarFechas(): boolean {

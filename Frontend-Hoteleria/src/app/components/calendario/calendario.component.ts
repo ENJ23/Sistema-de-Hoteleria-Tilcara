@@ -269,13 +269,21 @@ export class CalendarioComponent implements OnInit, OnDestroy {
            `Cliente: ${cliente}\n` +
            `Habitación: ${habitacion}\n` +
            `Estado: ${reserva.estado}\n` +
-           `Fecha Entrada: ${fechaEntrada.toLocaleDateString()} ${horaEntrada}\n` +
-           `Fecha Salida: ${fechaSalida.toLocaleDateString()} ${horaSalida}\n` +
+           `Fecha Entrada: ${this.formatDateDDMMYYYY(fechaEntrada)} ${horaEntrada}\n` +
+           `Fecha Salida: ${this.formatDateDDMMYYYY(fechaSalida)} ${horaSalida}\n` +
            `Método de Pago: ${reserva.metodoPago || 'No especificado'}\n` +
            `Precio por Noche: $${reserva.precioPorNoche?.toFixed(2) || '0.00'}\n` +
            `Precio Total: $${reserva.precioTotal?.toFixed(2) || '0.00'}\n` +
            `Pagado: ${reserva.pagado ? 'Sí' : 'No'}\n` +
            `Observaciones: ${reserva.observaciones || 'Ninguna'}`;
+  }
+
+  // Método auxiliar para formatear fechas en DD/MM/YYYY
+  private formatDateDDMMYYYY(date: Date): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   // Método para cargar las reservas

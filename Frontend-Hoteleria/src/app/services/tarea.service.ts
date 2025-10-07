@@ -74,16 +74,15 @@ export class TareaService {
     return colores[tipo] || '#757575';
   }
 
-  // Formatear fecha para mostrar
+  // Formatear fecha para mostrar (DD/MM/YYYY HH:mm)
   formatearFecha(fecha: Date | string): string {
     const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
-    return fechaObj.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const day = fechaObj.getDate().toString().padStart(2, '0');
+    const month = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
+    const year = fechaObj.getFullYear();
+    const hours = fechaObj.getHours().toString().padStart(2, '0');
+    const minutes = fechaObj.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   }
 
   // Obtener tiempo transcurrido desde creación

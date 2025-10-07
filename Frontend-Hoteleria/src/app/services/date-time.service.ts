@@ -58,26 +58,22 @@ export class DateTimeService {
    * Formatea una fecha para mostrar en la UI (DD/MM/YYYY)
    */
   formatDateForDisplay(date: Date): string {
-    return date.toLocaleDateString('es-AR', {
-      timeZone: this.ARGENTINA_TIMEZONE,
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   /**
-   * Formatea una fecha y hora para mostrar en la UI
+   * Formatea una fecha y hora para mostrar en la UI (DD/MM/YYYY HH:mm)
    */
   formatDateTimeForDisplay(date: Date): string {
-    return date.toLocaleString('es-AR', {
-      timeZone: this.ARGENTINA_TIMEZONE,
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   }
 
   /**
@@ -238,15 +234,13 @@ export class DateTimeService {
    */
   getCurrentDateTimeForLogs(): string {
     const now = new Date();
-    return now.toLocaleString('es-AR', {
-      timeZone: this.ARGENTINA_TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+    const day = now.getDate().toString().padStart(2, '0');
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const year = now.getFullYear();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
   }
 
   /**

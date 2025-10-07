@@ -122,23 +122,20 @@
           <mat-form-field appearance="outline" class="form-field-full">
             <mat-label>Habitación</mat-label>
             <input type="text" matInput 
-                   [matAutocomplete]="autoHabitacion"
-                   formControlName="habitacion"
-                   (click)="onHabitacionClick()"
-                   placeholder="Haga clic para ver habitaciones o escriba para buscar">
-            <mat-autocomplete #autoHabitacion="matAutocomplete" 
-                             [displayWith]="mostrarNombreHabitacion"
-                             (optionSelected)="onHabitacionSeleccionada($event)"
-                             autoActiveFirstOption>
-              <mat-option *ngFor="let habitacion of habitacionesFiltradas | async" 
-                          [value]="habitacion._id">
-                {{ mostrarNombreHabitacion(habitacion) }}
-              </mat-option>
-            </mat-autocomplete>
+                   [value]="getHabitacionSeleccionadaTexto()"
+                   (click)="abrirSelectorHabitaciones()"
+                   placeholder="Haga clic para seleccionar una habitación"
+                   readonly>
+            <button matSuffix mat-icon-button 
+                    (click)="abrirSelectorHabitaciones()"
+                    matTooltip="Seleccionar habitación"
+                    type="button">
+              <mat-icon>search</mat-icon>
+            </button>
             <mat-error *ngIf="isFieldInvalid('habitacion')">
               {{ getErrorMessage('habitacion') }}
             </mat-error>
-            <mat-hint>Haga clic para ver todas las habitaciones o escriba para buscar</mat-hint>
+            <mat-hint>Haga clic en el campo o en el botón de búsqueda para seleccionar una habitación</mat-hint>
           </mat-form-field>
         </div>
       </mat-card-content>
@@ -322,3 +319,4 @@
     </div>
   </form>
 </div>
+

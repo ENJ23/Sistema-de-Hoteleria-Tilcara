@@ -45,12 +45,10 @@ export class SeleccionReservaSimpleComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.fechaFormateada = this.dia.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    const day = this.dia.getDate().toString().padStart(2, '0');
+    const month = (this.dia.getMonth() + 1).toString().padStart(2, '0');
+    const year = this.dia.getFullYear();
+    this.fechaFormateada = `${day}/${month}/${year}`;
   }
 
   seleccionarReserva(reserva: Reserva): void {
