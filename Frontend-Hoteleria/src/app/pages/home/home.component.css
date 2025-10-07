@@ -405,10 +405,91 @@
 
 /* Contenido Principal */
 .main-content {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   margin-bottom: 30px;
+}
+
+/* Layout para computadora */
+.desktop-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* To-Do List compacta */
+.todo-card-compact {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+}
+
+.todo-card-compact mat-card-content {
+  padding: 16px;
+}
+
+.todo-card-compact mat-card-header {
+  padding: 16px 16px 8px 16px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.todo-card-compact mat-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.todo-card-compact mat-card-subtitle {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+/* Scrollbar personalizado para to-do list compacta */
+.todo-card-compact::-webkit-scrollbar {
+  width: 6px;
+}
+
+.todo-card-compact::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.todo-card-compact::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.todo-card-compact::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Calendario principal */
+.calendario-card {
+  flex: 1;
+  min-height: 600px;
+  border: 1px solid #e0e0e0;
+}
+
+.calendario-card mat-card-header {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.calendario-card mat-card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.calendario-card mat-card-subtitle {
+  font-size: 0.95rem;
+  color: #6c757d;
 }
 
 .content-card {
@@ -808,8 +889,12 @@
 
 /* Responsive */
 @media (max-width: 1200px) {
-  .main-content {
-    grid-template-columns: 1fr;
+  .desktop-layout {
+    flex-direction: column;
+  }
+  
+  .todo-card-compact {
+    max-height: none;
   }
   
   .stats-grid {
@@ -834,6 +919,18 @@
   
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .desktop-layout {
+    gap: 15px;
+  }
+  
+  .todo-card-compact {
+    max-height: 250px;
+  }
+  
+  .calendario-card {
+    min-height: 500px;
   }
   
   .calendario-grid {
@@ -897,29 +994,46 @@
   justify-content: center;
   gap: 20px;
   margin-bottom: 20px;
-  padding: 10px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 
 .nav-btn {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  min-width: 48px;
+  min-height: 48px;
 }
 
 .nav-btn:hover {
   background: white;
-  transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.nav-btn mat-icon {
+  color: #667eea;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
 }
 
 .mes-actual {
-  font-size: 24px;
-  font-weight: 600;
-  color: #2c3e50;
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
   margin: 0;
   text-transform: capitalize;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
 }
 
 /* Tabla de timeline */
@@ -951,13 +1065,62 @@
   z-index: 10;
 }
 
+/* Indicador de mes en la tabla */
+.mes-indicator-row {
+  background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%);
+}
+
+.mes-indicator-cell {
+  background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  text-align: center;
+  position: sticky;
+  left: 0;
+  z-index: 15;
+}
+
+.mes-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mes-indicator mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.mes-indicator-day {
+  background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mes-indicator-text {
+  color: white;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
 .habitacion-header, .tipo-header, .capacidad-header {
   background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
-  min-width: 80px;
+  min-width: 30px;
 }
 
 .dia-header {
-  min-width: 60px;
+  min-width: 45px;
   position: relative;
 }
 
@@ -1003,48 +1166,16 @@
 /* Información de habitación */
 .habitacion-info {
   text-align: left !important;
-  min-width: 100px;
+  min-width: 30px;
 }
 
 .habitacion-numero {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: #2c3e50;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
-.habitacion-estado {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.estado-disponible {
-  background: #d4edda;
-  color: #155724;
-}
-
-.estado-ocupada {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.estado-reservada {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.estado-limpieza {
-  background: #d1ecf1;
-  color: #0c5460;
-}
-
-.estado-mantenimiento {
-  background: #f5c6cb;
-  color: #721c24;
-}
 
 .habitacion-tipo {
   font-weight: 600;
@@ -1055,13 +1186,14 @@
 .habitacion-capacidad {
   font-weight: 600;
   color: #6c757d;
-  min-width: 60px;
+  min-width: 30px;
+  font-size: 12px;
 }
 
 /* Celdas de ocupación */
 .celda-ocupacion {
-  min-width: 60px;
-  height: 50px;
+  min-width: 45px;
+  height: 40px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -1431,10 +1563,51 @@
   .timeline-header {
     flex-direction: column;
     gap: 10px;
+    padding: 12px 15px;
   }
   
   .mes-actual {
-    font-size: 20px;
+    font-size: 24px;
+  }
+  
+  .mes-indicator {
+    font-size: 12px;
+  }
+  
+  .mes-indicator mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+  
+  .mes-indicator-text {
+    font-size: 9px;
+  }
+  
+  /* Sticky positioning para móvil */
+  .timeline-table th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  }
+  
+  .habitacion-info {
+    position: sticky;
+    left: 0;
+    z-index: 15;
+    background: white;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    border-right: 2px solid #e9ecef;
+  }
+  
+  .habitacion-header {
+    position: sticky;
+    left: 0;
+    z-index: 25;
+    background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
   }
   
   .timeline-leyenda {
@@ -1463,15 +1636,15 @@
   
   /* MEJORAR ÁREAS DE TOQUE PARA MÓVIL */
   .celda-ocupacion {
-    min-width: 48px;  /* Aumentar de 60px a 48px mínimo */
-    height: 48px;     /* Aumentar de 50px a 48px */
+    min-width: 40px;  /* Reducir de 45px a 40px para móvil */
+    height: 40px;     /* Reducir de 40px a 40px */
     padding: 6px;     /* Aumentar padding para área de toque */
   }
   
   .celda-ocupacion.clickeable {
-    /* Área de toque efectiva: 48px + 12px padding = 60px */
-    min-height: 60px;
-    min-width: 60px;
+    /* Área de toque efectiva: 40px + 12px padding = 52px */
+    min-height: 52px;
+    min-width: 52px;
   }
   
   /* Botones de navegación más grandes */
@@ -1490,15 +1663,24 @@
 /* Para pantallas muy pequeñas (móviles pequeños) */
 @media (max-width: 480px) {
   .celda-ocupacion {
-    min-width: 44px;  /* Mínimo absoluto para accesibilidad */
-    height: 44px;
+    min-width: 35px;  /* Reducir de 44px a 35px */
+    height: 35px;     /* Reducir de 44px a 35px */
     padding: 8px;     /* Más padding para compensar tamaño pequeño */
   }
   
   .celda-ocupacion.clickeable {
-    /* Área de toque efectiva: 44px + 16px padding = 60px */
-    min-height: 60px;
-    min-width: 60px;
+    /* Área de toque efectiva: 35px + 16px padding = 51px */
+    min-height: 51px;
+    min-width: 51px;
+  }
+  
+  /* Mejorar sticky positioning en pantallas muy pequeñas */
+  .habitacion-info {
+    min-width: 35px;  /* Ajustar para sticky con nuevo tamaño */
+  }
+  
+  .habitacion-header {
+    min-width: 35px;  /* Ajustar para sticky con nuevo tamaño */
   }
   
   /* Iconos más grandes para mejor visibilidad */

@@ -405,15 +405,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Verificar cache (solo si no se fuerza el refresh)
-    const cacheKey = `${this.mesActual.getFullYear()}-${this.mesActual.getMonth() + 1}`;
-    const now = Date.now();
+    // CORRECCIÓN CRÍTICA: Invalidar cache existente para rango expandido
+    // El cache anterior solo incluía el mes actual, ahora necesitamos rango expandido
+    console.log('🗑️ Invalidando cache para rango expandido de fechas');
+    this.cacheReservas = {}; // Limpiar cache completamente
+    this.lastRefreshTime = 0; // Resetear tiempo de última actualización
     
-    if (!forzarRefresh && this.cacheReservas[cacheKey] && (now - this.lastRefreshTime) < this.CACHE_DURATION) {
-      console.log('📋 Usando datos en cache para ocupación');
-      this.procesarOcupacionConDatos(this.cacheReservas[cacheKey]);
-      return;
-    }
+    const cacheKey = `${this.mesActual.getFullYear()}-${this.mesActual.getMonth() + 1}-expandido`;
+    const now = Date.now();
     
     console.log('📊 Generando ocupación...');
     console.log('🏨 Habitaciones disponibles:', this.habitaciones.length);
@@ -421,16 +420,35 @@ export class HomeComponent implements OnInit, OnDestroy {
     
     this.cargandoOcupacion = true;
     this.cargando = true;
-    const fechaInicio = this.dateTimeService.getFirstDayOfMonth(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1);
-    const fechaFin = this.dateTimeService.getLastDayOfMonth(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1);
     
-    // Obtener reservas para el mes actual
+    // CORRECCIÓN CRÍTICA: Expandir rango de fechas para capturar reservas que abarcan múltiples meses
+    const mesAnterior = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() - 1, 1);
+    const mesSiguiente = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 1);
+    
+    const fechaInicio = this.dateTimeService.getFirstDayOfMonth(mesAnterior.getFullYear(), mesAnterior.getMonth() + 1);
+    const fechaFin = this.dateTimeService.getLastDayOfMonth(mesSiguiente.getFullYear(), mesSiguiente.getMonth() + 1);
+    
+    console.log('📅 Rango de fechas expandido:', {
+      fechaInicio: this.dateTimeService.formatDateToLocalString(fechaInicio),
+      fechaFin: this.dateTimeService.formatDateToLocalString(fechaFin),
+      mesActual: this.mesActual.getMonth() + 1,
+      añoActual: this.mesActual.getFullYear()
+    });
+    
+    // Obtener reservas para el rango expandido (mes anterior + mes actual + mes siguiente)
     this.reservaService.getReservas({
       fechaInicio: this.dateTimeService.formatDateToLocalString(fechaInicio),
       fechaFin: this.dateTimeService.formatDateToLocalString(fechaFin)
     }, 1, 1000).subscribe({
       next: (response) => {
         console.log('📋 Reservas cargadas:', response.reservas.length);
+        console.log('📋 Detalle de reservas cargadas:', response.reservas.map((r: any) => ({
+          id: r._id,
+          habitacion: typeof r.habitacion === 'string' ? r.habitacion : r.habitacion?.numero,
+          fechaEntrada: r.fechaEntrada,
+          fechaSalida: r.fechaSalida,
+          estado: r.estado
+        })));
         
         // Guardar en cache
         this.cacheReservas[cacheKey] = response;
@@ -484,6 +502,8 @@ export class HomeComponent implements OnInit, OnDestroy {
           fechaSalida: r.fechaSalida,
           estado: r.estado
         })));
+    
+    console.log('🔍 Procesando ocupación para mes:', this.mesActual.getMonth() + 1, this.mesActual.getFullYear());
         
         this.ocupacionHabitaciones = [];
         
@@ -496,6 +516,11 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.diasCalendario.forEach(dia => {
             if (dia.esMesActual) {
               const fechaStr = this.formatearFecha(dia.fecha);
+              
+              // Debugging específico para noviembre
+              if (dia.fecha.getMonth() === 10) { // Noviembre es mes 10 (0-indexed)
+                console.log('🔍 Procesando día de noviembre:', fechaStr, 'Habitación:', habitacion.numero);
+              }
               
               // Buscar reservas para esta habitación en esta fecha
           const reservasHabitacion = response.reservas.filter((reserva: any) => {
@@ -534,6 +559,23 @@ export class HomeComponent implements OnInit, OnDestroy {
             // Para cualquier reserva, incluir si está en rango O si es día de entrada/salida específico
             // También incluir si hay problemas de zona horaria que hacen que las fechas se vean diferentes
             const incluir = enRango || esDiaEntrada || esDiaSalida || esDiaEntradaLocal || esDiaSalidaLocal;
+            
+            // Debugging específico para reservas de noviembre
+            if (dia.fecha.getMonth() === 10 && incluir) {
+              console.log('✅ Reserva encontrada para noviembre:', {
+                fecha: fechaStr,
+                habitacion: habitacion.numero,
+                reserva: {
+                  id: reserva._id,
+                  fechaEntrada: reserva.fechaEntrada,
+                  fechaSalida: reserva.fechaSalida,
+                  estado: reserva.estado
+                },
+                enRango,
+                esDiaEntrada,
+                esDiaSalida
+              });
+            }
             
             // CASO ESPECIAL: Si las fechas originales son iguales pero las locales son diferentes,
             // significa que hay un problema de zona horaria y debemos incluir ambos días

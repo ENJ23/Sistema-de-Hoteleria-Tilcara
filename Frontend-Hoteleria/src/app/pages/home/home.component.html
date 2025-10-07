@@ -84,11 +84,24 @@
 
   <!-- Sección Principal -->
   <div class="main-content">
-    <!-- To-Do List -->
-    <app-todo-list></app-todo-list>
-    
-    <!-- Calendario de Ocupación - Estilo Timeline -->
-    <mat-card class="content-card calendario-card">
+    <!-- Layout para computadora: To-Do List compacta arriba, Calendario abajo -->
+    <div class="desktop-layout">
+      <!-- To-Do List Compacta -->
+      <mat-card class="content-card todo-card-compact">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>checklist</mat-icon>
+            Tareas del Día
+          </mat-card-title>
+          <mat-card-subtitle>Gestión de tareas diarias</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <app-todo-list></app-todo-list>
+        </mat-card-content>
+      </mat-card>
+      
+      <!-- Calendario de Ocupación - Estilo Timeline -->
+      <mat-card class="content-card calendario-card">
       <mat-card-header>
         <mat-card-title>
           <mat-icon>calendar_today</mat-icon>
@@ -115,7 +128,7 @@
               <!-- Encabezado con días -->
               <thead>
                 <tr>
-                  <th class="habitacion-header">Habitación</th>
+                  <th class="habitacion-header">Hab.</th>
                   <th class="tipo-header">Tipo</th>
                   <th class="capacidad-header">Cap.</th>
                   <th 
@@ -129,6 +142,18 @@
                     <div class="dia-dia">{{ dia.fecha | date:'EEE' }}</div>
                   </th>
                 </tr>
+                <!-- Fila adicional con indicador de mes -->
+                <tr class="mes-indicator-row">
+                  <td colspan="3" class="mes-indicator-cell">
+                    <div class="mes-indicator">
+                      <mat-icon>calendar_month</mat-icon>
+                      <span>{{ obtenerNombreMes() }}</span>
+                    </div>
+                  </td>
+                  <td *ngFor="let dia of diasCalendario" class="mes-indicator-day">
+                    <div class="mes-indicator-text">{{ dia.fecha | date:'MMM' }}</div>
+                  </td>
+                </tr>
               </thead>
               
               <!-- Filas de habitaciones -->
@@ -139,9 +164,6 @@
                   <!-- Información de la habitación -->
                   <td class="habitacion-info">
                     <div class="habitacion-numero">{{ ocupacion.habitacion.numero }}</div>
-                    <div class="habitacion-estado" [ngClass]="'estado-' + ocupacion.habitacion.estado">
-                      {{ ocupacion.habitacion.estado }}
-                    </div>
                   </td>
                   
                   <td class="habitacion-tipo">{{ ocupacion.habitacion.tipo }}</td>
@@ -295,6 +317,7 @@
         </div>
       </mat-card-content>
     </mat-card>
+    </div> <!-- Cierre del desktop-layout -->
 
     <!-- Acciones Rápidas -->
     <mat-card class="content-card acciones-card">
