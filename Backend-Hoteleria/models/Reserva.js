@@ -197,7 +197,7 @@ reservaSchema.pre('save', function(next) {
             const fechaSalida = new Date(this.fechaSalida);
             
             // Calcular días
-            const diffTime = Math.abs(fechaSalida.getTime() - fechaEntrada.getTime());
+            const diffTime = fechaSalida.getTime() - fechaEntrada.getTime();
             const dias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             // Calcular precio total
@@ -218,7 +218,10 @@ reservaSchema.pre('save', function(next) {
 // Método para calcular el número de días
 reservaSchema.methods.calcularDias = function() {
     if (this.fechaEntrada && this.fechaSalida) {
-        return Math.ceil((this.fechaSalida - this.fechaEntrada) / (1000 * 60 * 60 * 24));
+        const fechaEntrada = new Date(this.fechaEntrada);
+        const fechaSalida = new Date(this.fechaSalida);
+        const diffTime = fechaSalida.getTime() - fechaEntrada.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
     return 0;
 };

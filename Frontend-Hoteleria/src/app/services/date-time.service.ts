@@ -156,7 +156,7 @@ export class DateTimeService {
    * Calcula la diferencia en días entre dos fechas
    */
   calculateDaysDifference(startDate: Date, endDate: Date): number {
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffTime = endDate.getTime() - startDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   }

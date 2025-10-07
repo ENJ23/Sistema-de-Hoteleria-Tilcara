@@ -305,7 +305,13 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       console.log('🏨 Habitación encontrada para edición:', this.habitacionSeleccionada);
     }
 
-    // Calcular precios
+    // Actualizar precio total desde la reserva original
+    if (reserva.precioTotal) {
+      this.precioTotal = reserva.precioTotal;
+      console.log('💰 Precio total precargado:', this.precioTotal);
+    }
+    
+    // Calcular precios (esto actualizará el cálculo local)
     this.calcularPrecio();
     
     console.log('✅ Datos precargados correctamente');
@@ -650,6 +656,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
     this.reservaService.updateReserva(this.reservaId!, reservaUpdateData).subscribe({
       next: (reserva) => {
+        console.log('✅ Reserva actualizada:', reserva);
+        
+        // Actualizar el precio total en la interfaz con el valor del backend
+        if (reserva.precioTotal) {
+          this.precioTotal = reserva.precioTotal;
+          console.log('💰 Precio total actualizado desde backend:', this.precioTotal);
+        }
+        
         this.mostrarMensaje('Reserva actualizada exitosamente', 'success');
         this.router.navigate(['/'], { 
           queryParams: { 

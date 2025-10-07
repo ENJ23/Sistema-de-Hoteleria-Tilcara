@@ -293,7 +293,7 @@ export class ReservaMockService {
     const unDia = 24 * 60 * 60 * 1000; // milisegundos en un día
     const inicio = new Date(fechaInicio);
     const fin = new Date(fechaFin);
-    const diferencia = Math.round(Math.abs((fin.getTime() - inicio.getTime()) / unDia));
+    const diferencia = Math.ceil((fin.getTime() - inicio.getTime()) / unDia);
     return diferencia || 1; // Mínimo una noche
   }
 }

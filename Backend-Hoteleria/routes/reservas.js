@@ -297,6 +297,70 @@ router.get('/habitacion/:habitacionId', [
     }
 });
 
+// GET - Verificar disponibilidad de habitación (DEBE ir ANTES de /:id)
+router.get('/check-disponibilidad', [
+    verifyToken,
+    query('habitacionId').isMongoId().withMessage('ID de habitación inválido'),
+    query('fechaInicio').isISO8601().withMessage('Fecha de inicio inválida'),
+    query('fechaFin').isISO8601().withMessage('Fecha de fin inválida'),
+    query('excludeReservaId').optional().isMongoId().withMessage('ID de reserva a excluir inválido')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { habitacionId, fechaInicio, fechaFin, excludeReservaId } = req.query;
+
+        // Verificar que la habitación existe
+        const habitacion = await Habitacion.findById(habitacionId);
+        if (!habitacion) {
+            return res.status(404).json({ message: 'Habitación no encontrada' });
+        }
+
+        // Construir query para buscar reservas conflictivas
+        const query = {
+            habitacion: habitacionId,
+            estado: { $nin: ['Cancelada'] }, // Excluir reservas canceladas
+            $or: [
+                {
+                    fechaEntrada: { $lt: new Date(fechaFin) },
+                    fechaSalida: { $gt: new Date(fechaInicio) }
+                }
+            ]
+        };
+
+        // Excluir la reserva actual si se está editando
+        if (excludeReservaId) {
+            query._id = { $ne: excludeReservaId };
+        }
+
+        // Buscar reservas que se superponen con el rango de fechas
+        const reservasConflictivas = await Reserva.find(query);
+
+        // La habitación está disponible si no hay reservas conflictivas
+        const disponible = reservasConflictivas.length === 0;
+
+        console.log('🔍 Verificación de disponibilidad:', {
+            habitacionId,
+            fechaInicio,
+            fechaFin,
+            excludeReservaId,
+            reservasConflictivas: reservasConflictivas.length,
+            disponible
+        });
+
+        res.json(disponible);
+    } catch (error) {
+        console.error('Error al verificar disponibilidad:', error);
+        res.status(500).json({ 
+            message: 'Error al verificar disponibilidad', 
+            error: error.message 
+        });
+    }
+});
+
 // GET - Obtener una reserva por ID (el propio cliente o empleados/administradores)
 router.get('/:id', verifyToken, async (req, res) => {
     try {
@@ -496,10 +560,35 @@ router.put('/:id', [
             });
         }
         
+        // Preparar datos de actualización
+        const datosActualizacion = { ...req.body };
+        
+        // Recalcular precio total si cambian las fechas o el precio por noche
+        const fechaEntradaActual = new Date(fechaEntrada);
+        const fechaSalidaActual = new Date(fechaSalida);
+        const precioPorNocheActual = parseFloat(req.body.precioPorNoche);
+        
+        // Calcular número de noches
+        const diferenciaTiempo = fechaSalidaActual.getTime() - fechaEntradaActual.getTime();
+        const numeroNoches = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
+        
+        // Recalcular precio total
+        const precioTotal = precioPorNocheActual * numeroNoches;
+        datosActualizacion.precioTotal = precioTotal;
+        
+        console.log('💰 Recalculando precio total:', {
+            reservaId: req.params.id,
+            fechaEntrada: fechaEntradaActual,
+            fechaSalida: fechaSalidaActual,
+            numeroNoches,
+            precioPorNoche: precioPorNocheActual,
+            precioTotal
+        });
+        
         // Actualizar la reserva
         const reservaActualizada = await Reserva.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            datosActualizacion,
             { new: true, runValidators: true }
         ).populate('habitacion');
         
