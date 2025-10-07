@@ -274,6 +274,17 @@ export interface DetalleReservaData {
             [title]="isCompletamentePagado() ? 'Reserva completamente pagada' : 'Registrar Pago'">
             <mat-icon>payment</mat-icon>
           </button>
+
+          <!-- Revertir Check-out -->
+          <button 
+            mat-fab 
+            color="accent" 
+            class="action-btn-primary revertir-checkout"
+            [disabled]="data.reserva.estado !== 'Finalizada'"
+            (click)="revertirCheckOut()"
+            title="Revertir Check-out">
+            <mat-icon>undo</mat-icon>
+          </button>
         </div>
 
         <!-- Botones secundarios -->
@@ -756,6 +767,10 @@ export interface DetalleReservaData {
       background: linear-gradient(135deg, #2196f3, #1976d2);
     }
 
+    .action-btn-primary.revertir-checkout {
+      background: linear-gradient(135deg, #ff9800, #f57c00);
+    }
+
     .action-btn-primary:disabled {
       opacity: 0.4;
       cursor: not-allowed;
@@ -1065,6 +1080,80 @@ export class DetalleReservaModalComponent {
           mensajeError = '❌ No tiene permisos para realizar check-out.';
         } else if (error.status === 404) {
           mensajeError = '❌ Reserva no encontrada.';
+        } else if (error.status === 0) {
+          mensajeError = '❌ Error de conexión. Verifique que el servidor esté ejecutándose.';
+        }
+        
+        this.snackBar.open(mensajeError, 'Cerrar', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  revertirCheckOut(): void {
+    // Verificar autenticación antes de proceder
+    if (!this.authService.isAuthenticated()) {
+      this.snackBar.open('❌ Debe iniciar sesión para revertir check-out', 'Cerrar', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    // Confirmación con información detallada
+    const confirmacion = confirm(
+      `¿Está seguro de que desea revertir el check-out?\n\n` +
+      `Cliente: ${this.data.reserva.cliente?.nombre} ${this.data.reserva.cliente?.apellido}\n` +
+      `Habitación: ${this.data.reserva.habitacion?.numero}\n` +
+      `Estado actual: ${this.data.reserva.estado}\n\n` +
+      `Esta acción:\n` +
+      `• Cambiará el estado a "En curso"\n` +
+      `• Marcará la habitación como "Ocupada"\n` +
+      `• Eliminará la tarea de limpieza\n\n` +
+      `¿Continuar?`
+    );
+
+    if (!confirmacion) {
+      return;
+    }
+    
+    console.log('Revirtiendo check-out:', {
+      reservaId: this.data.reserva._id,
+      estadoActual: this.data.reserva.estado
+    });
+    
+    this.reservaService.revertirCheckOut(this.data.reserva._id).subscribe({
+      next: (response) => {
+        this.snackBar.open(`✅ Check-out revertido exitosamente para ${this.data.reserva.cliente?.nombre} ${this.data.reserva.cliente?.apellido}`, 'Cerrar', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+        
+        // Actualizar los datos de la reserva en el modal
+        this.data.reserva = response.reserva;
+        
+        this.dialogRef.close({ 
+          action: 'revertir-checkout', 
+          reserva: response.reserva,
+          mensaje: response.message
+        });
+      },
+      error: (error) => {
+        console.error('Error al revertir check-out:', error);
+        
+        let mensajeError = '❌ Error al revertir el check-out. Intente nuevamente.';
+        
+        if (error.status === 401) {
+          mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
+          this.authService.logout();
+        } else if (error.status === 403) {
+          mensajeError = '❌ No tiene permisos para revertir check-out.';
+        } else if (error.status === 404) {
+          mensajeError = '❌ Reserva no encontrada.';
+        } else if (error.status === 400) {
+          mensajeError = error.error?.message || '❌ No se puede revertir este check-out.';
         } else if (error.status === 0) {
           mensajeError = '❌ Error de conexión. Verifique que el servidor esté ejecutándose.';
         }

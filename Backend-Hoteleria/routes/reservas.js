@@ -45,17 +45,32 @@ const validarReserva = [
     
     body('cliente.telefono')
         .optional()
-        .trim()
-        .isLength({ min: 7, max: 20 })
-        .withMessage('El teléfono debe tener entre 7 y 20 caracteres')
-        .matches(/^[\d\s\-\+\(\)]*$/)
-        .withMessage('El teléfono solo puede contener números, espacios, guiones y paréntesis'),
+        .custom((value) => {
+            if (!value || value.trim() === '') {
+                return true; // Campo vacío es válido
+            }
+            const trimmed = value.trim();
+            if (trimmed.length < 7 || trimmed.length > 20) {
+                throw new Error('El teléfono debe tener entre 7 y 20 caracteres');
+            }
+            if (!/^[\d\s\-\+\(\)]*$/.test(trimmed)) {
+                throw new Error('El teléfono solo puede contener números, espacios, guiones y paréntesis');
+            }
+            return true;
+        }),
     
     body('cliente.documento')
         .optional()
-        .trim()
-        .isLength({ min: 5, max: 20 })
-        .withMessage('El documento debe tener entre 5 y 20 caracteres'),
+        .custom((value) => {
+            if (!value || value.trim() === '') {
+                return true; // Campo vacío es válido
+            }
+            const trimmed = value.trim();
+            if (trimmed.length < 5 || trimmed.length > 20) {
+                throw new Error('El documento debe tener entre 5 y 20 caracteres');
+            }
+            return true;
+        }),
     
     body('habitacion', 'La habitación es obligatoria')
         .notEmpty()
@@ -838,7 +853,72 @@ router.patch('/:id/checkout', [
     }
 });
 
-
+// PATCH - Revertir check-out de una reserva
+router.patch('/:id/revertir-checkout', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        const reserva = await Reserva.findById(req.params.id);
+        if (!reserva) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+        
+        if (reserva.estado !== 'Finalizada') {
+            return res.status(400).json({ 
+                message: 'Solo se puede revertir check-out a reservas finalizadas',
+                estadoActual: reserva.estado
+            });
+        }
+        
+        // Verificar que la reserva tenga fecha de check-out (para confirmar que realmente se hizo checkout)
+        if (!reserva.fechaCheckOut) {
+            return res.status(400).json({ 
+                message: 'Esta reserva no tiene fecha de check-out registrada' 
+            });
+        }
+        
+        // Revertir el check-out
+        reserva.estado = 'En curso';
+        reserva.horaCheckOut = undefined;
+        reserva.fechaCheckOut = undefined;
+        
+        await reserva.save();
+        
+        // Actualizar estado de la habitación a ocupada
+        await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Ocupada' });
+        
+        // Eliminar tarea de limpieza si existe (opcional)
+        try {
+            const Tarea = require('../models/Tarea');
+            await Tarea.deleteMany({ 
+                habitacion: reserva.habitacion, 
+                tipo: 'Limpieza',
+                estado: 'Pendiente'
+            });
+            console.log(`✅ Tarea de limpieza eliminada para habitación ${reserva.habitacion}`);
+        } catch (tareaError) {
+            console.error('⚠️ Error al eliminar tarea de limpieza:', tareaError);
+            // No fallar la reversión si hay error en la tarea
+        }
+        
+        await reserva.populate('habitacion');
+        
+        console.log('🔄 Check-out revertido:', {
+            reservaId: reserva._id,
+            habitacion: reserva.habitacion.numero,
+            nuevoEstado: reserva.estado
+        });
+        
+        res.json({
+            message: 'Check-out revertido exitosamente',
+            reserva: reserva
+        });
+    } catch (error) {
+        console.error('❌ Error al revertir check-out:', error);
+        res.status(500).json({ message: 'Error al revertir check-out', error: error.message });
+    }
+});
 
 // GET - Obtener reservas para check-in hoy
 router.get('/checkin/hoy', [

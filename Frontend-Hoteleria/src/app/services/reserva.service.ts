@@ -153,6 +153,11 @@ export class ReservaService {
     return this.http.patch<Reserva>(`${this.apiUrl}/${id}/checkout`, data);
   }
 
+  // Revertir check-out de una reserva
+  revertirCheckOut(id: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/${id}/revertir-checkout`, {});
+  }
+
   // Registrar pago de una reserva
   registrarPago(id: string, metodoPago: string, monto?: number, observaciones?: string): Observable<Reserva> {
     const data: any = { metodoPago };

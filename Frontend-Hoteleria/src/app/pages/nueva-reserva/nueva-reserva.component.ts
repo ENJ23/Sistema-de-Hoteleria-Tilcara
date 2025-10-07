@@ -9,7 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, NativeDateAdapter } from '@angular/material/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -26,6 +26,33 @@ import { HabitacionService } from '../../services/habitacion.service';
 import { DateTimeService } from '../../services/date-time.service';
 import { ReservaCreate, ReservaUpdate, Reserva } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
+
+// DateAdapter personalizado para formato DD/MM/YYYY
+export class CustomDateAdapter extends NativeDateAdapter {
+  override parse(value: any): Date | null {
+    if (typeof value === 'string' && value) {
+      // Formato DD/MM/YYYY
+      const parts = value.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Los meses van de 0-11
+        const year = parseInt(parts[2], 10);
+        return new Date(year, month, day);
+      }
+    }
+    return super.parse(value);
+  }
+
+  override format(date: Date, displayFormat: any): string {
+    if (displayFormat === 'DD/MM/YYYY') {
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    return super.format(date, displayFormat);
+  }
+}
 
 // Configuración de formato de fecha DD/MM/YYYY
 export const DD_MM_YYYY_FORMAT = {
@@ -65,6 +92,7 @@ export const DD_MM_YYYY_FORMAT = {
   templateUrl: './nueva-reserva.component.html',
   styleUrls: ['./nueva-reserva.component.scss'],
   providers: [
+    { provide: DateAdapter, useClass: CustomDateAdapter },
     { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_FORMAT },
     { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
   ]
@@ -594,8 +622,8 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
         // Usar el método checkDisponibilidad que está implementado en el servicio
         const disponible = await firstValueFrom(this.reservaService.checkDisponibilidad(
           habitacionId, 
-          fechaEntrada instanceof Date ? fechaEntrada.toISOString() : fechaEntrada,
-          fechaSalida instanceof Date ? fechaSalida.toISOString() : fechaSalida,
+          fechaEntrada instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaEntrada) : fechaEntrada,
+          fechaSalida instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaSalida) : fechaSalida,
           this.modoEdicion ? this.reservaId : undefined
         ));
         
@@ -689,8 +717,8 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
         nacionalidad: this.reservaForm.get('nacionalidadCliente')?.value?.trim() || undefined
       },
       habitacion: this.reservaForm.get('habitacion')?.value,
-      fechaEntrada: fechaEntrada instanceof Date ? fechaEntrada.toISOString() : fechaEntrada,
-      fechaSalida: fechaSalida instanceof Date ? fechaSalida.toISOString() : fechaSalida,
+      fechaEntrada: fechaEntrada instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaEntrada) : fechaEntrada,
+      fechaSalida: fechaSalida instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaSalida) : fechaSalida,
       horaEntrada: horaEntrada || '14:00',
       horaSalida: horaSalida || '11:00',
       precioPorNoche: parseFloat(precioPorNoche),
@@ -792,6 +820,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     console.error(`Error al ${accion} reserva:`, error);
     console.error('Error completo:', error);
     console.error('Error details:', error.error);
+    
+    // Mostrar errores de validación específicos
+    if (error.error && error.error.errors && Array.isArray(error.error.errors)) {
+      console.error('Errores de validación:', error.error.errors);
+      const erroresTexto = error.error.errors.map((err: any) => `${err.param || err.field}: ${err.msg || err.message}`).join(', ');
+      this.mostrarMensaje(`Errores de validación: ${erroresTexto}`, 'error');
+      return;
+    }
     
     let mensajeError = `Error al ${accion} la reserva`;
     

@@ -1582,6 +1582,11 @@ ${habitacionesLimpieza.length > 0 ?
         // Recargar estadísticas inmediatamente
         this.cargarEstadisticas();
         this.cargarReservasHoy();
+        
+        // Recargar to-do list si se revirtió un checkout
+        if (result.action === 'revertir-checkout' && this.todoListComponent) {
+          this.todoListComponent.cargarTareasPendientes();
+        }
       }
     });
   }
