@@ -134,11 +134,11 @@ export interface DetalleReservaData {
                </div>
                <div class="info-row" *ngIf="data.reserva.montoPagado !== undefined">
                  <span class="label">Monto Pagado:</span>
-                 <span class="value precio">{{ data.reserva.montoPagado }}€</span>
+                 <span class="value precio">{{ data.reserva.montoPagado }}$</span>
                </div>
                <div class="info-row" *ngIf="data.reserva.montoRestante !== undefined">
                  <span class="label">Monto Restante:</span>
-                 <span class="value precio restante">{{ data.reserva.montoRestante }}€</span>
+                 <span class="value precio restante">{{ data.reserva.montoRestante }}$</span>
                </div>
                <div class="info-row" *ngIf="data.reserva.totalPagos > 0">
                  <span class="label">Total de Pagos:</span>
@@ -183,7 +183,7 @@ export interface DetalleReservaData {
                    </div>
                    <div class="pago-details">
                      <div class="pago-monto">
-                       <strong>{{ pago.monto }}€</strong>
+                       <strong>{{ pago.monto }}$</strong>
                      </div>
                      <div class="pago-metodo">
                        <mat-chip class="metodo-chip">{{ pago.metodoPago }}</mat-chip>
@@ -217,11 +217,11 @@ export interface DetalleReservaData {
             <mat-card-content>
               <div class="info-row">
                 <span class="label">Precio por noche:</span>
-                <span class="value precio">{{ data.reserva.precioPorNoche }}€</span>
+                <span class="value precio">{{ data.reserva.precioPorNoche }}$</span>
               </div>
               <div class="info-row">
                 <span class="label">Precio total:</span>
-                <span class="value precio total">{{ data.reserva.precioTotal }}€</span>
+                <span class="value precio total">{{ data.reserva.precioTotal }}$</span>
               </div>
             </mat-card-content>
           </mat-card>
