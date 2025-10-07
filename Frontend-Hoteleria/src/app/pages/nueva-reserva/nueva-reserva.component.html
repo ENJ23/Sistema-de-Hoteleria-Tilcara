@@ -35,24 +35,18 @@
       </mat-card-header>
       <mat-card-content>
         <div class="form-row">
-          <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Nombre</mat-label>
-            <input type="text" matInput 
-                   formControlName="nombreCliente"
-                   placeholder="Nombre del cliente (opcional)">
-            <mat-error *ngIf="isFieldInvalid('nombreCliente')">
-              {{ getErrorMessage('nombreCliente') }}
-            </mat-error>
-          </mat-form-field>
+           <mat-form-field appearance="outline" class="form-field-half">
+             <mat-label>Nombre</mat-label>
+             <input type="text" matInput 
+                    formControlName="nombreCliente"
+                    placeholder="Nombre del cliente (opcional)">
+           </mat-form-field>
 
           <mat-form-field appearance="outline" class="form-field-half">
             <mat-label>Apellido</mat-label>
             <input type="text" matInput 
                    formControlName="apellidoCliente"
                    placeholder="Apellido del cliente (opcional)">
-            <mat-error *ngIf="isFieldInvalid('apellidoCliente')">
-              {{ getErrorMessage('apellidoCliente') }}
-            </mat-error>
           </mat-form-field>
         </div>
 
@@ -62,9 +56,6 @@
             <input type="email" matInput 
                    formControlName="emailCliente"
                    placeholder="email@ejemplo.com (opcional)">
-            <mat-error *ngIf="isFieldInvalid('emailCliente')">
-              {{ getErrorMessage('emailCliente') }}
-            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="form-field-half">
@@ -72,9 +63,6 @@
             <input type="tel" matInput 
                    formControlName="telefonoCliente"
                    placeholder="Número de teléfono (opcional)">
-            <mat-error *ngIf="isFieldInvalid('telefonoCliente')">
-              {{ getErrorMessage('telefonoCliente') }}
-            </mat-error>
           </mat-form-field>
         </div>
 
@@ -84,9 +72,6 @@
             <input type="text" matInput 
                    formControlName="documentoCliente"
                    placeholder="DNI, Pasaporte, etc. (opcional)">
-            <mat-error *ngIf="isFieldInvalid('documentoCliente')">
-              {{ getErrorMessage('documentoCliente') }}
-            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="form-field-half">

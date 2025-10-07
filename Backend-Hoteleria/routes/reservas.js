@@ -16,32 +16,79 @@ const {
 const mongoose = require('mongoose'); // Importar mongoose para transacciones
 const pdfService = require('../services/pdf.service'); // Importar servicio de PDF
 
+// Función helper para parsear fechas locales evitando problemas de zona horaria
+function parseLocalDate(dateString) {
+  if (!dateString || typeof dateString !== 'string') {
+    throw new Error('Fecha inválida');
+  }
+  
+  const parts = dateString.split('-');
+  if (parts.length !== 3) {
+    throw new Error('Formato de fecha inválido');
+  }
+  
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    throw new Error('Fecha inválida');
+  }
+  
+  return new Date(year, month, day, 0, 0, 0, 0);
+}
+
 // Validaciones mejoradas para crear/actualizar reservas
 const validarReserva = [
     body('cliente.nombre')
         .optional()
-        .trim()
-        .escape()
-        .isLength({ min: 2, max: 50 })
-        .withMessage('El nombre debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
-        .withMessage('El nombre solo puede contener letras y espacios'),
+        .custom((value) => {
+            if (!value || value.trim() === '') {
+                return true; // Campo vacío es válido
+            }
+            const trimmed = value.trim();
+            if (trimmed.length < 2 || trimmed.length > 50) {
+                throw new Error('El nombre debe tener entre 2 y 50 caracteres');
+            }
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(trimmed)) {
+                throw new Error('El nombre solo puede contener letras y espacios');
+            }
+            return true;
+        }),
     
     body('cliente.apellido')
         .optional()
-        .trim()
-        .escape()
-        .isLength({ min: 2, max: 50 })
-        .withMessage('El apellido debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
-        .withMessage('El apellido solo puede contener letras y espacios'),
+        .custom((value) => {
+            if (!value || value.trim() === '') {
+                return true; // Campo vacío es válido
+            }
+            const trimmed = value.trim();
+            if (trimmed.length < 2 || trimmed.length > 50) {
+                throw new Error('El apellido debe tener entre 2 y 50 caracteres');
+            }
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(trimmed)) {
+                throw new Error('El apellido solo puede contener letras y espacios');
+            }
+            return true;
+        }),
     
     body('cliente.email')
         .optional()
-        .isEmail()
-        .normalizeEmail()
-        .isLength({ max: 100 })
-        .withMessage('El email no puede exceder 100 caracteres'),
+        .custom((value) => {
+            if (!value || value.trim() === '') {
+                return true; // Campo vacío es válido
+            }
+            const trimmed = value.trim();
+            if (trimmed.length > 100) {
+                throw new Error('El email no puede exceder 100 caracteres');
+            }
+            // Validar formato de email solo si hay contenido
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(trimmed)) {
+                throw new Error('Formato de email inválido');
+            }
+            return true;
+        }),
     
     body('cliente.telefono')
         .optional()
@@ -79,29 +126,37 @@ const validarReserva = [
     
     body('fechaEntrada', 'La fecha de entrada es obligatoria')
         .notEmpty()
-        .isISO8601()
-        .withMessage('Formato de fecha inválido')
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage('Formato de fecha inválido (debe ser YYYY-MM-DD)')
         .custom((value) => {
-            const fecha = new Date(value);
-            const hoy = new Date();
-            hoy.setHours(0, 0, 0, 0);
-            if (fecha < hoy) {
-                throw new Error('La fecha de entrada no puede ser anterior a hoy');
+            try {
+                const fecha = parseLocalDate(value);
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                if (fecha < hoy) {
+                    throw new Error('La fecha de entrada no puede ser anterior a hoy');
+                }
+                return true;
+            } catch (error) {
+                throw new Error('Fecha de entrada inválida: ' + error.message);
             }
-            return true;
         }),
     
     body('fechaSalida', 'La fecha de salida es obligatoria')
         .notEmpty()
-        .isISO8601()
-        .withMessage('Formato de fecha inválido')
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage('Formato de fecha inválido (debe ser YYYY-MM-DD)')
         .custom((value, { req }) => {
-            const fechaSalida = new Date(value);
-            const fechaEntrada = new Date(req.body.fechaEntrada);
-            if (fechaSalida <= fechaEntrada) {
-                throw new Error('La fecha de salida debe ser posterior a la fecha de entrada');
+            try {
+                const fechaSalida = parseLocalDate(value);
+                const fechaEntrada = parseLocalDate(req.body.fechaEntrada);
+                if (fechaSalida <= fechaEntrada) {
+                    throw new Error('La fecha de salida debe ser posterior a la fecha de entrada');
+                }
+                return true;
+            } catch (error) {
+                throw new Error('Fecha de salida inválida: ' + error.message);
             }
-            return true;
         }),
     
     body('horaEntrada', 'Formato de hora inválido')
@@ -229,8 +284,8 @@ router.get('/', [
         
         if (fechaInicio && fechaFin) {
             query.fechaEntrada = {
-                $gte: new Date(fechaInicio),
-                $lte: new Date(fechaFin)
+                $gte: parseLocalDate(fechaInicio),
+                $lte: parseLocalDate(fechaFin)
             };
         }
         
@@ -340,8 +395,8 @@ router.get('/check-disponibilidad', [
             estado: { $nin: ['Cancelada'] }, // Excluir reservas canceladas
             $or: [
                 {
-                    fechaEntrada: { $lt: new Date(fechaFin) },
-                    fechaSalida: { $gt: new Date(fechaInicio) }
+                    fechaEntrada: { $lt: parseLocalDate(fechaFin) },
+                    fechaSalida: { $gt: parseLocalDate(fechaInicio) }
                 }
             ]
         };
@@ -471,14 +526,17 @@ router.post('/', [
         // NO verificar el estado de la habitación aquí, solo verificar conflictos de fechas
         // El estado de la habitación se maneja dinámicamente basado en las reservas activas
         
-        // Verificar conflictos de fechas
+        // Verificar conflictos de fechas usando parseLocalDate
+        const fechaEntradaParsed = parseLocalDate(fechaEntrada);
+        const fechaSalidaParsed = parseLocalDate(fechaSalida);
+        
         const reservasExistentes = await Reserva.find({
             habitacion: habitacion,
             estado: { $nin: ['Cancelada'] }, // Excluir reservas canceladas
             $or: [
                 {
-                    fechaEntrada: { $lt: new Date(fechaSalida) },
-                    fechaSalida: { $gt: new Date(fechaEntrada) }
+                    fechaEntrada: { $lt: fechaSalidaParsed },
+                    fechaSalida: { $gt: fechaEntradaParsed }
                 }
             ]
         });
@@ -497,12 +555,12 @@ router.post('/', [
             });
         }
         
-        // Crear la reserva
+        // Crear la reserva usando parseLocalDate para evitar problemas de zona horaria
         const reserva = new Reserva({
             cliente,
             habitacion,
-            fechaEntrada: new Date(fechaEntrada),
-            fechaSalida: new Date(fechaSalida),
+            fechaEntrada: parseLocalDate(fechaEntrada),
+            fechaSalida: parseLocalDate(fechaSalida),
             ...otrosDatos,
             creadoPor: req.userId ? req.userId.nombre : 'Cliente'
         });
@@ -536,8 +594,8 @@ router.post('/', [
 router.put('/:id', [
     verifyToken,
     isEncargado,
-    body('fechaEntrada').isISO8601().withMessage('Fecha de entrada inválida'),
-    body('fechaSalida').isISO8601().withMessage('Fecha de salida inválida'),
+    body('fechaEntrada').matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Formato de fecha de entrada inválido (debe ser YYYY-MM-DD)'),
+    body('fechaSalida').matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Formato de fecha de salida inválido (debe ser YYYY-MM-DD)'),
     body('precioPorNoche').isFloat({ min: 0 }).withMessage('El precio por noche debe ser mayor a 0'),
     body('horaEntrada').matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Formato de hora inválido'),
     body('horaSalida').matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Formato de hora inválido')
@@ -562,8 +620,8 @@ router.put('/:id', [
             estado: { $nin: ['Cancelada'] },
             $or: [
                 {
-                    fechaEntrada: { $lt: new Date(fechaSalida) },
-                    fechaSalida: { $gt: new Date(fechaEntrada) }
+                    fechaEntrada: { $lt: parseLocalDate(fechaSalida) },
+                    fechaSalida: { $gt: parseLocalDate(fechaEntrada) }
                 }
             ]
         });
@@ -575,12 +633,23 @@ router.put('/:id', [
             });
         }
         
-        // Preparar datos de actualización
+        // Preparar datos de actualización con fechas parseadas correctamente
         const datosActualizacion = { ...req.body };
         
+        // CORRECCIÓN CRÍTICA: Parsear fechas usando parseLocalDate para evitar problemas de zona horaria
+        datosActualizacion.fechaEntrada = parseLocalDate(fechaEntrada);
+        datosActualizacion.fechaSalida = parseLocalDate(fechaSalida);
+        
+        console.log('🔧 FECHAS PARSEADAS PARA ACTUALIZACIÓN:', {
+            fechaEntradaOriginal: fechaEntrada,
+            fechaEntradaParsed: datosActualizacion.fechaEntrada,
+            fechaSalidaOriginal: fechaSalida,
+            fechaSalidaParsed: datosActualizacion.fechaSalida
+        });
+        
         // Recalcular precio total si cambian las fechas o el precio por noche
-        const fechaEntradaActual = new Date(fechaEntrada);
-        const fechaSalidaActual = new Date(fechaSalida);
+        const fechaEntradaActual = datosActualizacion.fechaEntrada;
+        const fechaSalidaActual = datosActualizacion.fechaSalida;
         const precioPorNocheActual = parseFloat(req.body.precioPorNoche);
         
         // Calcular número de noches
@@ -606,6 +675,13 @@ router.put('/:id', [
             datosActualizacion,
             { new: true, runValidators: true }
         ).populate('habitacion');
+        
+        console.log('✅ RESERVA ACTUALIZADA:', {
+            id: reservaActualizada._id,
+            fechaEntrada: reservaActualizada.fechaEntrada,
+            fechaSalida: reservaActualizada.fechaSalida,
+            precioTotal: reservaActualizada.precioTotal
+        });
         
         res.json(reservaActualizada);
     } catch (error) {

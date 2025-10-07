@@ -48,6 +48,7 @@ export class DateTimeService {
    * Formatea una fecha a string YYYY-MM-DD en horario argentino
    */
   formatDateToLocalString(date: Date): string {
+    // Usar métodos locales para mantener zona horaria de Argentina
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -246,7 +247,7 @@ export class DateTimeService {
   /**
    * Parsea una fecha desde string evitando problemas de zona horaria
    * @param dateString String de fecha en formato YYYY-MM-DD
-   * @returns Date object en zona horaria local
+   * @returns Date object en zona horaria local de Argentina
    */
   parseDateFromString(dateString: string): Date {
     // Si el string ya está en formato YYYY-MM-DD, crear la fecha directamente
@@ -257,12 +258,16 @@ export class DateTimeService {
       const month = parseInt(parts[1], 10) - 1; // Los meses en JS van de 0-11
       const day = parseInt(parts[2], 10);
       
-      // Crear fecha en zona horaria local
-      return new Date(year, month, day);
+      // Crear fecha en zona horaria local de Argentina
+      const fecha = new Date(year, month, day);
+      fecha.setHours(0, 0, 0, 0); // Establecer a medianoche local
+      return fecha;
     }
     
     // Fallback: usar el constructor normal
-    return new Date(dateString);
+    const fecha = new Date(dateString);
+    fecha.setHours(0, 0, 0, 0); // Establecer a medianoche local
+    return fecha;
   }
 }
 

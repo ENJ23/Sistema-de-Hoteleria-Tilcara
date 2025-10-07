@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil, filter } from 'rxjs';
 import { DetalleReservaComponent } from '../../components/detalle-reserva/detalle-reserva.component';
 import { DetalleReservaModalComponent } from '../../components/detalle-reserva-modal/detalle-reserva-modal.component';
 import { SeleccionReservaSimpleComponent } from '../../components/seleccion-reserva-simple/seleccion-reserva-simple.component';
@@ -129,6 +129,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private habitacionService: HabitacionService,
@@ -171,6 +172,25 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.generarOcupacion();
     });
     
+    // Detectar navegación de vuelta para refrescar datos
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      console.log('🔄 Navegación detectada - invalidando cache y refrescando datos');
+      this.invalidarCacheYRefrescar();
+    });
+    
+    // Detectar query parameters para cambios específicos
+    this.route.queryParams.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      if (params['reservaActualizada'] || params['reservaCreada']) {
+        console.log('🔄 Cambio de reserva detectado - invalidando cache');
+        this.invalidarCacheYRefrescar();
+      }
+    });
+    
     this.inicializarHabitaciones();
   }
 
@@ -178,6 +198,54 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.limpiarEstilosDinamicos();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Invalida el cache y fuerza la actualización de datos
+   */
+  private invalidarCacheYRefrescar(): void {
+    console.log('🗑️ Invalidando cache y refrescando datos...');
+    
+    // Limpiar cache de reservas
+    this.cacheReservas = {};
+    this.lastRefreshTime = 0;
+    
+    // Forzar refresh de ocupación (bypass cache)
+    this.generarOcupacion(true);
+    
+    // Recargar estadísticas
+    this.cargarEstadisticas();
+    this.cargarReservasHoy();
+    
+    // Recargar to-do list si está disponible
+    if (this.todoListComponent) {
+      this.todoListComponent.cargarTareasPendientes();
+    }
+    
+    console.log('✅ Cache invalidado y datos refrescados');
+  }
+
+  /**
+   * Refresca datos cuando la ventana vuelve a tener foco
+   */
+  @HostListener('window:focus', ['$event'])
+  onWindowFocus(): void {
+    console.log('👁️ Ventana enfocada - verificando si necesitamos refrescar datos');
+    
+    // Solo refrescar si han pasado más de 5 segundos desde la última actualización
+    const now = Date.now();
+    if (now - this.lastRefreshTime > 5000) {
+      console.log('🔄 Refrescando datos por focus de ventana');
+      this.invalidarCacheYRefrescar();
+    }
+  }
+
+  /**
+   * Método público para refrescar datos manualmente
+   */
+  public refrescarDatos(): void {
+    console.log('🔄 Refrescando datos manualmente...');
+    this.invalidarCacheYRefrescar();
   }
 
   private limpiarEstilosDinamicos(): void {
@@ -326,7 +394,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  generarOcupacion(): void {
+  generarOcupacion(forzarRefresh: boolean = false): void {
     if (this.habitaciones.length === 0) {
       console.log('❌ No hay habitaciones para generar ocupación');
       return;
@@ -337,11 +405,11 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Verificar cache
+    // Verificar cache (solo si no se fuerza el refresh)
     const cacheKey = `${this.mesActual.getFullYear()}-${this.mesActual.getMonth() + 1}`;
     const now = Date.now();
     
-    if (this.cacheReservas[cacheKey] && (now - this.lastRefreshTime) < this.CACHE_DURATION) {
+    if (!forzarRefresh && this.cacheReservas[cacheKey] && (now - this.lastRefreshTime) < this.CACHE_DURATION) {
       console.log('📋 Usando datos en cache para ocupación');
       this.procesarOcupacionConDatos(this.cacheReservas[cacheKey]);
       return;

@@ -156,7 +156,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       // Información del cliente (opcional para facilitar carga rápida)
       nombreCliente: [''],
       apellidoCliente: [''],
-      emailCliente: ['', Validators.email],
+      emailCliente: [''],
       telefonoCliente: [''],
       documentoCliente: [''],
       direccionCliente: [''],
@@ -373,6 +373,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     
     console.log('✅ Datos precargados correctamente');
   }
+
 
   private buscarYConfigurarHabitacion(habitacionId: string): void {
     this.habitacionSeleccionada = this.habitaciones.find(h => h._id === habitacionId);
@@ -680,6 +681,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     const horaSalida = this.reservaForm.get('horaSalida')?.value;
     const precioPorNoche = this.reservaForm.get('precioPorNoche')?.value;
     
+    
     // Validar que las fechas sean válidas
     if (!fechaEntrada || !fechaSalida) {
       this.mostrarMensaje('Las fechas de entrada y salida son obligatorias', 'error');
@@ -706,19 +708,25 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       return;
     }
     
+    // Procesar fechas
+    const fechaEntradaFormateada = fechaEntrada instanceof Date ? 
+      this.dateTimeService.formatDateToLocalString(fechaEntrada) : fechaEntrada;
+    const fechaSalidaFormateada = fechaSalida instanceof Date ? 
+      this.dateTimeService.formatDateToLocalString(fechaSalida) : fechaSalida;
+    
     const reservaData: ReservaCreate = {
       cliente: {
-        nombre: this.reservaForm.get('nombreCliente')?.value?.trim(),
-        apellido: this.reservaForm.get('apellidoCliente')?.value?.trim(),
-        email: this.reservaForm.get('emailCliente')?.value?.trim(),
-        telefono: this.reservaForm.get('telefonoCliente')?.value?.trim(),
-        documento: this.reservaForm.get('documentoCliente')?.value?.trim(),
+        nombre: this.reservaForm.get('nombreCliente')?.value?.trim() || undefined,
+        apellido: this.reservaForm.get('apellidoCliente')?.value?.trim() || undefined,
+        email: this.reservaForm.get('emailCliente')?.value?.trim() || undefined,
+        telefono: this.reservaForm.get('telefonoCliente')?.value?.trim() || undefined,
+        documento: this.reservaForm.get('documentoCliente')?.value?.trim() || undefined,
         direccion: this.reservaForm.get('direccionCliente')?.value?.trim() || undefined,
         nacionalidad: this.reservaForm.get('nacionalidadCliente')?.value?.trim() || undefined
       },
       habitacion: this.reservaForm.get('habitacion')?.value,
-      fechaEntrada: fechaEntrada instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaEntrada) : fechaEntrada,
-      fechaSalida: fechaSalida instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaSalida) : fechaSalida,
+      fechaEntrada: fechaEntradaFormateada,
+      fechaSalida: fechaSalidaFormateada,
       horaEntrada: horaEntrada || '14:00',
       horaSalida: horaSalida || '11:00',
       precioPorNoche: parseFloat(precioPorNoche),
@@ -874,6 +882,13 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   // Métodos para el template
   getErrorMessage(controlName: string): string {
     const control = this.reservaForm.get(controlName);
+    
+    // Los campos del cliente son opcionales, no mostrar errores de validación
+    const camposCliente = ['nombreCliente', 'apellidoCliente', 'emailCliente', 'telefonoCliente', 'documentoCliente', 'direccionCliente', 'nacionalidadCliente'];
+    if (camposCliente.includes(controlName)) {
+      return '';
+    }
+    
     if (control?.hasError('required')) {
       return 'Este campo es requerido';
     }
@@ -888,6 +903,13 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   isFieldInvalid(controlName: string): boolean {
     const control = this.reservaForm.get(controlName);
+    
+    // Los campos del cliente son opcionales, no considerarlos inválidos
+    const camposCliente = ['nombreCliente', 'apellidoCliente', 'emailCliente', 'telefonoCliente', 'documentoCliente', 'direccionCliente', 'nacionalidadCliente'];
+    if (camposCliente.includes(controlName)) {
+      return false;
+    }
+    
     return !!(control && control.invalid && (control.dirty || control.touched));
   }
 }
