@@ -96,12 +96,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar
   ) {
     this.reservaForm = this.fb.group({
-      // Información del cliente
-      nombreCliente: ['', Validators.required],
-      apellidoCliente: ['', Validators.required],
-      emailCliente: ['', [Validators.required, Validators.email]],
-      telefonoCliente: ['', Validators.required],
-      documentoCliente: ['', Validators.required],
+      // Información del cliente (opcional para facilitar carga rápida)
+      nombreCliente: [''],
+      apellidoCliente: [''],
+      emailCliente: ['', Validators.email],
+      telefonoCliente: [''],
+      documentoCliente: [''],
       direccionCliente: [''],
       nacionalidadCliente: [''],
       

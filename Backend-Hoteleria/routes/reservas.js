@@ -3,6 +3,7 @@ const router = express.Router();
 const Reserva = require('../models/Reserva');
 const Habitacion = require('../models/Habitacion');
 const Cliente = require('../models/Cliente');
+const Tarea = require('../models/Tarea');
 const { body, validationResult, query } = require('express-validator');
 const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/authJwt');
 const { 
@@ -17,40 +18,41 @@ const pdfService = require('../services/pdf.service'); // Importar servicio de P
 
 // Validaciones mejoradas para crear/actualizar reservas
 const validarReserva = [
-    body('cliente.nombre', 'El nombre del cliente es obligatorio')
-        .notEmpty()
+    body('cliente.nombre')
+        .optional()
         .trim()
         .escape()
         .isLength({ min: 2, max: 50 })
         .withMessage('El nombre debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
+        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
         .withMessage('El nombre solo puede contener letras y espacios'),
     
-    body('cliente.apellido', 'El apellido del cliente es obligatorio')
-        .notEmpty()
+    body('cliente.apellido')
+        .optional()
         .trim()
         .escape()
         .isLength({ min: 2, max: 50 })
         .withMessage('El apellido debe tener entre 2 y 50 caracteres')
-        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)
+        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
         .withMessage('El apellido solo puede contener letras y espacios'),
     
-    body('cliente.email', 'El email del cliente es obligatorio')
+    body('cliente.email')
+        .optional()
         .isEmail()
         .normalizeEmail()
         .isLength({ max: 100 })
         .withMessage('El email no puede exceder 100 caracteres'),
     
-    body('cliente.telefono', 'El teléfono del cliente es obligatorio')
-        .notEmpty()
+    body('cliente.telefono')
+        .optional()
         .trim()
         .isLength({ min: 7, max: 20 })
         .withMessage('El teléfono debe tener entre 7 y 20 caracteres')
-        .matches(/^[\d\s\-\+\(\)]+$/)
+        .matches(/^[\d\s\-\+\(\)]*$/)
         .withMessage('El teléfono solo puede contener números, espacios, guiones y paréntesis'),
     
-    body('cliente.documento', 'El documento del cliente es obligatorio')
-        .notEmpty()
+    body('cliente.documento')
+        .optional()
         .trim()
         .isLength({ min: 5, max: 20 })
         .withMessage('El documento debe tener entre 5 y 20 caracteres'),
@@ -728,6 +730,16 @@ router.patch('/:id/checkout', [
         
         // Actualizar estado de la habitación
         await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Disponible' });
+        
+        // Crear tarea de limpieza automáticamente
+        try {
+            const creadoPor = req.userId.nombre || 'Sistema';
+            await Tarea.crearTareaLimpieza(reserva.habitacion, creadoPor);
+            console.log(`✅ Tarea de limpieza creada para habitación ${reserva.habitacion}`);
+        } catch (tareaError) {
+            console.error('⚠️ Error al crear tarea de limpieza:', tareaError);
+            // No fallar el checkout si hay error en la tarea
+        }
         
         await reserva.populate('habitacion');
         

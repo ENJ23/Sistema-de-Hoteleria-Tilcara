@@ -1,0 +1,87 @@
+<div class="todo-list-container">
+  <mat-card class="todo-card">
+    <mat-card-header class="todo-header">
+      <mat-card-title class="todo-title">
+        <mat-icon class="title-icon">task_alt</mat-icon>
+        TAREAS PENDIENTES
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content class="todo-content">
+      <!-- Loading spinner -->
+      <div *ngIf="cargando" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p class="loading-text">Cargando tareas...</p>
+      </div>
+
+      <!-- Lista de tareas -->
+      <div *ngIf="!cargando && tareas.length > 0" class="tareas-list">
+        <div 
+          *ngFor="let tarea of tareas; trackBy: trackByTareaId" 
+          class="tarea-item"
+          [class.completando]="estaCompletando(tarea._id)">
+          
+          <!-- Información de la tarea -->
+          <div class="tarea-info">
+            <div class="tarea-header">
+              <mat-icon 
+                class="tipo-icon"
+                [style.color]="obtenerColorTipo(tarea.tipo)">
+                {{ obtenerIconoTipo(tarea.tipo) }}
+              </mat-icon>
+              
+              <div class="tarea-details">
+                <h4 class="tarea-descripcion">{{ tarea.descripcion }}</h4>
+                <p class="tarea-habitacion">
+                  Habitación {{ tarea.habitacion.numero }} - {{ tarea.habitacion.tipo }}
+                </p>
+              </div>
+            </div>
+            
+            <div class="tarea-meta">
+              <mat-chip 
+                class="tipo-chip"
+                [style.background-color]="obtenerColorTipo(tarea.tipo)"
+                [style.color]="'white'">
+                {{ tarea.tipo | titlecase }}
+              </mat-chip>
+              
+              <span class="tiempo-transcurrido">
+                {{ obtenerTiempoTranscurrido(tarea.fechaCreacion) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Botón de completar -->
+          <div class="tarea-actions">
+            <button 
+              mat-raised-button 
+              color="primary"
+              class="btn-completar"
+              [disabled]="estaCompletando(tarea._id)"
+              (click)="completarTarea(tarea)">
+              
+              <mat-spinner 
+                *ngIf="estaCompletando(tarea._id)" 
+                diameter="16" 
+                class="btn-spinner">
+              </mat-spinner>
+              
+              <mat-icon *ngIf="!estaCompletando(tarea._id)">check_circle</mat-icon>
+              
+              <span *ngIf="!estaCompletando(tarea._id)">Completar</span>
+              <span *ngIf="estaCompletando(tarea._id)">Completando...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="!cargando && tareas.length === 0" class="empty-state">
+        <mat-icon class="empty-icon">task_alt</mat-icon>
+        <h3 class="empty-title">¡Excelente trabajo!</h3>
+        <p class="empty-message">No hay tareas pendientes en este momento.</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

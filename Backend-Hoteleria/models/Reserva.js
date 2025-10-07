@@ -4,36 +4,38 @@ const reservaSchema = new mongoose.Schema({
     cliente: {
         nombre: {
             type: String,
-            required: [true, 'El nombre del cliente es obligatorio'],
-            trim: true
+            trim: true,
+            default: ''
         },
         apellido: {
             type: String,
-            required: [true, 'El apellido del cliente es obligatorio'],
-            trim: true
+            trim: true,
+            default: ''
         },
         email: {
             type: String,
-            required: [true, 'El email del cliente es obligatorio'],
-            trim: true
+            trim: true,
+            default: ''
         },
         telefono: {
             type: String,
-            required: [true, 'El teléfono del cliente es obligatorio'],
-            trim: true
+            trim: true,
+            default: ''
         },
         documento: {
             type: String,
-            required: [true, 'El documento del cliente es obligatorio'],
-            trim: true
+            trim: true,
+            default: ''
         },
         direccion: {
             type: String,
-            trim: true
+            trim: true,
+            default: ''
         },
         nacionalidad: {
             type: String,
-            trim: true
+            trim: true,
+            default: ''
         }
     },
     habitacion: {

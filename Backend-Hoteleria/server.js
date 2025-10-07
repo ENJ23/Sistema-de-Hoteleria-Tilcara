@@ -118,12 +118,14 @@ const authRoutes = require('./routes/auth');
 const reservasRoutes = require('./routes/reservas');
 const habitacionesRoutes = require('./routes/habitaciones');
 const clientesRoutes = require('./routes/clientes');
+const tareasRoutes = require('./routes/tareas');
 
 // Configurar rutas con rate limiting específico
 apiRouter.use('/auth', securityMiddleware.authLimiter, authRoutes);
 apiRouter.use('/reservas', securityMiddleware.reservasLimiter, reservasRoutes);
 apiRouter.use('/habitaciones', habitacionesRoutes);
 apiRouter.use('/clientes', clientesRoutes);
+apiRouter.use('/tareas', tareasRoutes);
 
 // Ruta de prueba de la API
 apiRouter.get('/', (req, res) => {

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -14,10 +14,12 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { DetalleReservaComponent } from '../../components/detalle-reserva/detalle-reserva.component';
 import { DetalleReservaModalComponent } from '../../components/detalle-reserva-modal/detalle-reserva-modal.component';
 import { SeleccionReservaSimpleComponent } from '../../components/seleccion-reserva-simple/seleccion-reserva-simple.component';
+import { TodoListComponent } from '../../components/todo-list/todo-list.component';
 import { HabitacionService } from '../../services/habitacion.service';
 import { ReservaService } from '../../services/reserva.service';
 import { ClienteService } from '../../services/cliente.service';
 import { DateTimeService } from '../../services/date-time.service';
+import { TareaService } from '../../services/tarea.service';
 
 interface Habitacion {
   _id: string;
@@ -92,12 +94,15 @@ interface Estadisticas {
     MatFormFieldModule,
     MatInputModule,
     FormsModule,
-    MatDialogModule
+    MatDialogModule,
+    TodoListComponent
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  @ViewChild(TodoListComponent) todoListComponent!: TodoListComponent;
+  
   fechaActual!: Date;
   mesActual!: Date;
   diasCalendario: DiaCalendario[] = [];
@@ -129,7 +134,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     private habitacionService: HabitacionService,
     private reservaService: ReservaService,
     private clienteService: ClienteService,
-    private dateTimeService: DateTimeService
+    private dateTimeService: DateTimeService,
+    private tareaService: TareaService
   ) {}
   
   estadisticas: Estadisticas = {
@@ -1683,6 +1689,11 @@ ${habitacionesLimpieza.length > 0 ?
           // Recargar datos para reflejar los cambios
           this.cargarReservasHoy();
           this.generarOcupacion();
+          
+          // Recargar to-do list para mostrar nueva tarea de limpieza
+          if (this.todoListComponent) {
+            this.todoListComponent.cargarTareasPendientes();
+          }
         },
         error: (error) => {
           console.error('=== ERROR EN CHECK-OUT ===');

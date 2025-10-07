@@ -1,0 +1,248 @@
+.todo-list-container {
+  margin-bottom: 24px;
+
+  .todo-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+
+    .todo-header {
+      background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+      padding: 16px 20px;
+      margin: 0;
+
+      .todo-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+
+        .title-icon {
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+        }
+      }
+    }
+
+    .todo-content {
+      padding: 20px;
+
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 40px 20px;
+
+        .loading-text {
+          margin: 0;
+          color: #666;
+          font-size: 14px;
+        }
+      }
+
+      .tareas-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .tarea-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border: 1px solid #e9ecef;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+
+          &.completando {
+            background: #e3f2fd;
+            border-color: #1976d2;
+            opacity: 0.8;
+          }
+
+          .tarea-info {
+            flex: 1;
+
+            .tarea-header {
+              display: flex;
+              align-items: flex-start;
+              gap: 12px;
+              margin-bottom: 8px;
+
+              .tipo-icon {
+                font-size: 20px;
+                width: 20px;
+                height: 20px;
+                margin-top: 2px;
+              }
+
+              .tarea-details {
+                flex: 1;
+
+                .tarea-descripcion {
+                  margin: 0 0 4px 0;
+                  font-size: 16px;
+                  font-weight: 500;
+                  color: #333;
+                  line-height: 1.4;
+                }
+
+                .tarea-habitacion {
+                  margin: 0;
+                  font-size: 14px;
+                  color: #666;
+                }
+              }
+            }
+
+            .tarea-meta {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+
+              .tipo-chip {
+                font-size: 12px;
+                font-weight: 500;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+
+                &::before {
+                  content: '';
+                  width: 6px;
+                  height: 6px;
+                  border-radius: 50%;
+                  background: rgba(255, 255, 255, 0.8);
+                }
+              }
+
+              .tiempo-transcurrido {
+                font-size: 12px;
+                color: #999;
+                font-style: italic;
+              }
+            }
+          }
+
+          .tarea-actions {
+            .btn-completar {
+              min-width: 120px;
+              height: 36px;
+              border-radius: 18px;
+              font-weight: 500;
+              transition: all 0.3s ease;
+
+              &:hover:not(:disabled) {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+              }
+
+              .btn-spinner {
+                margin-right: 8px;
+              }
+
+              .mat-icon {
+                margin-right: 8px;
+                font-size: 18px;
+                width: 18px;
+                height: 18px;
+              }
+            }
+          }
+        }
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 40px 20px;
+        text-align: center;
+
+        .empty-icon {
+          font-size: 48px;
+          width: 48px;
+          height: 48px;
+          color: #4CAF50;
+        }
+
+        .empty-title {
+          margin: 0;
+          color: #333;
+          font-size: 20px;
+          font-weight: 500;
+        }
+
+        .empty-message {
+          margin: 0;
+          color: #666;
+          font-size: 14px;
+          max-width: 300px;
+        }
+      }
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .todo-list-container {
+    .todo-card {
+      .todo-content {
+        padding: 16px;
+
+        .tareas-list {
+          .tarea-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+
+            .tarea-actions {
+              .btn-completar {
+                width: 100%;
+                min-width: unset;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Animaciones
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tarea-item {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.tarea-item:nth-child(1) { animation-delay: 0.1s; }
+.tarea-item:nth-child(2) { animation-delay: 0.2s; }
+.tarea-item:nth-child(3) { animation-delay: 0.3s; }
+.tarea-item:nth-child(4) { animation-delay: 0.4s; }
+.tarea-item:nth-child(5) { animation-delay: 0.5s; }
