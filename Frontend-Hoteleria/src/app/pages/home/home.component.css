@@ -986,6 +986,9 @@
 .calendario-timeline-container {
   width: 100%;
   overflow-x: auto;
+  position: relative;
+  /* Forzar el contexto de stacking para sticky */
+  isolation: isolate;
 }
 
 .timeline-header {
@@ -1039,13 +1042,20 @@
 /* Tabla de timeline */
 .timeline-table-container {
   overflow-x: auto;
+  overflow-y: auto;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  max-height: 80vh;
+  /* Forzar el contexto de scrolling para sticky */
+  contain: layout style paint;
 }
 
 .timeline-table {
-  width: 100%;
-  border-collapse: collapse;
+  width: max-content;
+  min-width: 800px;
+  border-collapse: separate;
+  border-spacing: 0;
   background: white;
   border-radius: 12px;
   overflow: hidden;
@@ -1114,7 +1124,22 @@
   opacity: 0.9;
 }
 
-.habitacion-header, .tipo-header, .capacidad-header {
+.habitacion-header {
+  background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
+  min-width: 30px;
+  position: sticky;
+  left: 0;
+  z-index: 25;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  /* Asegurar que el sticky funcione */
+  will-change: transform;
+  backface-visibility: hidden;
+  /* Forzar el sticky */
+  transform: translateZ(0);
+}
+
+.tipo-header, .capacidad-header {
   background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
   min-width: 30px;
 }
@@ -1167,6 +1192,22 @@
 .habitacion-info {
   text-align: left !important;
   min-width: 30px;
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: white !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  border-right: 2px solid #e9ecef;
+  /* Asegurar que el sticky funcione */
+  will-change: transform;
+  backface-visibility: hidden;
+  /* Forzar el sticky */
+  transform: translateZ(0);
+  /* Asegurar que el sticky funcione en todos los navegadores */
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
 }
 
 .habitacion-numero {
@@ -1595,10 +1636,11 @@
   .habitacion-info {
     position: sticky;
     left: 0;
-    z-index: 15;
+    z-index: 20;
     background: white;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     border-right: 2px solid #e9ecef;
+    min-width: 35px;
   }
   
   .habitacion-header {
@@ -1608,6 +1650,7 @@
     background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     border-right: 2px solid rgba(255, 255, 255, 0.2);
+    min-width: 35px;
   }
   
   .timeline-leyenda {

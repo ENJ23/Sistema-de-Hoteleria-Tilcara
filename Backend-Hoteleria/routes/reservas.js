@@ -35,7 +35,18 @@ function parseLocalDate(dateString) {
     throw new Error('Fecha inválida');
   }
   
-  return new Date(year, month, day, 0, 0, 0, 0);
+  // CORRECCIÓN CRÍTICA: Crear fecha en UTC para evitar problemas de zona horaria
+  // Esto asegura que las fechas se almacenen consistentemente independientemente del servidor
+  const fecha = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  
+  console.log('🇦🇷 parseLocalDate (Backend):', {
+    input: dateString,
+    output: fecha,
+    iso: fecha.toISOString(),
+    timezone: 'UTC'
+  });
+  
+  return fecha;
 }
 
 // Validaciones mejoradas para crear/actualizar reservas

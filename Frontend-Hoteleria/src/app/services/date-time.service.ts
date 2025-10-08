@@ -48,10 +48,36 @@ export class DateTimeService {
    * Formatea una fecha a string YYYY-MM-DD en horario argentino
    */
   formatDateToLocalString(date: Date): string {
+    // CORRECCIÓN CRÍTICA: Manejar zona horaria para Vercel vs Local
+    const isVercel = window.location.hostname.includes('vercel.app') || 
+                     window.location.hostname.includes('vercel.com') ||
+                     window.location.hostname.includes('localhost') === false;
+    
+    let fechaAjustada = date;
+    
+    if (isVercel) {
+      // En Vercel, ajustar a zona horaria de Argentina
+      const offsetArgentina = -3; // UTC-3
+      const offsetLocal = date.getTimezoneOffset() / 60; // Offset local en horas
+      const diferencia = offsetLocal - offsetArgentina;
+      
+      // Ajustar fecha para compensar diferencia de zona horaria
+      fechaAjustada = new Date(date.getTime() + (diferencia * 60 * 60 * 1000));
+    }
+    
     // Usar métodos locales para mantener zona horaria de Argentina
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = fechaAjustada.getFullYear();
+    const month = String(fechaAjustada.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaAjustada.getDate()).padStart(2, '0');
+    
+    console.log('🇦🇷 formatDateToLocalString:', {
+      original: date,
+      ajustada: fechaAjustada,
+      resultado: `${year}-${month}-${day}`,
+      isVercel,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
+    
     return `${year}-${month}-${day}`;
   }
 
@@ -250,6 +276,11 @@ export class DateTimeService {
    * @returns Date object en zona horaria local de Argentina
    */
   parseDateFromString(dateString: string): Date {
+    // CORRECCIÓN CRÍTICA: Manejar zona horaria para Vercel vs Local
+    const isVercel = window.location.hostname.includes('vercel.app') || 
+                     window.location.hostname.includes('vercel.com') ||
+                     window.location.hostname.includes('localhost') === false;
+    
     // Si el string ya está en formato YYYY-MM-DD, crear la fecha directamente
     // para evitar problemas de zona horaria
     const parts = dateString.split('-');
@@ -259,14 +290,43 @@ export class DateTimeService {
       const day = parseInt(parts[2], 10);
       
       // Crear fecha en zona horaria local de Argentina
-      const fecha = new Date(year, month, day);
+      let fecha = new Date(year, month, day);
       fecha.setHours(0, 0, 0, 0); // Establecer a medianoche local
+      
+      if (isVercel) {
+        // En Vercel, ajustar a zona horaria de Argentina
+        const offsetArgentina = -3; // UTC-3
+        const offsetLocal = fecha.getTimezoneOffset() / 60; // Offset local en horas
+        const diferencia = offsetLocal - offsetArgentina;
+        
+        // Ajustar fecha para compensar diferencia de zona horaria
+        fecha = new Date(fecha.getTime() - (diferencia * 60 * 60 * 1000));
+      }
+      
+      console.log('🇦🇷 parseDateFromString:', {
+        input: dateString,
+        output: fecha,
+        isVercel,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+      
       return fecha;
     }
     
     // Fallback: usar el constructor normal
-    const fecha = new Date(dateString);
+    let fecha = new Date(dateString);
     fecha.setHours(0, 0, 0, 0); // Establecer a medianoche local
+    
+    if (isVercel) {
+      // En Vercel, ajustar a zona horaria de Argentina
+      const offsetArgentina = -3; // UTC-3
+      const offsetLocal = fecha.getTimezoneOffset() / 60; // Offset local en horas
+      const diferencia = offsetLocal - offsetArgentina;
+      
+      // Ajustar fecha para compensar diferencia de zona horaria
+      fecha = new Date(fecha.getTime() - (diferencia * 60 * 60 * 1000));
+    }
+    
     return fecha;
   }
 }
