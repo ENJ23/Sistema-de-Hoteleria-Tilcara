@@ -280,13 +280,33 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       
       // Modo de creación normal
       if (params['fecha']) {
-        // CORRECCIÓN: Usar el servicio de fecha para manejar correctamente la zona horaria
-        this.fechaSeleccionada = this.dateTimeService.parseDateFromString(params['fecha']);
+        // CORRECCIÓN CRÍTICA: Evitar doble conversión - la fecha ya viene formateada
+        // Solo parsear si es necesario, pero sin conversión adicional
+        const fechaStr = params['fecha'];
+        
+        // Crear fecha directamente desde el string para evitar problemas de zona horaria
+        const parts = fechaStr.split('-');
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // Los meses van de 0-11
+          const day = parseInt(parts[2], 10);
+          
+          this.fechaSeleccionada = new Date(year, month, day);
+          this.fechaSeleccionada.setHours(0, 0, 0, 0); // Establecer a medianoche
+        } else {
+          // Fallback: usar parseDateFromString
+          this.fechaSeleccionada = this.dateTimeService.parseDateFromString(fechaStr);
+        }
+        
         this.reservaForm.patchValue({
           fechaEntrada: this.fechaSeleccionada
         });
-        console.log('Fecha recibida desde calendario:', params['fecha']);
-        console.log('Fecha procesada para formulario:', this.fechaSeleccionada);
+        
+        console.log('🗓️ Fecha procesada desde calendario:', {
+          fechaRecibida: params['fecha'],
+          fechaProcesada: this.fechaSeleccionada,
+          fechaFormateada: this.dateTimeService.formatDateToLocalString(this.fechaSeleccionada)
+        });
       }
       
       if (params['habitacion']) {
@@ -708,11 +728,20 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Procesar fechas
+    // Procesar fechas con debugging crítico
     const fechaEntradaFormateada = fechaEntrada instanceof Date ? 
       this.dateTimeService.formatDateToLocalString(fechaEntrada) : fechaEntrada;
     const fechaSalidaFormateada = fechaSalida instanceof Date ? 
       this.dateTimeService.formatDateToLocalString(fechaSalida) : fechaSalida;
+    
+    console.log('🔍 DEBUGGING CRÍTICO DE FECHAS:', {
+      fechaEntradaOriginal: fechaEntrada,
+      fechaEntradaFormateada: fechaEntradaFormateada,
+      fechaSalidaOriginal: fechaSalida,
+      fechaSalidaFormateada: fechaSalidaFormateada,
+      modoEdicion: this.modoEdicion,
+      timestamp: new Date().toISOString()
+    });
     
     const reservaData: ReservaCreate = {
       cliente: {

@@ -1401,15 +1401,23 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   abrirNuevaReservaDesdeFecha(fecha: Date, habitacion?: Habitacion): void {
+    // CORRECCIÓN CRÍTICA: Pasar fecha directamente sin conversión para evitar doble conversión
+    const fechaStr = this.dateTimeService.formatDateToLocalString(fecha);
+    
     const queryParams: any = {
-      fecha: this.dateTimeService.formatDateToLocalString(fecha)
+      fecha: fechaStr
     };
     
     if (habitacion) {
       queryParams.habitacion = habitacion._id;
     }
     
-    console.log('Navegando a nueva reserva con fecha:', this.dateTimeService.formatDateToLocalString(fecha));
+    console.log('🗓️ Navegando a nueva reserva:', {
+      fechaOriginal: fecha,
+      fechaEnviada: fechaStr,
+      habitacion: habitacion?.numero
+    });
+    
     this.router.navigate(['/nueva-reserva'], { queryParams });
   }
 
