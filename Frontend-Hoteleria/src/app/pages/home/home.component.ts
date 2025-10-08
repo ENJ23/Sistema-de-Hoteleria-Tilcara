@@ -429,16 +429,16 @@ export class HomeComponent implements OnInit, OnDestroy {
     const fechaFin = this.dateTimeService.getLastDayOfMonth(mesSiguiente.getFullYear(), mesSiguiente.getMonth() + 1);
     
     console.log('📅 Rango de fechas expandido:', {
-      fechaInicio: this.dateTimeService.formatDateToLocalString(fechaInicio),
-      fechaFin: this.dateTimeService.formatDateToLocalString(fechaFin),
+      fechaInicio: this.dateTimeService.dateToString(fechaInicio),
+      fechaFin: this.dateTimeService.dateToString(fechaFin),
       mesActual: this.mesActual.getMonth() + 1,
       añoActual: this.mesActual.getFullYear()
     });
     
     // Obtener reservas para el rango expandido (mes anterior + mes actual + mes siguiente)
     this.reservaService.getReservas({
-      fechaInicio: this.dateTimeService.formatDateToLocalString(fechaInicio),
-      fechaFin: this.dateTimeService.formatDateToLocalString(fechaFin)
+      fechaInicio: this.dateTimeService.dateToString(fechaInicio),
+      fechaFin: this.dateTimeService.dateToString(fechaFin)
     }, 1, 1000).subscribe({
       next: (response) => {
         console.log('📋 Reservas cargadas:', response.reservas.length);
@@ -684,7 +684,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   formatearFecha(fecha: Date): string {
-    return this.dateTimeService.formatDateToLocalString(fecha);
+    return this.dateTimeService.dateToString(fecha);
   }
 
   // Función para determinar la prioridad de una reserva
@@ -730,7 +730,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       return false;
     }
     
-    const fechaStr = this.dateTimeService.formatDateToLocalString(fecha);
+    const fechaStr = this.dateTimeService.dateToString(fecha);
     
     // Filtrar reservas válidas (con fechas y ID)
     const reservasValidas = reservas.filter(r => 
@@ -772,7 +772,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (typeof fecha === 'string') {
       return fecha.split('T')[0];
     }
-    return this.dateTimeService.formatDateToLocalString(fecha);
+    return this.dateTimeService.dateToString(fecha);
   }
 
   // Método para obtener el color de una reserva según su estado y pago
@@ -1401,8 +1401,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   abrirNuevaReservaDesdeFecha(fecha: Date, habitacion?: Habitacion): void {
-    // CORRECCIÓN CRÍTICA: Pasar fecha directamente sin conversión para evitar doble conversión
-    const fechaStr = this.dateTimeService.formatDateToLocalString(fecha);
+    // ESTÁNDAR: Usar método estándar para convertir fecha
+    const fechaStr = this.dateTimeService.dateToString(fecha);
     
     const queryParams: any = {
       fecha: fechaStr
@@ -1412,20 +1412,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       queryParams.habitacion = habitacion._id;
     }
     
-    console.log('🗓️ Navegando a nueva reserva:', {
-      fechaOriginal: fecha,
-      fechaEnviada: fechaStr,
-      habitacion: habitacion?.numero
-    });
-    
     this.router.navigate(['/nueva-reserva'], { queryParams });
   }
 
   // Métodos de navegación
   abrirNuevaReserva(): void {
-    const fechaFormateada = this.dateTimeService.getCurrentDateString();
+    const fechaActual = this.dateTimeService.getCurrentDate();
+    const fechaFormateada = this.dateTimeService.dateToString(fechaActual);
     
-    console.log('Navegando a nueva reserva con fecha actual:', fechaFormateada);
     this.router.navigate(['/nueva-reserva'], {
       queryParams: {
         fecha: fechaFormateada
@@ -1715,8 +1709,8 @@ ${habitacionesLimpieza.length > 0 ?
     const fechaFin = this.dateTimeService.getLastDayOfMonth(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1);
     
     this.reservaService.getReservas({
-      fechaInicio: this.dateTimeService.formatDateToLocalString(fechaInicio),
-      fechaFin: this.dateTimeService.formatDateToLocalString(fechaFin)
+      fechaInicio: this.dateTimeService.dateToString(fechaInicio),
+      fechaFin: this.dateTimeService.dateToString(fechaFin)
     }, 1, 100).subscribe({
       next: (response) => {
         const reserva = response.reservas.find(r => {

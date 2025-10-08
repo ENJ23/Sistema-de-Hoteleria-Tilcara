@@ -8,6 +8,10 @@ export class DateTimeService {
   // Zona horaria de Argentina (UTC-3)
   private readonly ARGENTINA_TIMEZONE = 'America/Argentina/Buenos_Aires';
   private readonly ARGENTINA_OFFSET = -3; // UTC-3
+  
+  // Cache para evitar recálculos
+  private readonly dateCache = new Map<string, Date>();
+  private readonly stringCache = new Map<string, string>();
 
   constructor() { }
 
@@ -45,40 +49,30 @@ export class DateTimeService {
   }
 
   /**
-   * Formatea una fecha a string YYYY-MM-DD en horario argentino
+   * ESTÁNDAR: Formatea una fecha a string YYYY-MM-DD de forma consistente
+   * Sin logs, sin bucles, sin conversiones complejas
    */
   formatDateToLocalString(date: Date): string {
-    // CORRECCIÓN CRÍTICA: Manejar zona horaria para Vercel vs Local
-    const isVercel = window.location.hostname.includes('vercel.app') || 
-                     window.location.hostname.includes('vercel.com') ||
-                     window.location.hostname.includes('localhost') === false;
-    
-    let fechaAjustada = date;
-    
-    if (isVercel) {
-      // En Vercel, ajustar a zona horaria de Argentina
-      const offsetArgentina = -3; // UTC-3
-      const offsetLocal = date.getTimezoneOffset() / 60; // Offset local en horas
-      const diferencia = offsetLocal - offsetArgentina;
-      
-      // Ajustar fecha para compensar diferencia de zona horaria
-      fechaAjustada = new Date(date.getTime() + (diferencia * 60 * 60 * 1000));
+    if (!date || !(date instanceof Date)) {
+      throw new Error('Fecha inválida para formatear');
     }
     
-    // Usar métodos locales para mantener zona horaria de Argentina
-    const year = fechaAjustada.getFullYear();
-    const month = String(fechaAjustada.getMonth() + 1).padStart(2, '0');
-    const day = String(fechaAjustada.getDate()).padStart(2, '0');
+    // Cache para evitar recálculos
+    const cacheKey = `format_${date.getTime()}`;
+    if (this.stringCache.has(cacheKey)) {
+      return this.stringCache.get(cacheKey)!;
+    }
     
-    console.log('🇦🇷 formatDateToLocalString:', {
-      original: date,
-      ajustada: fechaAjustada,
-      resultado: `${year}-${month}-${day}`,
-      isVercel,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    });
+    // Crear fecha en zona horaria local sin ajustes complejos
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const result = `${year}-${month}-${day}`;
     
-    return `${year}-${month}-${day}`;
+    // Cachear resultado
+    this.stringCache.set(cacheKey, result);
+    
+    return result;
   }
 
   /**
@@ -271,63 +265,66 @@ export class DateTimeService {
   }
 
   /**
-   * Parsea una fecha desde string evitando problemas de zona horaria
-   * @param dateString String de fecha en formato YYYY-MM-DD
-   * @returns Date object en zona horaria local de Argentina
+   * ESTÁNDAR: Parsea una fecha desde string de forma consistente
+   * Sin logs, sin bucles, sin conversiones complejas
    */
   parseDateFromString(dateString: string): Date {
-    // CORRECCIÓN CRÍTICA: Manejar zona horaria para Vercel vs Local
-    const isVercel = window.location.hostname.includes('vercel.app') || 
-                     window.location.hostname.includes('vercel.com') ||
-                     window.location.hostname.includes('localhost') === false;
+    if (!dateString || typeof dateString !== 'string') {
+      throw new Error('String de fecha inválido');
+    }
     
-    // Si el string ya está en formato YYYY-MM-DD, crear la fecha directamente
-    // para evitar problemas de zona horaria
+    // Cache para evitar recálculos
+    if (this.dateCache.has(dateString)) {
+      return this.dateCache.get(dateString)!;
+    }
+    
+    // Parsear fecha directamente desde string YYYY-MM-DD
     const parts = dateString.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1; // Los meses en JS van de 0-11
-      const day = parseInt(parts[2], 10);
-      
-      // Crear fecha en zona horaria local de Argentina
-      let fecha = new Date(year, month, day);
-      fecha.setHours(0, 0, 0, 0); // Establecer a medianoche local
-      
-      if (isVercel) {
-        // En Vercel, ajustar a zona horaria de Argentina
-        const offsetArgentina = -3; // UTC-3
-        const offsetLocal = fecha.getTimezoneOffset() / 60; // Offset local en horas
-        const diferencia = offsetLocal - offsetArgentina;
-        
-        // Ajustar fecha para compensar diferencia de zona horaria
-        fecha = new Date(fecha.getTime() - (diferencia * 60 * 60 * 1000));
-      }
-      
-      console.log('🇦🇷 parseDateFromString:', {
-        input: dateString,
-        output: fecha,
-        isVercel,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      });
-      
-      return fecha;
+    if (parts.length !== 3) {
+      throw new Error('Formato de fecha inválido, debe ser YYYY-MM-DD');
     }
     
-    // Fallback: usar el constructor normal
-    let fecha = new Date(dateString);
-    fecha.setHours(0, 0, 0, 0); // Establecer a medianoche local
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Los meses van de 0-11
+    const day = parseInt(parts[2], 10);
     
-    if (isVercel) {
-      // En Vercel, ajustar a zona horaria de Argentina
-      const offsetArgentina = -3; // UTC-3
-      const offsetLocal = fecha.getTimezoneOffset() / 60; // Offset local en horas
-      const diferencia = offsetLocal - offsetArgentina;
-      
-      // Ajustar fecha para compensar diferencia de zona horaria
-      fecha = new Date(fecha.getTime() - (diferencia * 60 * 60 * 1000));
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+      throw new Error('Fecha inválida');
     }
+    
+    // Crear fecha en zona horaria local sin ajustes complejos
+    const fecha = new Date(year, month, day);
+    fecha.setHours(0, 0, 0, 0); // Establecer a medianoche
+    
+    // Cachear resultado
+    this.dateCache.set(dateString, fecha);
     
     return fecha;
+  }
+
+  /**
+   * ESTÁNDAR: Convierte Date object a string para envío al backend
+   * Formato: YYYY-MM-DD
+   */
+  dateToString(date: Date): string {
+    return this.formatDateToLocalString(date);
+  }
+
+  /**
+   * ESTÁNDAR: Convierte string del backend a Date object
+   * Formato esperado: YYYY-MM-DD
+   */
+  stringToDate(dateString: string): Date {
+    return this.parseDateFromString(dateString);
+  }
+
+
+  /**
+   * ESTÁNDAR: Limpia cache para liberar memoria
+   */
+  clearCache(): void {
+    this.dateCache.clear();
+    this.stringCache.clear();
   }
 }
 

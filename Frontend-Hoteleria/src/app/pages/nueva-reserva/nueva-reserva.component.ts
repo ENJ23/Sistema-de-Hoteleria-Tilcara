@@ -280,32 +280,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       
       // Modo de creación normal
       if (params['fecha']) {
-        // CORRECCIÓN CRÍTICA: Evitar doble conversión - la fecha ya viene formateada
-        // Solo parsear si es necesario, pero sin conversión adicional
+        // ESTÁNDAR: Usar método estándar para parsear fecha
         const fechaStr = params['fecha'];
-        
-        // Crear fecha directamente desde el string para evitar problemas de zona horaria
-        const parts = fechaStr.split('-');
-        if (parts.length === 3) {
-          const year = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1; // Los meses van de 0-11
-          const day = parseInt(parts[2], 10);
-          
-          this.fechaSeleccionada = new Date(year, month, day);
-          this.fechaSeleccionada.setHours(0, 0, 0, 0); // Establecer a medianoche
-        } else {
-          // Fallback: usar parseDateFromString
-          this.fechaSeleccionada = this.dateTimeService.parseDateFromString(fechaStr);
-        }
+        this.fechaSeleccionada = this.dateTimeService.stringToDate(fechaStr);
         
         this.reservaForm.patchValue({
           fechaEntrada: this.fechaSeleccionada
-        });
-        
-        console.log('🗓️ Fecha procesada desde calendario:', {
-          fechaRecibida: params['fecha'],
-          fechaProcesada: this.fechaSeleccionada,
-          fechaFormateada: this.dateTimeService.formatDateToLocalString(this.fechaSeleccionada)
         });
       }
       
@@ -323,29 +303,23 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   }
 
   private cargarReservaParaEdicion(reservaId: string): void {
-    console.log('🔄 Cargando reserva para edición:', reservaId);
     this.cargando = true;
     
     this.reservaService.getReserva(reservaId).subscribe({
       next: (reserva) => {
-        console.log('✅ Reserva cargada para edición:', reserva);
         this.reservaOriginal = reserva;
         this.precargarDatosReserva(reserva);
         this.cargando = false;
       },
       error: (error) => {
-        console.error('❌ Error al cargar reserva para edición:', error);
         this.mostrarMensaje('Error al cargar la reserva para edición', 'error');
         this.cargando = false;
-        // Redirigir a la página principal si no se puede cargar la reserva
         this.router.navigate(['/']);
       }
     });
   }
 
   private precargarDatosReserva(reserva: Reserva): void {
-    console.log('📝 Precargando datos de la reserva en el formulario');
-    
     // Precargar datos del cliente
     this.reservaForm.patchValue({
       nombreCliente: reserva.cliente.nombre,
@@ -357,10 +331,10 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       nacionalidadCliente: reserva.cliente.nacionalidad || ''
     });
 
-    // Precargar datos de la reserva
+    // ESTÁNDAR: Precargar datos de la reserva usando métodos estándar
     this.reservaForm.patchValue({
-      fechaEntrada: this.dateTimeService.parseDateFromString(reserva.fechaEntrada),
-      fechaSalida: this.dateTimeService.parseDateFromString(reserva.fechaSalida),
+      fechaEntrada: this.dateTimeService.stringToDate(reserva.fechaEntrada),
+      fechaSalida: this.dateTimeService.stringToDate(reserva.fechaSalida),
       horaEntrada: reserva.horaEntrada,
       horaSalida: reserva.horaSalida,
       precioPorNoche: reserva.precioPorNoche,
@@ -643,8 +617,8 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
         // Usar el método checkDisponibilidad que está implementado en el servicio
         const disponible = await firstValueFrom(this.reservaService.checkDisponibilidad(
           habitacionId, 
-          fechaEntrada instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaEntrada) : fechaEntrada,
-          fechaSalida instanceof Date ? this.dateTimeService.formatDateToLocalString(fechaSalida) : fechaSalida,
+          fechaEntrada instanceof Date ? this.dateTimeService.dateToString(fechaEntrada) : fechaEntrada,
+          fechaSalida instanceof Date ? this.dateTimeService.dateToString(fechaSalida) : fechaSalida,
           this.modoEdicion ? this.reservaId : undefined
         ));
         
@@ -728,20 +702,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Procesar fechas con debugging crítico
+    // ESTÁNDAR: Procesar fechas usando métodos estándar
     const fechaEntradaFormateada = fechaEntrada instanceof Date ? 
-      this.dateTimeService.formatDateToLocalString(fechaEntrada) : fechaEntrada;
+      this.dateTimeService.dateToString(fechaEntrada) : fechaEntrada;
     const fechaSalidaFormateada = fechaSalida instanceof Date ? 
-      this.dateTimeService.formatDateToLocalString(fechaSalida) : fechaSalida;
-    
-    console.log('🔍 DEBUGGING CRÍTICO DE FECHAS:', {
-      fechaEntradaOriginal: fechaEntrada,
-      fechaEntradaFormateada: fechaEntradaFormateada,
-      fechaSalidaOriginal: fechaSalida,
-      fechaSalidaFormateada: fechaSalidaFormateada,
-      modoEdicion: this.modoEdicion,
-      timestamp: new Date().toISOString()
-    });
+      this.dateTimeService.dateToString(fechaSalida) : fechaSalida;
     
     const reservaData: ReservaCreate = {
       cliente: {
@@ -765,18 +730,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       observaciones: observacionesValue && observacionesValue.trim() !== '' ? observacionesValue : undefined
     };
 
-    console.log('=== DATOS DE RESERVA A ENVIAR ===');
-    console.log('Reserva completa:', reservaData);
-    console.log('Cliente:', reservaData.cliente);
-    console.log('Habitación ID:', reservaData.habitacion);
-    console.log('Fechas:', { entrada: reservaData.fechaEntrada, salida: reservaData.fechaSalida });
-    console.log('Horas:', { entrada: reservaData.horaEntrada, salida: reservaData.horaSalida });
-    console.log('Precio por noche:', reservaData.precioPorNoche);
-    console.log('Estado:', reservaData.estado);
-    console.log('Pagado:', reservaData.pagado);
-    console.log('Método de pago:', reservaData.metodoPago);
-    console.log('Observaciones:', reservaData.observaciones);
-    console.log('=== FIN DATOS ===');
 
     if (this.modoEdicion && this.reservaId) {
       // Modo de edición

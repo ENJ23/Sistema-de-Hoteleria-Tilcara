@@ -16,7 +16,7 @@ const {
 const mongoose = require('mongoose'); // Importar mongoose para transacciones
 const pdfService = require('../services/pdf.service'); // Importar servicio de PDF
 
-// Función helper para parsear fechas locales evitando problemas de zona horaria
+// ESTÁNDAR: Función helper para parsear fechas de forma consistente
 function parseLocalDate(dateString) {
   if (!dateString || typeof dateString !== 'string') {
     throw new Error('Fecha inválida');
@@ -35,16 +35,8 @@ function parseLocalDate(dateString) {
     throw new Error('Fecha inválida');
   }
   
-  // CORRECCIÓN CRÍTICA: Crear fecha en UTC para evitar problemas de zona horaria
-  // Esto asegura que las fechas se almacenen consistentemente independientemente del servidor
+  // ESTÁNDAR: Crear fecha en UTC para consistencia
   const fecha = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-  
-  console.log('🇦🇷 parseLocalDate (Backend):', {
-    input: dateString,
-    output: fecha,
-    iso: fecha.toISOString(),
-    timezone: 'UTC'
-  });
   
   return fecha;
 }
@@ -519,20 +511,12 @@ router.post('/', [
     try {
         const { cliente, habitacion, fechaEntrada, fechaSalida, ...otrosDatos } = req.body;
         
-        console.log('=== CREANDO RESERVA ===');
-        console.log('Cliente:', cliente);
-        console.log('Habitación ID:', habitacion);
-        console.log('Fechas:', { entrada: fechaEntrada, salida: fechaSalida });
-        console.log('Otros datos:', otrosDatos);
         
         // Verificar que la habitación existe y está disponible
         const habitacionDoc = await Habitacion.findById(habitacion);
         if (!habitacionDoc) {
-            console.log('❌ Habitación no encontrada:', habitacion);
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }
-        
-        console.log('✅ Habitación encontrada:', habitacionDoc.numero, 'Estado:', habitacionDoc.estado);
         
         // NO verificar el estado de la habitación aquí, solo verificar conflictos de fechas
         // El estado de la habitación se maneja dinámicamente basado en las reservas activas
@@ -552,10 +536,7 @@ router.post('/', [
             ]
         });
         
-        console.log('🔍 Reservas existentes encontradas:', reservasExistentes.length);
-        
         if (reservasExistentes.length > 0) {
-            console.log('❌ Conflicto de fechas detectado');
             return res.status(400).json({ 
                 message: 'La habitación ya está reservada para esas fechas',
                 conflictos: reservasExistentes.map(r => ({
@@ -647,16 +628,9 @@ router.put('/:id', [
         // Preparar datos de actualización con fechas parseadas correctamente
         const datosActualizacion = { ...req.body };
         
-        // CORRECCIÓN CRÍTICA: Parsear fechas usando parseLocalDate para evitar problemas de zona horaria
+        // ESTÁNDAR: Parsear fechas usando parseLocalDate
         datosActualizacion.fechaEntrada = parseLocalDate(fechaEntrada);
         datosActualizacion.fechaSalida = parseLocalDate(fechaSalida);
-        
-        console.log('🔧 FECHAS PARSEADAS PARA ACTUALIZACIÓN:', {
-            fechaEntradaOriginal: fechaEntrada,
-            fechaEntradaParsed: datosActualizacion.fechaEntrada,
-            fechaSalidaOriginal: fechaSalida,
-            fechaSalidaParsed: datosActualizacion.fechaSalida
-        });
         
         // Recalcular precio total si cambian las fechas o el precio por noche
         const fechaEntradaActual = datosActualizacion.fechaEntrada;
@@ -671,14 +645,6 @@ router.put('/:id', [
         const precioTotal = precioPorNocheActual * numeroNoches;
         datosActualizacion.precioTotal = precioTotal;
         
-        console.log('💰 Recalculando precio total:', {
-            reservaId: req.params.id,
-            fechaEntrada: fechaEntradaActual,
-            fechaSalida: fechaSalidaActual,
-            numeroNoches,
-            precioPorNoche: precioPorNocheActual,
-            precioTotal
-        });
         
         // Actualizar la reserva
         const reservaActualizada = await Reserva.findByIdAndUpdate(
@@ -687,12 +653,6 @@ router.put('/:id', [
             { new: true, runValidators: true }
         ).populate('habitacion');
         
-        console.log('✅ RESERVA ACTUALIZADA:', {
-            id: reservaActualizada._id,
-            fechaEntrada: reservaActualizada.fechaEntrada,
-            fechaSalida: reservaActualizada.fechaSalida,
-            precioTotal: reservaActualizada.precioTotal
-        });
         
         res.json(reservaActualizada);
     } catch (error) {
