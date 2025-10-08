@@ -280,13 +280,20 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       
       // Modo de creación normal
       if (params['fecha']) {
-        // ESTÁNDAR: Usar método estándar para parsear fecha
-        const fechaStr = params['fecha'];
-        this.fechaSeleccionada = this.dateTimeService.stringToDate(fechaStr);
+        // DEBUGGING: Logs para diagnosticar el problema
+        console.log('🔍 DEBUGGING NUEVA RESERVA:');
+        console.log('📅 Fecha recibida como string:', params['fecha']);
+        
+        this.fechaSeleccionada = this.dateTimeService.stringToDate(params['fecha']);
+        console.log('📅 Fecha convertida con stringToDate:', this.fechaSeleccionada);
+        console.log('📅 Fecha ISO string:', this.fechaSeleccionada.toISOString());
+        console.log('📅 Fecha local string:', this.fechaSeleccionada.toLocaleDateString());
         
         this.reservaForm.patchValue({
           fechaEntrada: this.fechaSeleccionada
         });
+        
+        console.log('📅 Fecha asignada al formulario:', this.reservaForm.get('fechaEntrada')?.value);
       }
       
       if (params['habitacion']) {
@@ -702,11 +709,20 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // ESTÁNDAR: Procesar fechas usando métodos estándar
+    // DEBUGGING: Logs para diagnosticar el problema
+    console.log('🔍 DEBUGGING GUARDAR RESERVA:');
+    console.log('📅 Fecha entrada del formulario:', fechaEntrada);
+    console.log('📅 Fecha salida del formulario:', fechaSalida);
+    console.log('📅 Tipo fecha entrada:', typeof fechaEntrada);
+    console.log('📅 Tipo fecha salida:', typeof fechaSalida);
+    
     const fechaEntradaFormateada = fechaEntrada instanceof Date ? 
       this.dateTimeService.dateToString(fechaEntrada) : fechaEntrada;
     const fechaSalidaFormateada = fechaSalida instanceof Date ? 
       this.dateTimeService.dateToString(fechaSalida) : fechaSalida;
+    
+    console.log('📅 Fecha entrada formateada:', fechaEntradaFormateada);
+    console.log('📅 Fecha salida formateada:', fechaSalidaFormateada);
     
     const reservaData: ReservaCreate = {
       cliente: {

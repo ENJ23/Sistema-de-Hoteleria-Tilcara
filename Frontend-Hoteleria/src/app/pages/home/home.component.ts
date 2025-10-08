@@ -1401,8 +1401,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   abrirNuevaReservaDesdeFecha(fecha: Date, habitacion?: Habitacion): void {
-    // ESTÁNDAR: Usar método estándar para convertir fecha
+    // DEBUGGING: Logs para diagnosticar el problema
+    console.log('🔍 DEBUGGING CALENDARIO → NUEVA RESERVA:');
+    console.log('📅 Fecha original del calendario:', fecha);
+    console.log('📅 Fecha ISO string:', fecha.toISOString());
+    console.log('📅 Fecha local string:', fecha.toLocaleDateString());
+    console.log('📅 Zona horaria del navegador:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+    
     const fechaStr = this.dateTimeService.dateToString(fecha);
+    console.log('📅 Fecha convertida con dateToString:', fechaStr);
     
     const queryParams: any = {
       fecha: fechaStr
@@ -1411,6 +1418,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (habitacion) {
       queryParams.habitacion = habitacion._id;
     }
+    
+    console.log('📅 Query params enviados:', queryParams);
     
     this.router.navigate(['/nueva-reserva'], { queryParams });
   }
