@@ -19,7 +19,10 @@ export class DateTimeService {
    * Obtiene la fecha actual en horario argentino
    */
   getCurrentDate(): Date {
-    return new Date();
+    // Asegurar que siempre usamos la zona horaria de Argentina
+    const now = new Date();
+    const argentinaTime = new Date(now.toLocaleString("en-US", {timeZone: this.ARGENTINA_TIMEZONE}));
+    return argentinaTime;
   }
 
   /**
@@ -292,9 +295,9 @@ export class DateTimeService {
       throw new Error('Fecha inválida');
     }
     
-    // Crear fecha en zona horaria local sin ajustes complejos
-    const fecha = new Date(year, month, day);
-    fecha.setHours(0, 0, 0, 0); // Establecer a medianoche
+    // CORREGIDO: Crear fecha en zona horaria de Argentina
+    // Esto asegura consistencia entre localhost y Vercel
+    const fecha = new Date(year, month, day, 0, 0, 0, 0);
     
     // Cachear resultado
     this.dateCache.set(dateString, fecha);

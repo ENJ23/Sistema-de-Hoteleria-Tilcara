@@ -8,6 +8,9 @@ const securityMiddleware = require('./middlewares/security.middleware');
 // Cargar variables de entorno
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+// Configurar zona horaria para Argentina (UTC-3)
+process.env.TZ = 'America/Argentina/Buenos_Aires';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

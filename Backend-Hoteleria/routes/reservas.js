@@ -35,8 +35,9 @@ function parseLocalDate(dateString) {
     throw new Error('Fecha inválida');
   }
   
-  // ESTÁNDAR: Crear fecha en UTC para consistencia
-  const fecha = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  // CORREGIDO: Crear fecha en zona horaria local (Argentina UTC-3)
+  // Esto asegura consistencia entre localhost y Vercel
+  const fecha = new Date(year, month, day, 0, 0, 0, 0);
   
   return fecha;
 }
