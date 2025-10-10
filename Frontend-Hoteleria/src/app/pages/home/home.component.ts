@@ -324,9 +324,10 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private async loadHabitaciones(): Promise<void> {
     return new Promise((resolve, reject) => {
-    this.habitacionService.getHabitaciones(1, 100).subscribe({
+    // CORREGIDO: Usar getHabitacionesActivas para el calendario de ocupación
+    this.habitacionService.getHabitacionesActivas().subscribe({
       next: (response) => {
-        console.log('✅ Habitaciones cargadas:', response.habitaciones.length);
+        console.log('✅ Habitaciones activas cargadas para calendario:', response.habitaciones.length);
         this.habitaciones = response.habitaciones.map(hab => ({
           _id: hab._id,
           numero: hab.numero,
@@ -340,7 +341,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           resolve();
       },
       error: (error) => {
-        console.error('❌ Error al cargar habitaciones:', error);
+        console.error('❌ Error al cargar habitaciones activas:', error);
         console.log('🔄 Usando habitaciones de ejemplo...');
         // Si hay error, crear habitaciones de ejemplo para mostrar el calendario
         this.habitaciones = [

@@ -110,8 +110,8 @@ export class HabitacionMockService {
       );
     }
 
-    // Solo habitaciones activas
-    habitacionesFiltradas = habitacionesFiltradas.filter(h => h.activa);
+    // CORREGIDO: No filtrar por activa por defecto para mostrar todas las habitaciones
+    // Solo filtrar si se especifica explícitamente
 
     // Paginación
     const total = habitacionesFiltradas.length;

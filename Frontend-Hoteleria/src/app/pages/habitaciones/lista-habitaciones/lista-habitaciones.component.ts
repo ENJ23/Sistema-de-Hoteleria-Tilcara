@@ -143,14 +143,15 @@ export class ListaHabitacionesComponent implements OnInit {
    */
   confirmarEliminacion(habitacion: Habitacion): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '450px',
+      width: '500px',
       data: {
         titulo: 'Confirmar eliminación',
         mensaje: `¿Está seguro de que desea eliminar la habitación ${habitacion.numero}?`,
         colorBotonConfirmar: 'warn',
         textoBotonConfirmar: 'Eliminar',
         textoBotonCancelar: 'Cancelar',
-        tipo: 'warn'
+        tipo: 'warn',
+        advertencia: 'Esta acción marcará la habitación como inactiva. Si tiene reservas activas, no se podrá eliminar.'
       }
     });
 
@@ -166,17 +167,30 @@ export class ListaHabitacionesComponent implements OnInit {
    */
   private eliminarHabitacion(id: string): void {
     this.habitacionService.deleteHabitacion(id).subscribe({
-      next: () => {
+      next: (response) => {
         this.snackBar.open('Habitación eliminada correctamente', 'Cerrar', { duration: 3000 });
         this.cargarHabitaciones();
       },
       error: (error: any) => {
         console.error('Error al eliminar la habitación', error);
-        this.snackBar.open(
-          'Error al eliminar la habitación. Por favor, intente nuevamente.',
-          'Cerrar',
-          { duration: 5000, panelClass: ['error-snackbar'] }
-        );
+        
+        // CORREGIDO: Manejar error específico de reservas activas
+        if (error.status === 400 && error.error?.reservasActivas > 0) {
+          const detalles = error.error.detalles || [];
+          const mensaje = `No se puede eliminar la habitación porque tiene ${error.error.reservasActivas} reserva(s) activa(s). ` +
+                         `Reservas: ${detalles.map((r: any) => `${r.estado} (${r.fechaEntrada} - ${r.fechaSalida})`).join(', ')}`;
+          
+          this.snackBar.open(mensaje, 'Cerrar', { 
+            duration: 8000, 
+            panelClass: ['error-snackbar'] 
+          });
+        } else {
+          this.snackBar.open(
+            'Error al eliminar la habitación. Por favor, intente nuevamente.',
+            'Cerrar',
+            { duration: 5000, panelClass: ['error-snackbar'] }
+          );
+        }
       }
     });
   }

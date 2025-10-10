@@ -56,8 +56,8 @@ export class HabitacionService {
     
     let params = new HttpParams()
       .set('page', page.toString())
-      .set('limit', limit.toString())
-      .set('activa', 'true'); // Asegurarse de obtener solo habitaciones activas
+      .set('limit', limit.toString());
+      // CORREGIDO: No filtrar por activa para mostrar todas las habitaciones
 
     if (estado) params = params.set('estado', estado);
     if (tipo) params = params.set('tipo', tipo);
@@ -104,6 +104,45 @@ export class HabitacionService {
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
       catchError(this.handleError)
+    );
+  }
+
+  // Obtener solo habitaciones activas (para calendario de ocupación)
+  getHabitacionesActivas(): Observable<HabitacionResponse> {
+    console.log('Solicitando habitaciones activas para calendario');
+    
+    let params = new HttpParams()
+      .set('page', '1')
+      .set('limit', '100') // Límite alto para obtener todas
+      .set('activa', 'true'); // Solo habitaciones activas
+
+    const headers = this.authService.getAuthHeaders();
+
+    return this.http.get<any>(
+      this.apiUrl, 
+      { 
+        params,
+        headers: headers
+      }
+    ).pipe(
+      tap(response => {
+        console.log('Respuesta del servidor (habitaciones activas):', response);
+      }),
+      map(response => {
+        const result: HabitacionResponse = {
+          habitaciones: response.habitaciones || [],
+          total: response.total || 0,
+          page: response.currentPage || 1,
+          totalPages: response.totalPages || 1,
+          limit: 100
+        };
+        console.log('Datos de habitaciones activas procesados:', result);
+        return result;
+      }),
+      catchError(error => {
+        console.error('Error al obtener habitaciones activas:', error);
+        return this.handleError(error);
+      })
     );
   }
 

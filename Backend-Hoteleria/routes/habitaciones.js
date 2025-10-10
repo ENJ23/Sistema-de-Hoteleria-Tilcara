@@ -7,9 +7,14 @@ const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/au
 // GET - Obtener todas las habitaciones (acceso público, pero con datos limitados si no está autenticado)
 router.get('/', async (req, res) => {
     try {
-        const { page = 1, limit = 10, estado = '', tipo = '', activa = true } = req.query;
+        const { page = 1, limit = 10, estado = '', tipo = '', activa } = req.query;
         
-        let query = { activa: activa === 'true' };
+        let query = {};
+        
+        // CORREGIDO: Solo filtrar por activa si se especifica explícitamente
+        if (activa !== undefined) {
+            query.activa = activa === 'true';
+        }
         
         if (estado) {
             query.estado = estado;
@@ -235,23 +240,89 @@ router.get('/check-numero', [
     }
 });
 
+// GET - Verificar reservas activas de una habitación
+router.get('/:id/reservas-activas', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        const habitacion = await Habitacion.findById(req.params.id);
+        
+        if (!habitacion) {
+            return res.status(404).json({ message: 'Habitación no encontrada' });
+        }
+        
+        const Reserva = require('../models/Reserva');
+        const reservasActivas = await Reserva.find({
+            habitacion: req.params.id,
+            estado: { $nin: ['Cancelada', 'Completada', 'Finalizada'] }
+        }).populate('cliente', 'nombre apellido email');
+        
+        res.json({
+            habitacion: {
+                id: habitacion._id,
+                numero: habitacion.numero,
+                tipo: habitacion.tipo
+            },
+            reservasActivas: reservasActivas.length,
+            reservas: reservasActivas.map(r => ({
+                id: r._id,
+                estado: r.estado,
+                fechaEntrada: r.fechaEntrada,
+                fechaSalida: r.fechaSalida,
+                cliente: r.cliente,
+                precioTotal: r.precioTotal
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al verificar reservas activas', error: error.message });
+    }
+});
+
 // DELETE - Eliminar una habitación (marcar como inactiva) - Solo encargado
 router.delete('/:id', [
     verifyToken,
     isEncargado
 ], async (req, res) => {
     try {
-        const habitacion = await Habitacion.findByIdAndUpdate(
-            req.params.id,
-            { activa: false },
-            { new: true }
-        );
+        const habitacion = await Habitacion.findById(req.params.id);
         
         if (!habitacion) {
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }
         
-        res.json({ message: 'Habitación eliminada correctamente' });
+        // CORREGIDO: Validar que no tenga reservas activas
+        const Reserva = require('../models/Reserva');
+        const reservasActivas = await Reserva.find({
+            habitacion: req.params.id,
+            estado: { $nin: ['Cancelada', 'Completada', 'Finalizada'] }
+        });
+        
+        if (reservasActivas.length > 0) {
+            return res.status(400).json({ 
+                message: 'No se puede eliminar la habitación porque tiene reservas activas',
+                reservasActivas: reservasActivas.length,
+                detalles: reservasActivas.map(r => ({
+                    id: r._id,
+                    estado: r.estado,
+                    fechaEntrada: r.fechaEntrada,
+                    fechaSalida: r.fechaSalida,
+                    cliente: r.cliente.nombre
+                }))
+            });
+        }
+        
+        // Si no hay reservas activas, marcar como inactiva
+        const habitacionActualizada = await Habitacion.findByIdAndUpdate(
+            req.params.id,
+            { activa: false },
+            { new: true }
+        );
+        
+        res.json({ 
+            message: 'Habitación eliminada correctamente',
+            habitacion: habitacionActualizada
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error al eliminar habitación', error: error.message });
     }
