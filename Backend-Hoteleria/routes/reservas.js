@@ -297,23 +297,30 @@ router.get('/', [
             { path: 'habitacion', select: 'numero tipo precioActual' }
         ];
         
+        // OPTIMIZADO: Usar lean() para mejor rendimiento y campos selectivos
         const reservas = await Reserva.find(query)
             .populate(populateOptions)
+            .select('fechaEntrada fechaSalida estado precioTotal montoPagado historialPagos cliente habitacion fechaCreacion')
             .limit(limit * 1)
             .skip((page - 1) * limit)
-            .sort({ fechaCreacion: -1 });
+            .sort({ fechaCreacion: -1 })
+            .lean(); // Usar lean() para mejor rendimiento
             
+        // OPTIMIZADO: Usar countDocuments con el mismo query para consistencia
         const total = await Reserva.countDocuments(query);
         
-        // Agregar campos calculados para cada reserva
+        // OPTIMIZADO: Calcular campos en una sola pasada
         const reservasConCalculos = reservas.map(reserva => {
-            const reservaObj = reserva.toObject();
-            reservaObj.estaCompletamentePagado = reserva.estaCompletamentePagado();
-            reservaObj.montoRestante = reserva.calcularMontoRestante();
-            reservaObj.totalPagos = reserva.historialPagos ? 
+            const totalPagos = reserva.historialPagos ? 
                 reserva.historialPagos.reduce((sum, pago) => sum + pago.monto, 0) : 
                 reserva.montoPagado || 0;
-            return reservaObj;
+            
+            return {
+                ...reserva,
+                estaCompletamentePagado: totalPagos >= reserva.precioTotal,
+                montoRestante: Math.max(0, reserva.precioTotal - totalPagos),
+                totalPagos
+            };
         });
         
         res.json({
@@ -453,6 +460,11 @@ router.get('/:id', verifyToken, async (req, res) => {
             reserva.historialPagos.reduce((sum, pago) => sum + pago.monto, 0) : 
             reserva.montoPagado || 0;
         
+        // DEBUGGING: Ver qué campos está devolviendo el backend
+        console.log('🔍 DEBUGGING BACKEND GET - Configuración de camas:', reservaObj.configuracionCamas);
+        console.log('🔍 DEBUGGING BACKEND GET - Información de transporte:', reservaObj.informacionTransporte);
+        console.log('🔍 DEBUGGING BACKEND GET - Necesidades especiales:', reservaObj.necesidadesEspeciales);
+        
         // Si el usuario es encargado, limpieza o mantenimiento, permitir acceso completo
         if (req.userId.rol === 'encargado' || req.userId.rol === 'limpieza' || req.userId.rol === 'mantenimiento') {
             console.log('✅ Usuario autorizado (rol:', req.userId.rol, ') - permitiendo acceso a reserva');
@@ -510,6 +522,11 @@ router.post('/', [
     manejarErroresValidacion
 ], async (req, res) => {
     try {
+        console.log('🔍 DEBUGGING POST - Datos recibidos:', req.body);
+        console.log('🔍 DEBUGGING POST - Configuración de camas:', req.body.configuracionCamas);
+        console.log('🔍 DEBUGGING POST - Información de transporte:', req.body.informacionTransporte);
+        console.log('🔍 DEBUGGING POST - Necesidades especiales:', req.body.necesidadesEspeciales);
+        
         const { cliente, habitacion, fechaEntrada, fechaSalida, ...otrosDatos } = req.body;
         
         
@@ -555,7 +572,11 @@ router.post('/', [
             fechaEntrada: parseLocalDate(fechaEntrada),
             fechaSalida: parseLocalDate(fechaSalida),
             ...otrosDatos,
-            creadoPor: req.userId ? req.userId.nombre : 'Cliente'
+            creadoPor: req.userId ? req.userId.nombre : 'Cliente',
+            // Nuevos campos opcionales
+            configuracionCamas: req.body.configuracionCamas || undefined,
+            informacionTransporte: req.body.informacionTransporte || undefined,
+            necesidadesEspeciales: req.body.necesidadesEspeciales || undefined
         });
         
         console.log('💾 Guardando reserva...');
@@ -629,9 +650,26 @@ router.put('/:id', [
         // Preparar datos de actualización con fechas parseadas correctamente
         const datosActualizacion = { ...req.body };
         
+        // DEBUGGING: Ver qué datos están llegando
+        console.log('🔍 DEBUGGING PUT - Datos recibidos:', req.body);
+        console.log('🔍 DEBUGGING PUT - Configuración de camas:', req.body.configuracionCamas);
+        console.log('🔍 DEBUGGING PUT - Información de transporte:', req.body.informacionTransporte);
+        console.log('🔍 DEBUGGING PUT - Necesidades especiales:', req.body.necesidadesEspeciales);
+        
         // ESTÁNDAR: Parsear fechas usando parseLocalDate
         datosActualizacion.fechaEntrada = parseLocalDate(fechaEntrada);
         datosActualizacion.fechaSalida = parseLocalDate(fechaSalida);
+        
+        // ✅ INCLUIR EXPLÍCITAMENTE LOS NUEVOS CAMPOS
+        if (req.body.configuracionCamas !== undefined) {
+            datosActualizacion.configuracionCamas = req.body.configuracionCamas;
+        }
+        if (req.body.informacionTransporte !== undefined) {
+            datosActualizacion.informacionTransporte = req.body.informacionTransporte;
+        }
+        if (req.body.necesidadesEspeciales !== undefined) {
+            datosActualizacion.necesidadesEspeciales = req.body.necesidadesEspeciales;
+        }
         
         // Recalcular precio total si cambian las fechas o el precio por noche
         const fechaEntradaActual = datosActualizacion.fechaEntrada;

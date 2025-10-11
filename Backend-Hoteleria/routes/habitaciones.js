@@ -24,10 +24,13 @@ router.get('/', async (req, res) => {
             query.tipo = tipo;
         }
         
+        // OPTIMIZADO: Usar lean() y campos selectivos para mejor rendimiento
         const habitaciones = await Habitacion.find(query)
+            .select('numero tipo capacidad precioActual estado activa')
             .limit(limit * 1)
             .skip((page - 1) * limit)
-            .sort({ numero: 1 });
+            .sort({ numero: 1 })
+            .lean(); // Usar lean() para mejor rendimiento
             
         const total = await Habitacion.countDocuments(query);
         

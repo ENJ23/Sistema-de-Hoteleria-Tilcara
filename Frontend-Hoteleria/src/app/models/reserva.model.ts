@@ -45,8 +45,24 @@ export interface Reserva {
   montoRestante?: number;
   estaCompletamentePagado?: boolean;
   totalPagos?: number;
+  // Nuevos campos para configuración específica
+  configuracionCamas?: CamaInfo[];
+  informacionTransporte?: TransporteInfo;
+  necesidadesEspeciales?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CamaInfo {
+  tipo: 'matrimonial' | 'single' | 'doble' | 'queen' | 'king';
+  cantidad: number;
+}
+
+export interface TransporteInfo {
+  tipo: 'vehiculo_propio' | 'colectivo' | 'taxi' | 'otro';
+  detalles?: string;
+  numeroPlaca?: string;
+  empresa?: string;
 }
 
 export interface ReservaCreate {
@@ -61,6 +77,10 @@ export interface ReservaCreate {
   pagado?: boolean;
   metodoPago?: string;
   observaciones?: string;
+  // Nuevos campos para configuración específica
+  configuracionCamas?: CamaInfo[];
+  informacionTransporte?: TransporteInfo;
+  necesidadesEspeciales?: string;
 }
 
 export interface ReservaUpdate {
@@ -76,6 +96,10 @@ export interface ReservaUpdate {
   pagado?: boolean;
   metodoPago?: string;
   observaciones?: string;
+  // Nuevos campos para configuración específica
+  configuracionCamas?: CamaInfo[];
+  informacionTransporte?: TransporteInfo;
+  necesidadesEspeciales?: string;
 }
 
 export interface ReservaFilters {

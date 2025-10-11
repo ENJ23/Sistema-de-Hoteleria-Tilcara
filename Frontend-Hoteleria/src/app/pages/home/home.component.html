@@ -178,7 +178,7 @@
                       obtenerClaseOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)], dia.fecha, ocupacion.habitacion.numero),
                       'clickeable'
                     ]"
-                    [style.--color-reserva]="obtenerColorReserva(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)].reservaPrincipal)"
+                    [style.--color-reserva]="obtenerColorReserva(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.reservaPrincipal)"
                     [attr.data-habitacion]="ocupacion.habitacion.numero"
                     [attr.data-fecha]="formatearFecha(dia.fecha)"
                     (click)="seleccionarCelda(ocupacion.habitacion, dia)"
@@ -218,7 +218,7 @@
           
           <!-- Leyenda de estados -->
           <div class="timeline-leyenda">
-            <h4>Estados de Ocupación</h4>
+            <h4>Estados de Disponibilidad</h4>
             <div class="leyenda-section">
               <div class="leyenda-item">
                 <div class="leyenda-color ocupacion-disponible"></div>
@@ -234,7 +234,7 @@
               </div>
             </div>
             
-            <h4>Estados de Reservas</h4>
+            <h4>Reservas Pendientes</h4>
             <div class="leyenda-section">
               <div class="leyenda-item">
                 <div class="leyenda-color ocupacion-reservada"></div>
@@ -254,7 +254,7 @@
               </div>
             </div>
             
-            <h4>Estados de Ocupación</h4>
+            <h4>Reservas Ocupadas</h4>
             <div class="leyenda-section">
               <div class="leyenda-item">
                 <div class="leyenda-color ocupacion-ocupada"></div>
@@ -274,7 +274,7 @@
               </div>
             </div>
             
-            <h4>Estados Finalizados</h4>
+            <h4>Reservas Finalizadas</h4>
             <div class="leyenda-section">
               <div class="leyenda-item">
                 <div class="leyenda-color ocupacion-finalizada"></div>
@@ -294,23 +294,19 @@
               </div>
             </div>
             
-            <h4>Estados de Transición</h4>
+            <h4>Días de Transición</h4>
             <div class="leyenda-section">
               <div class="leyenda-item">
                 <div class="leyenda-color ocupacion-transicion"></div>
-                <span>Día de Transición<br><small>(Verde: Pagado / Rojo: Sin Pago)</small></span>
+                <span>Día de Transición<br><small>(Combinación de colores)</small></span>
               </div>
               <div class="leyenda-item">
-                <div class="leyenda-color transicion-completa"></div>
-                <span>Entrada y Salida</span>
+                <div class="leyenda-color transicion-misma-reserva"></div>
+                <span>Misma Reserva<br><small>(Entrada y Salida)</small></span>
               </div>
               <div class="leyenda-item">
-                <div class="leyenda-color transicion-checkout"></div>
-                <span>Solo Salida</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color transicion-checkin"></div>
-                <span>Solo Entrada</span>
+                <div class="leyenda-color transicion-diferentes-reservas"></div>
+                <span>Diferentes Reservas<br><small>(Entrada y Salida)</small></span>
               </div>
             </div>
           </div>

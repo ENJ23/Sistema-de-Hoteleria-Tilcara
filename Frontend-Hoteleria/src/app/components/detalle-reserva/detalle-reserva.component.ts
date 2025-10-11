@@ -650,4 +650,26 @@ export class DetalleReservaComponent implements OnInit {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   }
+
+  // Métodos para obtener labels
+  getTipoCamaLabel(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      'matrimonial': 'Matrimonial',
+      'single': 'Single',
+      'doble': 'Doble',
+      'queen': 'Queen',
+      'king': 'King'
+    };
+    return tipos[tipo] || tipo;
+  }
+
+  getTransporteLabel(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      'vehiculo_propio': 'Vehículo Propio',
+      'colectivo': 'Colectivo',
+      'taxi': 'Taxi',
+      'otro': 'Otro'
+    };
+    return tipos[tipo] || tipo;
+  }
 }

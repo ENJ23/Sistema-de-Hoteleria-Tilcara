@@ -28,11 +28,12 @@ export const routes: Routes = [
     data: { roles: ['admin'] }
   },
   
-  // Módulo de habitaciones (carga perezosa)
+  // Módulo de habitaciones (carga perezosa optimizada)
   {
     path: 'habitaciones',
     loadChildren: () => import('./pages/habitaciones/habitaciones.module').then(m => m.HabitacionesModule),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { preload: false } // No precargar para mejor rendimiento inicial
   },
   
   // Calendario de ocupación

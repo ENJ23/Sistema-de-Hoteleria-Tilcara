@@ -433,6 +433,87 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+/* Estilos para nuevas secciones de configuración */
+.form-section {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f8f9ff;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  color: #667eea;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.section-title mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* Estilos para configuración de camas */
+.camas-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cama-chip {
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+  font-weight: 500;
+}
+
+.cama-chip mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+/* Estilos para información de transporte */
+.transporte-info {
+  display: grid;
+  gap: 8px;
+}
+
+.transporte-info .info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.transporte-info .info-item strong {
+  color: #495057;
+  min-width: 80px;
+}
+
+/* Estilos para necesidades especiales */
+.necesidades-info {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.necesidades-info p {
+  margin: 0;
+  color: #495057;
+  line-height: 1.5;
+}
+
 /* Scrollbar personalizado */
 .dialog-content::-webkit-scrollbar {
   width: 8px;

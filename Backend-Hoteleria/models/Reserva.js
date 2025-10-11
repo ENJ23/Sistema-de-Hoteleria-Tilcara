@@ -175,18 +175,55 @@ const reservaSchema = new mongoose.Schema({
     fechaCreacion: {
         type: Date,
         default: Date.now
+    },
+    // Nuevos campos para configuración específica
+    configuracionCamas: [{
+        tipo: {
+            type: String,
+            enum: ['matrimonial', 'single', 'doble', 'queen', 'king'],
+            required: true
+        },
+        cantidad: {
+            type: Number,
+            required: true,
+            min: 1
+        }
+    }],
+    informacionTransporte: {
+        tipo: {
+            type: String,
+            enum: ['vehiculo_propio', 'colectivo', 'taxi', 'otro'],
+            required: true
+        },
+        detalles: {
+            type: String,
+            trim: true
+        },
+        numeroPlaca: {
+            type: String,
+            trim: true
+        },
+        empresa: {
+            type: String,
+            trim: true
+        }
+    },
+    necesidadesEspeciales: {
+        type: String,
+        trim: true
     }
 }, {
     timestamps: true
 });
 
-// Índices para mejorar el rendimiento
+// Índices optimizados para mejorar el rendimiento
 reservaSchema.index({ cliente: 1 });
-reservaSchema.index({ habitacion: 1 });
-reservaSchema.index({ fechaEntrada: 1 });
-reservaSchema.index({ fechaSalida: 1 });
-reservaSchema.index({ estado: 1 });
-reservaSchema.index({ fechaEntrada: 1, fechaSalida: 1 });
+reservaSchema.index({ habitacion: 1, fechaEntrada: 1, fechaSalida: 1 }); // Índice compuesto para conflictos
+reservaSchema.index({ estado: 1, fechaEntrada: 1 }); // Índice compuesto para filtros
+reservaSchema.index({ 'cliente.email': 1 }); // Índice para búsquedas por cliente
+reservaSchema.index({ fechaCreacion: -1 }); // Índice para ordenamiento
+reservaSchema.index({ habitacion: 1, estado: 1 }); // Índice para ocupación
+reservaSchema.index({ fechaEntrada: 1, fechaSalida: 1 }); // Índice para rangos de fechas
 
 // Middleware para calcular el precio total automáticamente
 reservaSchema.pre('save', function(next) {

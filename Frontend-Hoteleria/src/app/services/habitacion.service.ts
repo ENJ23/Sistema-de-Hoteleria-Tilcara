@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders, HttpErrorResponse, HttpContext, HttpContextToken } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -38,6 +38,9 @@ export interface HabitacionResponse {
 })
 export class HabitacionService {
   private apiUrl = `${environment.apiUrl}/habitaciones`;
+  
+  // Token para cache HTTP
+  private static readonly CACHE_TOKEN = new HttpContextToken<string>(() => 'cache');
 
   constructor(
     private http: HttpClient,
@@ -46,14 +49,14 @@ export class HabitacionService {
 
   // Obtener todas las habitaciones con filtros opcionales y paginación
   getHabitaciones(
-    page: number = 1, 
-    limit: number = 10, 
-    estado?: EstadoHabitacion, 
+    page: number = 1,
+    limit: number = 10,
+    estado?: EstadoHabitacion,
     tipo?: TipoHabitacion,
     busqueda?: string
   ): Observable<HabitacionResponse> {
     console.log('Solicitando habitaciones con parámetros:', { page, limit, estado, tipo, busqueda });
-    
+
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
@@ -67,10 +70,12 @@ export class HabitacionService {
     console.log('Headers de autenticación:', headers);
 
     return this.http.get<any>(
-      this.apiUrl, 
-      { 
+      this.apiUrl,
+      {
         params,
-        headers: headers
+        headers: headers,
+        // OPTIMIZADO: Cache HTTP para mejorar rendimiento
+        context: new HttpContext().set(HabitacionService.CACHE_TOKEN, 'habitaciones')
       }
     ).pipe(
       tap(response => {

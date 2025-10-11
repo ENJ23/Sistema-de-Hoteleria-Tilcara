@@ -1379,7 +1379,7 @@
 }
 
 .ocupacion-reservada.sin-pago {
-  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  background: linear-gradient(135deg, #e83e8c 0%, #d63384 100%);
   color: white;
   font-weight: bold;
 }
@@ -1392,8 +1392,8 @@
 }
 
 .ocupacion-finalizada.parcialmente-pagado {
-  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-  color: #212529;
+  background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+  color: white;
   font-weight: bold;
 }
 
@@ -1571,7 +1571,16 @@
   flex-shrink: 0;
 }
 
-/* Sistema de divisiones verticales eliminado - ahora solo usamos divisiones horizontales dinámicas */
+/* Estilos para leyenda de transiciones */
+.transicion-misma-reserva {
+  background: linear-gradient(180deg, #28a745 0%, #28a745 50%, #28a745 50%, #28a745 100%);
+  border: 2px solid #155724;
+}
+
+.transicion-diferentes-reservas {
+  background: linear-gradient(180deg, #28a745 0%, #28a745 50%, #dc3545 50%, #dc3545 100%);
+  border: 2px solid #721c24;
+}
 
 /* Responsive */
 @media (max-width: 1200px) {

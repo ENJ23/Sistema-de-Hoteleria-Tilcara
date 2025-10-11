@@ -12,6 +12,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { ReservaService } from '../../services/reserva.service';
 import { DateTimeService } from '../../services/date-time.service';
+import { CamaInfo, TransporteInfo } from '../../models/reserva.model';
 import { PagoDialogComponent } from '../pago-dialog/pago-dialog.component';
 import { EditarPagoModalComponent } from '../editar-pago-modal/editar-pago-modal.component';
 import { AuthService } from '../../services/auth.service';
@@ -222,6 +223,62 @@ export interface DetalleReservaData {
               <div class="info-row">
                 <span class="label">Precio total:</span>
                 <span class="value precio total">{{ data.reserva.precioTotal }}$</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Configuración Específica -->
+          <mat-card class="info-card" *ngIf="data.reserva.configuracionCamas?.length || data.reserva.informacionTransporte || data.reserva.necesidadesEspeciales">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>settings</mat-icon>
+              <mat-card-title>Configuración Específica</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <!-- Configuración de Camas -->
+              <div class="config-section" *ngIf="data.reserva.configuracionCamas?.length">
+                <h4>
+                  <mat-icon>bed</mat-icon>
+                  Configuración de Camas
+                </h4>
+                <div class="camas-list">
+                  <div class="camas-chips">
+                    <mat-chip *ngFor="let cama of data.reserva.configuracionCamas">
+                      <mat-icon>bed</mat-icon>
+                      {{ cama.cantidad }}x {{ getTipoCamaLabel(cama.tipo) }}
+                    </mat-chip>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Información de Transporte -->
+              <div class="config-section" *ngIf="data.reserva.informacionTransporte">
+                <h4>
+                  <mat-icon>directions_car</mat-icon>
+                  Información de Transporte
+                </h4>
+                <div class="transporte-details">
+                  <div class="transporte-item">
+                    <strong>Tipo:</strong> {{ getTransporteLabel(data.reserva.informacionTransporte.tipo) }}
+                  </div>
+                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte.numeroPlaca">
+                    <strong>Placa:</strong> {{ data.reserva.informacionTransporte.numeroPlaca }}
+                  </div>
+                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte.empresa">
+                    <strong>Empresa:</strong> {{ data.reserva.informacionTransporte.empresa }}
+                  </div>
+                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte.detalles">
+                    <strong>Detalles:</strong> {{ data.reserva.informacionTransporte.detalles }}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Necesidades Especiales -->
+              <div class="config-section" *ngIf="data.reserva.necesidadesEspeciales">
+                <h4>
+                  <mat-icon>accessibility</mat-icon>
+                  Necesidades Especiales
+                </h4>
+                <p>{{ data.reserva.necesidadesEspeciales }}</p>
               </div>
             </mat-card-content>
           </mat-card>
@@ -976,7 +1033,14 @@ export class DetalleReservaModalComponent {
     private router: Router,
     private dateTimeService: DateTimeService,
     private authService: AuthService
-  ) {}
+  ) {
+    // DEBUGGING: Verificar datos recibidos
+    console.log('🔍 DEBUGGING MODAL - Datos recibidos:', data);
+    console.log('🔍 DEBUGGING MODAL - Reserva:', data.reserva);
+    console.log('🔍 DEBUGGING MODAL - Configuración de camas:', data.reserva?.configuracionCamas);
+    console.log('🔍 DEBUGGING MODAL - Información de transporte:', data.reserva?.informacionTransporte);
+    console.log('🔍 DEBUGGING MODAL - Necesidades especiales:', data.reserva?.necesidadesEspeciales);
+  }
 
   realizarCheckIn(): void {
     // Verificar autenticación antes de proceder
@@ -1966,6 +2030,28 @@ export class DetalleReservaModalComponent {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
+  }
+
+  // Métodos para obtener labels
+  getTipoCamaLabel(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      'matrimonial': 'Matrimonial',
+      'single': 'Single',
+      'doble': 'Doble',
+      'queen': 'Queen',
+      'king': 'King'
+    };
+    return tipos[tipo] || tipo;
+  }
+
+  getTransporteLabel(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      'vehiculo_propio': 'Vehículo Propio',
+      'colectivo': 'Colectivo',
+      'taxi': 'Taxi',
+      'otro': 'Otro'
+    };
+    return tipos[tipo] || tipo;
   }
 }
 

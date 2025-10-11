@@ -205,6 +205,53 @@
             </mat-form-field>
           </div>
 
+          <!-- Configuración de Camas -->
+          <div class="form-section" *ngIf="reserva?.configuracionCamas?.length">
+            <h4 class="section-title">
+              <mat-icon>bed</mat-icon>
+              Configuración de Camas
+            </h4>
+            <div class="camas-display">
+              <mat-chip *ngFor="let cama of reserva?.configuracionCamas" class="cama-chip">
+                <mat-icon>bed</mat-icon>
+                {{ cama?.cantidad }}x {{ getTipoCamaLabel(cama?.tipo || '') }}
+              </mat-chip>
+            </div>
+          </div>
+
+          <!-- Información de Transporte -->
+          <div class="form-section" *ngIf="reserva?.informacionTransporte">
+            <h4 class="section-title">
+              <mat-icon>directions_car</mat-icon>
+              Información de Transporte
+            </h4>
+            <div class="transporte-info">
+              <div class="info-item">
+                <strong>Tipo:</strong> {{ getTransporteLabel(reserva?.informacionTransporte?.tipo || '') }}
+              </div>
+              <div class="info-item" *ngIf="reserva?.informacionTransporte?.numeroPlaca">
+                <strong>Placa:</strong> {{ reserva?.informacionTransporte?.numeroPlaca }}
+              </div>
+              <div class="info-item" *ngIf="reserva?.informacionTransporte?.empresa">
+                <strong>Empresa:</strong> {{ reserva?.informacionTransporte?.empresa }}
+              </div>
+              <div class="info-item" *ngIf="reserva?.informacionTransporte?.detalles">
+                <strong>Detalles:</strong> {{ reserva?.informacionTransporte?.detalles }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Necesidades Especiales -->
+          <div class="form-section" *ngIf="reserva?.necesidadesEspeciales">
+            <h4 class="section-title">
+              <mat-icon>accessibility</mat-icon>
+              Necesidades Especiales
+            </h4>
+            <div class="necesidades-info">
+              <p>{{ reserva?.necesidadesEspeciales }}</p>
+            </div>
+          </div>
+
           <div class="form-row">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Observaciones</mat-label>

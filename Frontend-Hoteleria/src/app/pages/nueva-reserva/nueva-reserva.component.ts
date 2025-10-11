@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray, FormControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,7 +24,7 @@ import { Observable, Subject, of, debounceTime, distinctUntilChanged, switchMap,
 import { ReservaService } from '../../services/reserva.service';
 import { HabitacionService } from '../../services/habitacion.service';
 import { DateTimeService } from '../../services/date-time.service';
-import { ReservaCreate, ReservaUpdate, Reserva } from '../../models/reserva.model';
+import { ReservaCreate, ReservaUpdate, Reserva, CamaInfo, TransporteInfo } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
 
 // DateAdapter personalizado para formato DD/MM/YYYY
@@ -172,7 +172,15 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       estado: ['Pendiente', Validators.required],
       pagado: [false],
       metodoPago: [''],
-      observaciones: ['']
+      observaciones: [''],
+      
+      // Nuevos campos para configuración específica
+      configuracionCamas: this.fb.array([]),
+      tipoTransporte: [''],
+      numeroPlaca: [''],
+      empresa: [''],
+      detallesTransporte: [''],
+      necesidadesEspeciales: ['']
     });
   }
 
@@ -184,6 +192,45 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // Métodos para manejo de camas
+  get camas(): FormArray {
+    return this.reservaForm.get('configuracionCamas') as FormArray;
+  }
+
+  agregarCama(): void {
+    const camaForm = this.fb.group({
+      tipo: ['', Validators.required],
+      cantidad: [1, [Validators.required, Validators.min(1)]]
+    });
+    this.camas.push(camaForm);
+  }
+
+  eliminarCama(index: number): void {
+    this.camas.removeAt(index);
+  }
+
+  // Métodos para obtener labels
+  getTipoCamaLabel(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      'matrimonial': 'Matrimonial',
+      'single': 'Single',
+      'doble': 'Doble',
+      'queen': 'Queen',
+      'king': 'King'
+    };
+    return tipos[tipo] || tipo;
+  }
+
+  getTransporteLabel(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      'vehiculo_propio': 'Vehículo Propio',
+      'colectivo': 'Colectivo',
+      'taxi': 'Taxi',
+      'otro': 'Otro'
+    };
+    return tipos[tipo] || tipo;
   }
 
   private cargarDatosIniciales(): void {
@@ -348,8 +395,26 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       estado: reserva.estado,
       pagado: reserva.pagado,
       metodoPago: reserva.metodoPago || '',
-      observaciones: reserva.observaciones || ''
+      observaciones: reserva.observaciones || '',
+      // Nuevos campos
+      tipoTransporte: reserva.informacionTransporte?.tipo || '',
+      numeroPlaca: reserva.informacionTransporte?.numeroPlaca || '',
+      empresa: reserva.informacionTransporte?.empresa || '',
+      detallesTransporte: reserva.informacionTransporte?.detalles || '',
+      necesidadesEspeciales: reserva.necesidadesEspeciales || ''
     });
+
+    // Cargar configuración de camas
+    if (reserva.configuracionCamas && reserva.configuracionCamas.length > 0) {
+      this.camas.clear();
+      reserva.configuracionCamas.forEach(cama => {
+        const camaForm = this.fb.group({
+          tipo: [cama.tipo, Validators.required],
+          cantidad: [cama.cantidad, [Validators.required, Validators.min(1)]]
+        });
+        this.camas.push(camaForm);
+      });
+    }
 
     // Configurar habitación
     const habitacionId = typeof reserva.habitacion === 'string' ? reserva.habitacion : reserva.habitacion._id;
@@ -724,6 +789,28 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     console.log('📅 Fecha entrada formateada:', fechaEntradaFormateada);
     console.log('📅 Fecha salida formateada:', fechaSalidaFormateada);
     
+    // Preparar configuración de camas
+    const configuracionCamas: CamaInfo[] = this.camas.controls
+      .filter(cama => cama.get('tipo')?.value && cama.get('cantidad')?.value)
+      .map(cama => ({
+        tipo: cama.get('tipo')?.value,
+        cantidad: cama.get('cantidad')?.value
+      }));
+
+    // Preparar información de transporte
+    const tipoTransporte = this.reservaForm.get('tipoTransporte')?.value;
+    const informacionTransporte: TransporteInfo | undefined = tipoTransporte ? {
+      tipo: tipoTransporte,
+      numeroPlaca: this.reservaForm.get('numeroPlaca')?.value?.trim() || undefined,
+      empresa: this.reservaForm.get('empresa')?.value?.trim() || undefined,
+      detalles: this.reservaForm.get('detallesTransporte')?.value?.trim() || undefined
+    } : undefined;
+
+    // DEBUGGING: Ver qué datos se están preparando
+    console.log('🔍 DEBUGGING FRONTEND - Configuración de camas preparada:', configuracionCamas);
+    console.log('🔍 DEBUGGING FRONTEND - Información de transporte preparada:', informacionTransporte);
+    console.log('🔍 DEBUGGING FRONTEND - Necesidades especiales:', this.reservaForm.get('necesidadesEspeciales')?.value);
+
     const reservaData: ReservaCreate = {
       cliente: {
         nombre: this.reservaForm.get('nombreCliente')?.value?.trim() || undefined,
@@ -743,9 +830,15 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       estado: this.reservaForm.get('estado')?.value || 'Pendiente',
       pagado: this.reservaForm.get('pagado')?.value || false,
       metodoPago: metodoPagoValue && metodoPagoValue.trim() !== '' ? metodoPagoValue : undefined,
-      observaciones: observacionesValue && observacionesValue.trim() !== '' ? observacionesValue : undefined
+      observaciones: observacionesValue && observacionesValue.trim() !== '' ? observacionesValue : undefined,
+      // Nuevos campos
+      configuracionCamas: configuracionCamas.length > 0 ? configuracionCamas : undefined,
+      informacionTransporte: informacionTransporte,
+      necesidadesEspeciales: this.reservaForm.get('necesidadesEspeciales')?.value?.trim() || undefined
     };
 
+    // DEBUGGING: Ver el objeto completo que se va a enviar
+    console.log('🔍 DEBUGGING FRONTEND - Objeto completo a enviar:', reservaData);
 
     if (this.modoEdicion && this.reservaId) {
       // Modo de edición
@@ -794,7 +887,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       estado: reservaData.estado,
       pagado: reservaData.pagado,
       metodoPago: reservaData.metodoPago,
-      observaciones: reservaData.observaciones
+      observaciones: reservaData.observaciones,
+      // ✅ INCLUIR LOS NUEVOS CAMPOS
+      configuracionCamas: reservaData.configuracionCamas,
+      informacionTransporte: reservaData.informacionTransporte,
+      necesidadesEspeciales: reservaData.necesidadesEspeciales
     };
 
     this.reservaService.updateReserva(this.reservaId!, reservaUpdateData).subscribe({

@@ -265,6 +265,133 @@
       </mat-card-content>
     </mat-card>
 
+    <!-- Configuración de Camas -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>bed</mat-icon>
+          Configuración de Camas
+        </mat-card-title>
+        <mat-card-subtitle>Especifique los tipos y cantidades de camas requeridas</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div formArrayName="configuracionCamas" class="camas-container">
+          <div *ngFor="let cama of camas.controls; let i = index" [formGroupName]="i" class="cama-item">
+            <div class="cama-header">
+              <h5>Cama {{ i + 1 }}</h5>
+              <button type="button" mat-icon-button color="warn" (click)="eliminarCama(i)" 
+                      class="btn-eliminar-cama" matTooltip="Eliminar cama">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+            
+            <div class="cama-fields">
+              <mat-form-field appearance="outline" class="form-field-tipo">
+                <mat-label>Tipo de Cama</mat-label>
+                <mat-select formControlName="tipo">
+                  <mat-option value="matrimonial">🛏️ Matrimonial</mat-option>
+                  <mat-option value="single">🛏️ Single</mat-option>
+                  <mat-option value="doble">🛏️ Doble</mat-option>
+                  <mat-option value="queen">🛏️ Queen</mat-option>
+                  <mat-option value="king">🛏️ King</mat-option>
+                </mat-select>
+                <mat-hint>Seleccione el tipo de cama</mat-hint>
+              </mat-form-field>
+              
+              <mat-form-field appearance="outline" class="form-field-cantidad">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" formControlName="cantidad" min="1" max="10">
+                <mat-hint>Número de camas</mat-hint>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+        
+        <div class="add-cama-section">
+          <button type="button" mat-raised-button color="primary" (click)="agregarCama()" class="btn-agregar-cama">
+            <mat-icon>add</mat-icon>
+            Agregar Nueva Cama
+          </button>
+          <p class="add-cama-hint" *ngIf="camas.length === 0">
+            <mat-icon>info</mat-icon>
+            No hay camas configuradas. Haga clic en "Agregar Nueva Cama" para comenzar.
+          </p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información de Transporte -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>directions_car</mat-icon>
+          Información de Transporte
+        </mat-card-title>
+        <mat-card-subtitle>Especifique cómo llegará el cliente</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Tipo de Transporte</mat-label>
+            <mat-select formControlName="tipoTransporte">
+              <mat-option value="">Seleccionar...</mat-option>
+              <mat-option value="vehiculo_propio">Vehículo Propio</mat-option>
+              <mat-option value="colectivo">Colectivo</mat-option>
+              <mat-option value="taxi">Taxi</mat-option>
+              <mat-option value="otro">Otro</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Campos específicos según el tipo de transporte -->
+        <div class="form-row" *ngIf="reservaForm.get('tipoTransporte')?.value === 'vehiculo_propio'">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Número de Placa</mat-label>
+            <input matInput formControlName="numeroPlaca" placeholder="ABC-123">
+            <mat-hint>Placa del vehículo (opcional)</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row" *ngIf="reservaForm.get('tipoTransporte')?.value === 'colectivo'">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Empresa de Transporte</mat-label>
+            <input matInput formControlName="empresa" placeholder="Empresa de colectivos">
+            <mat-hint>Nombre de la empresa (opcional)</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row" *ngIf="reservaForm.get('tipoTransporte')?.value">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Detalles Adicionales</mat-label>
+            <textarea matInput formControlName="detallesTransporte" 
+                      rows="2" placeholder="Información adicional sobre el transporte..."></textarea>
+            <mat-hint>Detalles adicionales sobre el transporte (opcional)</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Necesidades Especiales -->
+    <mat-card class="form-section">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>accessibility</mat-icon>
+          Necesidades Especiales
+        </mat-card-title>
+        <mat-card-subtitle>Información sobre requerimientos especiales del cliente</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Necesidades Especiales</mat-label>
+            <textarea matInput formControlName="necesidadesEspeciales" 
+                      rows="3" placeholder="Accesibilidad, dietas especiales, etc..."></textarea>
+            <mat-hint>Describa cualquier necesidad especial del cliente (opcional)</mat-hint>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
     <!-- Observaciones -->
     <mat-card class="form-section">
       <mat-card-header>

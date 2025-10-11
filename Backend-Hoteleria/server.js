@@ -47,6 +47,20 @@ app.use(cors({
             return callback(null, true);
         }
         
+        // Permitir ngrok en desarrollo
+        if (origin.includes('ngrok.io') || origin.includes('ngrok-free.app')) {
+            console.log(`🌐 Permitido origen ngrok: ${origin}`);
+            return callback(null, true);
+        }
+        
+        // Permitir IPs locales (para desarrollo móvil)
+        if (origin.match(/^http:\/\/192\.168\.\d+\.\d+:\d+$/) || 
+            origin.match(/^http:\/\/10\.\d+\.\d+\.\d+:\d+$/) ||
+            origin.match(/^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:\d+$/)) {
+            console.log(`📱 Permitido origen móvil: ${origin}`);
+            return callback(null, true);
+        }
+        
         // Permitir todos los subdominios de vercel.app
         if (origin.includes('.vercel.app')) {
             return callback(null, true);
@@ -164,8 +178,9 @@ app.use((req, res, next) => {
 app.use(securityMiddleware.securityErrorHandler);
 
 // Iniciar servidor
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`🌐 Accesible desde red local en: http://[TU_IP]:${PORT}`);
     console.log(`📡 Entorno: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🔗 MongoDB: ${MONGODB_URI}`);
     console.log(`🔒 Seguridad: Habilitada`);

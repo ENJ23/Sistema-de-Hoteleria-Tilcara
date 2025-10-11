@@ -112,12 +112,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   cargandoOcupacion = false; // Nueva variable para evitar llamadas múltiples
   cargandoReservas = false; // Nueva variable para evitar llamadas múltiples
   
-  // Sistema de debounce y cache
+  // Sistema de debounce y cache optimizado
   private destroy$ = new Subject<void>();
   private refreshSubject = new Subject<void>();
   private cacheReservas: { [key: string]: any } = {};
+  private cacheOcupacion: { [key: string]: any } = {}; // Cache específico para ocupación
   private lastRefreshTime = 0;
   private readonly CACHE_DURATION = 30000; // 30 segundos
+  private readonly OCUPACION_CACHE_DURATION = 10000; // 10 segundos para ocupación (más sensible a cambios)
+  private readonly CRITICAL_CACHE_DURATION = 2000; // 2 segundos para operaciones críticas
   
   // Sistema de control de peticiones
   private isInitializing = false;
@@ -189,6 +192,16 @@ export class HomeComponent implements OnInit, OnDestroy {
         console.log('🔄 Cambio de reserva detectado - invalidando cache');
         this.invalidarCacheYRefrescar();
       }
+      // OPTIMIZADO: Detectar cambios de pago específicamente
+      if (params['pagoRegistrado'] || params['pagoActualizado']) {
+        console.log('💰 Cambio de pago detectado - invalidando cache de ocupación');
+        this.invalidarCacheOcupacion();
+      }
+      // OPTIMIZADO: Detectar check-in/check-out
+      if (params['checkinRealizado'] || params['checkoutRealizado']) {
+        console.log('🏨 Check-in/out detectado - invalidando cache completo');
+        this.invalidarCacheYRefrescar();
+      }
     });
     
     this.inicializarHabitaciones();
@@ -208,6 +221,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     
     // Limpiar cache de reservas
     this.cacheReservas = {};
+    this.cacheOcupacion = {}; // OPTIMIZADO: Limpiar también cache de ocupación
     this.lastRefreshTime = 0;
     
     // Forzar refresh de ocupación (bypass cache)
@@ -223,6 +237,36 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
     
     console.log('✅ Cache invalidado y datos refrescados');
+  }
+
+  /**
+   * OPTIMIZADO: Invalidar solo cache de ocupación para cambios de pago
+   */
+  private invalidarCacheOcupacion(): void {
+    console.log('🗑️ Invalidando solo cache de ocupación...');
+    
+    // Limpiar solo cache de ocupación
+    this.cacheOcupacion = {};
+    
+    // Forzar refresh de ocupación (bypass cache)
+    this.generarOcupacion(true);
+  }
+
+  /**
+   * OPTIMIZADO: Invalidar cache específico por habitación
+   */
+  private invalidarCacheHabitacion(habitacionId: string): void {
+    console.log(`🗑️ Invalidando cache para habitación ${habitacionId}...`);
+    
+    // Limpiar cache específico de la habitación
+    Object.keys(this.cacheOcupacion).forEach(key => {
+      if (key.includes(habitacionId)) {
+        delete this.cacheOcupacion[key];
+      }
+    });
+    
+    // Refrescar ocupación solo para esa habitación
+    this.generarOcupacion(true);
   }
 
   /**
@@ -281,36 +325,24 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.cargando = true;
     
     try {
-      // Paso 1: Cargar habitaciones
-      await this.loadHabitaciones();
+      // OPTIMIZADO: Cargar datos en paralelo para mejor rendimiento
+      const [habitacionesResult] = await Promise.all([
+        this.loadHabitaciones(),
+        // Cargar estadísticas en paralelo
+        this.cargarEstadisticas(),
+        // Cargar reservas del día en paralelo
+        this.cargarReservasHoy()
+      ]);
       
-      // Esperar 1 segundo
-      await this.delay(1000);
-      
-      // Paso 2: Generar calendario
+      // Generar calendario después de cargar habitaciones
       console.log('📅 Generando calendario...');
       this.generarCalendario();
       
-      // Esperar 1 segundo
-      await this.delay(1000);
-      
-      // Paso 3: Generar ocupación
+      // Generar ocupación después del calendario
       console.log('📊 Generando ocupación...');
       await this.loadOcupacion();
       
-      // Esperar 1 segundo
-      await this.delay(1000);
-      
-      // Paso 4: Cargar estadísticas
-      console.log('📈 Cargando estadísticas...');
-      this.cargarEstadisticas();
-      
-      // Esperar 1 segundo
-      await this.delay(1000);
-      
-      // Paso 5: Cargar reservas del día
-      console.log('📋 Cargando reservas del día...');
-      this.cargarReservasHoy();
+      console.log('✅ Inicialización completada');
       
     } catch (error) {
       console.error('❌ Error durante la inicialización:', error);
@@ -406,14 +438,31 @@ export class HomeComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // CORRECCIÓN CRÍTICA: Invalidar cache existente para rango expandido
-    // El cache anterior solo incluía el mes actual, ahora necesitamos rango expandido
-    console.log('🗑️ Invalidando cache para rango expandido de fechas');
-    this.cacheReservas = {}; // Limpiar cache completamente
-    this.lastRefreshTime = 0; // Resetear tiempo de última actualización
-    
+    // OPTIMIZADO: Cache inteligente con invalidación condicional
     const cacheKey = `${this.mesActual.getFullYear()}-${this.mesActual.getMonth() + 1}-expandido`;
     const now = Date.now();
+    
+    // Verificar cache solo si no se fuerza refresh
+    if (!forzarRefresh && this.cacheOcupacion[cacheKey]) {
+      const cacheTime = this.cacheOcupacion[cacheKey].timestamp;
+      const cacheAge = now - cacheTime;
+      
+      if (cacheAge < this.OCUPACION_CACHE_DURATION) {
+        console.log('📦 Usando cache de ocupación (edad:', Math.round(cacheAge / 1000), 'segundos)');
+        this.ocupacionHabitaciones = this.cacheOcupacion[cacheKey].data;
+        this.cargandoOcupacion = false;
+        this.cargando = false;
+        return;
+      } else {
+        console.log('⏰ Cache de ocupación expirado, refrescando...');
+        delete this.cacheOcupacion[cacheKey];
+      }
+    }
+    
+    if (forzarRefresh) {
+      console.log('🔄 Forzando refresh de ocupación - invalidando cache');
+      this.cacheOcupacion = {}; // Limpiar cache de ocupación
+    }
     
     console.log('📊 Generando ocupación...');
     console.log('🏨 Habitaciones disponibles:', this.habitaciones.length);
@@ -489,6 +538,13 @@ export class HomeComponent implements OnInit, OnDestroy {
           
           this.ocupacionHabitaciones.push(ocupacion);
         });
+        
+        // OPTIMIZADO: Guardar en cache para futuras consultas
+        this.cacheOcupacion[cacheKey] = {
+          data: [...this.ocupacionHabitaciones],
+          timestamp: Date.now()
+        };
+        console.log('💾 Cache de ocupación guardado para:', cacheKey);
         
         this.cargando = false;
         this.cargandoOcupacion = false;
@@ -680,8 +736,16 @@ export class HomeComponent implements OnInit, OnDestroy {
           this.ocupacionHabitaciones.push(ocupacion);
         });
         
+        // OPTIMIZADO: Guardar en cache para futuras consultas
+        const cacheKey = `${this.mesActual.getFullYear()}-${this.mesActual.getMonth() + 1}-expandido`;
+        this.cacheOcupacion[cacheKey] = {
+          data: [...this.ocupacionHabitaciones],
+          timestamp: Date.now()
+        };
+        console.log('💾 Cache de ocupación guardado para:', cacheKey);
+        
         this.cargando = false;
-    this.cargandoOcupacion = false;
+        this.cargandoOcupacion = false;
   }
 
   formatearFecha(fecha: Date): string {
@@ -833,13 +897,13 @@ export class HomeComponent implements OnInit, OnDestroy {
         } else if (tienePagoParcial) {
           return '#fd7e14'; // Naranja para reservada y parcialmente pagada
         } else {
-          return '#6f42c1'; // Morado para reservada sin pago
+          return '#e83e8c'; // Rosa para reservada sin pago
         }
       case 'finalizada':
         if (estaCompletamentePagado) {
           return '#007bff'; // Azul para finalizada y pagada
         } else if (tienePagoParcial) {
-          return '#ffc107'; // Amarillo para finalizada y parcialmente pagada
+          return '#6f42c1'; // Morado para finalizada y parcialmente pagada
         } else {
           return '#6c757d'; // Gris para finalizada sin pago
         }
@@ -1471,7 +1535,8 @@ export class HomeComponent implements OnInit, OnDestroy {
         
         // Recargar datos para reflejar los cambios
         this.cargarReservasHoy();
-        this.generarOcupacion();
+        // OPTIMIZADO: Invalidar cache específico para check-in
+        this.invalidarCacheOcupacion();
       },
       error: (error) => {
         console.error('❌ Error en check-in:', error);
@@ -1679,36 +1744,53 @@ ${habitacionesLimpieza.length > 0 ?
   // Métodos de reservas
   verDetalleReserva(reserva: any): void {
     console.log('Ver detalle de reserva:', reserva);
+    console.log('🔍 DEBUGGING - Configuración de camas:', reserva?.configuracionCamas);
+    console.log('🔍 DEBUGGING - Información de transporte:', reserva?.informacionTransporte);
+    console.log('🔍 DEBUGGING - Necesidades especiales:', reserva?.necesidadesEspeciales);
     
-    // Abrir el modal con el detalle de la reserva
-    const dialogRef = this.dialog.open(DetalleReservaModalComponent, {
-      width: '800px',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-      data: { reserva: reserva },
-      disableClose: false
-    });
+    // Hacer petición HTTP al backend para obtener los detalles completos de la reserva
+    this.reservaService.getReserva(reserva._id).subscribe({
+      next: (reservaCompleta) => {
+        console.log('🔍 DEBUGGING FRONTEND - Reserva completa obtenida:', reservaCompleta);
+        console.log('🔍 DEBUGGING FRONTEND - Configuración de camas:', reservaCompleta?.configuracionCamas);
+        console.log('🔍 DEBUGGING FRONTEND - Información de transporte:', reservaCompleta?.informacionTransporte);
+        console.log('🔍 DEBUGGING FRONTEND - Necesidades especiales:', reservaCompleta?.necesidadesEspeciales);
+        
+        // Abrir el modal con el detalle completo de la reserva
+        const dialogRef = this.dialog.open(DetalleReservaModalComponent, {
+          width: '800px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          data: { reserva: reservaCompleta },
+          disableClose: false
+        });
 
-    // Manejar el resultado del modal
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        console.log('Acción realizada:', result.action);
-        
-        // Limpiar cache para forzar recarga de datos
-        this.cacheReservas = {};
-        this.lastRefreshTime = 0;
-        
-        // Usar debounce para recargar datos
-        this.refreshSubject.next();
-        
-        // Recargar estadísticas inmediatamente
-        this.cargarEstadisticas();
-        this.cargarReservasHoy();
-        
-        // Recargar to-do list si se revirtió un checkout
-        if (result.action === 'revertir-checkout' && this.todoListComponent) {
-          this.todoListComponent.cargarTareasPendientes();
-        }
+        // Manejar el resultado del modal
+        dialogRef.afterClosed().subscribe(result => {
+          if (result) {
+            console.log('Acción realizada:', result.action);
+            
+            // Limpiar cache para forzar recarga de datos
+            this.cacheReservas = {};
+            this.lastRefreshTime = 0;
+            
+            // Usar debounce para recargar datos
+            this.refreshSubject.next();
+            
+            // Recargar estadísticas inmediatamente
+            this.cargarEstadisticas();
+            this.cargarReservasHoy();
+            
+            // Recargar to-do list si se revirtió un checkout
+            if (result.action === 'revertir-checkout' && this.todoListComponent) {
+              this.todoListComponent.cargarTareasPendientes();
+            }
+          }
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener detalles de la reserva:', error);
+        this.mostrarMensaje('Error al cargar los detalles de la reserva');
       }
     });
   }
@@ -1815,7 +1897,8 @@ ${habitacionesLimpieza.length > 0 ?
           
           // Recargar datos para reflejar los cambios
           this.cargarReservasHoy();
-          this.generarOcupacion();
+          // OPTIMIZADO: Invalidar cache específico para check-out
+          this.invalidarCacheOcupacion();
           
           // Recargar to-do list para mostrar nueva tarea de limpieza
           if (this.todoListComponent) {
@@ -1923,7 +2006,8 @@ ${habitacionesLimpieza.length > 0 ?
                 
                 // Recargar datos para reflejar los cambios
                 this.cargarReservasHoy();
-                this.generarOcupacion();
+                // OPTIMIZADO: Invalidar cache específico para pagos
+                this.invalidarCacheOcupacion();
               },
               error: (error) => {
                 console.error('❌ Error al registrar pago:', error);
