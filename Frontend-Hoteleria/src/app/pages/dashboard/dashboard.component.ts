@@ -127,24 +127,40 @@ export class DashboardComponent implements OnInit {
   }
 
   private obtenerPrimerDiaDelMes(): Date {
-    const hoy = new Date();
-    return new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    // ✅ Usar mesActual en lugar de hoy para navegación correcta
+    return new Date(this.mesActual.getFullYear(), this.mesActual.getMonth(), 1);
   }
 
   private obtenerUltimoDiaDelMes(): Date {
-    const hoy = new Date();
-    return new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    // ✅ Usar mesActual en lugar de hoy para navegación correcta
+    return new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 0);
   }
 
   private cargarDatos(): void {
     this.loading = true;
     const filtros = this.filtrosForm.value;
     
+    // ✅ DEBUGGING: Log de fechas solicitadas
+    console.log('📅 Dashboard - Cargando datos para:', {
+      mesActual: this.mesActual.getMonth() + 1 + '/' + this.mesActual.getFullYear(),
+      fechaInicio: filtros.fechaInicio.toISOString().split('T')[0],
+      fechaFin: filtros.fechaFin.toISOString().split('T')[0]
+    });
+    
     this.reservaService.getReservas({
       fechaInicio: filtros.fechaInicio.toISOString().split('T')[0],
       fechaFin: filtros.fechaFin.toISOString().split('T')[0]
     }).subscribe({
       next: (response: ReservaResponse) => {
+        // ✅ DEBUGGING: Log de reservas recibidas
+        console.log('📊 Dashboard - Reservas recibidas:', response.reservas.length);
+        console.log('📊 Dashboard - Detalle de reservas:', response.reservas.map(r => ({
+          id: r._id,
+          fechaEntrada: r.fechaEntrada,
+          cliente: r.cliente?.nombre + ' ' + r.cliente?.apellido,
+          montoPagado: r.montoPagado
+        })));
+        
         this.procesarDatos(response.reservas);
         this.loading = false;
       },
@@ -157,11 +173,14 @@ export class DashboardComponent implements OnInit {
   }
 
   private procesarDatos(reservas: Reserva[]): void {
-    // Filtrar reservas del mes actual
-    const reservasDelMes = reservas.filter(reserva => {
-      const fechaReserva = new Date(reserva.fechaEntrada);
-      return fechaReserva.getMonth() === this.mesActual.getMonth() && 
-             fechaReserva.getFullYear() === this.mesActual.getFullYear();
+    // ✅ El backend ya filtra por fecha, no necesitamos filtrar nuevamente
+    // Las reservas ya vienen filtradas por el rango de fechas solicitado
+    const reservasDelMes = reservas;
+
+    // ✅ DEBUGGING: Log de procesamiento
+    console.log('📊 Dashboard - Procesando datos:', {
+      totalReservas: reservasDelMes.length,
+      mesActual: this.mesActual.getMonth() + 1 + '/' + this.mesActual.getFullYear()
     });
 
     // Calcular ingresos
@@ -212,6 +231,16 @@ export class DashboardComponent implements OnInit {
       ingresosPorDia,
       reservasRecientes
     };
+
+    // ✅ DEBUGGING: Log de resultados finales
+    console.log('📊 Dashboard - Resumen calculado:', {
+      totalIngresos,
+      totalReservas: reservasDelMes.length,
+      reservasCompletas,
+      reservasParciales,
+      reservasSinPago,
+      promedioPorReserva: this.resumen.promedioPorReserva
+    });
   }
 
   private calcularIngresosPorDia(reservas: Reserva[]): { fecha: string, ingresos: number }[] {
@@ -282,6 +311,7 @@ export class DashboardComponent implements OnInit {
   }
 
   irAHoy(): void {
+    // ✅ Actualizar mesActual antes de obtener fechas
     this.mesActual = new Date();
     this.filtrosForm.patchValue({
       fechaInicio: this.obtenerPrimerDiaDelMes(),

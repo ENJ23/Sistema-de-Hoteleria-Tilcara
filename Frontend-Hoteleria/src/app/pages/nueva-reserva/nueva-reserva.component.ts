@@ -153,12 +153,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     private dialog: MatDialog
   ) {
     this.reservaForm = this.fb.group({
-      // Información del cliente (opcional para facilitar carga rápida)
-      nombreCliente: [''],
-      apellidoCliente: [''],
-      emailCliente: [''],
-      telefonoCliente: [''],
-      documentoCliente: [''],
+      // Información del cliente (campos obligatorios)
+      nombreCliente: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)]],
+      apellidoCliente: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)]],
+      emailCliente: ['', [Validators.email]],
+      telefonoCliente: ['', [Validators.required, Validators.minLength(7), Validators.maxLength(20), Validators.pattern(/^[0-9+\-\s()]*$/)]],
+      documentoCliente: ['', [Validators.minLength(5), Validators.maxLength(20)]],
       direccionCliente: [''],
       nacionalidadCliente: [''],
       
@@ -1198,7 +1198,10 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       { control: 'horaEntrada', nombre: 'Hora de Entrada' },
       { control: 'horaSalida', nombre: 'Hora de Salida' },
       { control: 'precioPorNoche', nombre: 'Precio por Noche' },
-      { control: 'estado', nombre: 'Estado de la Reserva' }
+      { control: 'estado', nombre: 'Estado de la Reserva' },
+      { control: 'nombreCliente', nombre: 'Nombre del Cliente' },
+      { control: 'apellidoCliente', nombre: 'Apellido del Cliente' },
+      { control: 'telefonoCliente', nombre: 'Teléfono del Cliente' }
     ];
     
     camposObligatorios.forEach(campo => {
@@ -1219,12 +1222,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   // Métodos para el template
   getErrorMessage(controlName: string): string {
     const control = this.reservaForm.get(controlName);
-    
-    // Los campos del cliente son opcionales, no mostrar errores de validación
-    const camposCliente = ['nombreCliente', 'apellidoCliente', 'emailCliente', 'telefonoCliente', 'documentoCliente', 'direccionCliente', 'nacionalidadCliente'];
-    if (camposCliente.includes(controlName)) {
-      return '';
-    }
     
     // Solo mostrar errores si el campo ha sido tocado o el formulario ha sido enviado
     if (!control || (!control.touched && !this.reservaForm.dirty)) {
@@ -1252,6 +1249,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           return '💰 El precio por noche es obligatorio';
         case 'estado':
           return '📋 El estado es obligatorio';
+        case 'nombreCliente':
+          return '👤 El nombre del cliente es obligatorio';
+        case 'apellidoCliente':
+          return '👤 El apellido del cliente es obligatorio';
+        case 'telefonoCliente':
+          return '📞 El teléfono del cliente es obligatorio';
         default:
           return 'Este campo es requerido';
       }
@@ -1266,6 +1269,36 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       }
     }
     
+    if (control.hasError('minlength')) {
+      switch (controlName) {
+        case 'nombreCliente':
+          return '👤 El nombre debe tener al menos 2 caracteres';
+        case 'apellidoCliente':
+          return '👤 El apellido debe tener al menos 2 caracteres';
+        case 'telefonoCliente':
+          return '📞 El teléfono debe tener al menos 7 caracteres';
+        case 'documentoCliente':
+          return '📄 El documento debe tener al menos 5 caracteres';
+        default:
+          return 'El campo es muy corto';
+      }
+    }
+    
+    if (control.hasError('maxlength')) {
+      switch (controlName) {
+        case 'nombreCliente':
+          return '👤 El nombre no puede exceder 50 caracteres';
+        case 'apellidoCliente':
+          return '👤 El apellido no puede exceder 50 caracteres';
+        case 'telefonoCliente':
+          return '📞 El teléfono no puede exceder 20 caracteres';
+        case 'documentoCliente':
+          return '📄 El documento no puede exceder 20 caracteres';
+        default:
+          return 'El campo es muy largo';
+      }
+    }
+    
     if (control.hasError('email')) {
       return '📧 Ingrese un email válido (ejemplo: usuario@ejemplo.com)';
     }
@@ -1275,6 +1308,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
         case 'horaEntrada':
         case 'horaSalida':
           return '🕐 Formato de hora inválido. Use formato HH:MM (24 horas)';
+        case 'nombreCliente':
+        case 'apellidoCliente':
+          return '👤 Solo se permiten letras y espacios (sin números ni símbolos)';
+        case 'telefonoCliente':
+          return '📞 Formato de teléfono inválido. Use solo números, +, -, espacios y paréntesis';
         default:
           return 'Formato inválido';
       }

@@ -31,22 +31,28 @@
           <mat-icon>person</mat-icon>
           Información del Cliente
         </mat-card-title>
-        <mat-card-subtitle>Datos del cliente (opcional - puede completarse más tarde)</mat-card-subtitle>
+        <mat-card-subtitle>Datos del cliente (* campos obligatorios)</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
         <div class="form-row">
            <mat-form-field appearance="outline" class="form-field-half">
-             <mat-label>Nombre</mat-label>
+             <mat-label>Nombre *</mat-label>
              <input type="text" matInput 
                     formControlName="nombreCliente"
-                    placeholder="Nombre del cliente (opcional)">
+                    placeholder="Nombre del cliente">
+             <mat-error *ngIf="isFieldInvalid('nombreCliente')">
+               {{ getErrorMessage('nombreCliente') }}
+             </mat-error>
            </mat-form-field>
 
           <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Apellido</mat-label>
+            <mat-label>Apellido *</mat-label>
             <input type="text" matInput 
                    formControlName="apellidoCliente"
-                   placeholder="Apellido del cliente (opcional)">
+                   placeholder="Apellido del cliente">
+            <mat-error *ngIf="isFieldInvalid('apellidoCliente')">
+              {{ getErrorMessage('apellidoCliente') }}
+            </mat-error>
           </mat-form-field>
         </div>
 
@@ -59,10 +65,13 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Teléfono</mat-label>
+            <mat-label>Teléfono *</mat-label>
             <input type="tel" matInput 
                    formControlName="telefonoCliente"
-                   placeholder="Número de teléfono (opcional)">
+                   placeholder="Número de teléfono">
+            <mat-error *ngIf="isFieldInvalid('telefonoCliente')">
+              {{ getErrorMessage('telefonoCliente') }}
+            </mat-error>
           </mat-form-field>
         </div>
 

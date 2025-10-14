@@ -87,38 +87,22 @@ const validarReserva = [
         .isIn(['Pendiente', 'Confirmada', 'Cancelada', 'Completada'])
         .withMessage('Estado de reserva inválido'),
     
-    // Validación de campos opcionales del cliente
+    // Validación de campos obligatorios del cliente
     body('cliente.nombre')
-        .optional()
-        .custom((value) => {
-            if (!value || value.trim() === '') {
-                return true; // Campo vacío es válido
-            }
-            const trimmed = value.trim();
-            if (trimmed.length < 2 || trimmed.length > 50) {
-                throw new Error('El nombre debe tener entre 2 y 50 caracteres y solo contener letras');
-            }
-            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(trimmed)) {
-                throw new Error('El nombre solo puede contener letras y espacios (sin números ni símbolos)');
-            }
-            return true;
-        }),
+        .notEmpty()
+        .withMessage('El nombre del cliente es obligatorio')
+        .isLength({ min: 2, max: 50 })
+        .withMessage('El nombre debe tener entre 2 y 50 caracteres')
+        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
+        .withMessage('El nombre solo puede contener letras y espacios (sin números ni símbolos)'),
     
     body('cliente.apellido')
-        .optional()
-        .custom((value) => {
-            if (!value || value.trim() === '') {
-                return true; // Campo vacío es válido
-            }
-            const trimmed = value.trim();
-            if (trimmed.length < 2 || trimmed.length > 50) {
-                throw new Error('El apellido debe tener entre 2 y 50 caracteres y solo contener letras');
-            }
-            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(trimmed)) {
-                throw new Error('El apellido solo puede contener letras y espacios (sin números ni símbolos)');
-            }
-            return true;
-        }),
+        .notEmpty()
+        .withMessage('El apellido del cliente es obligatorio')
+        .isLength({ min: 2, max: 50 })
+        .withMessage('El apellido debe tener entre 2 y 50 caracteres')
+        .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
+        .withMessage('El apellido solo puede contener letras y espacios (sin números ni símbolos)'),
     
     body('cliente.email')
         .optional()
@@ -139,20 +123,12 @@ const validarReserva = [
         }),
     
     body('cliente.telefono')
-        .optional()
-        .custom((value) => {
-            if (!value || value.trim() === '') {
-                return true; // Campo vacío es válido
-            }
-            const trimmed = value.trim();
-            if (trimmed.length < 7 || trimmed.length > 20) {
-                throw new Error('El teléfono debe tener entre 7 y 20 caracteres');
-            }
-            if (!/^[\d\s\-\+\(\)]*$/.test(trimmed)) {
-                throw new Error('El teléfono solo puede contener números, espacios, guiones y paréntesis');
-            }
-            return true;
-        }),
+        .notEmpty()
+        .withMessage('El teléfono del cliente es obligatorio')
+        .isLength({ min: 7, max: 20 })
+        .withMessage('El teléfono debe tener entre 7 y 20 caracteres')
+        .matches(/^[\d\s\-\+\(\)]*$/)
+        .withMessage('El teléfono solo puede contener números, espacios, guiones y paréntesis'),
     
     body('cliente.documento')
         .optional()
