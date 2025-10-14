@@ -33,10 +33,10 @@
                 <mat-icon matSuffix>room</mat-icon>
                 <mat-hint>Ejemplos: 101, 202A, 305B</mat-hint>
                 <mat-error *ngIf="habitacionForm.get('numero')?.hasError('required')">
-                  El número de habitación es requerido
+                  🏨 El número de habitación es obligatorio
                 </mat-error>
                 <mat-error *ngIf="habitacionForm.get('numero')?.hasError('pattern')">
-                  Formato inválido. Use números y una letra opcional (ej: 101, 202A)
+                  🏨 Formato inválido. Use números y una letra opcional (ej: 101, 202A)
                 </mat-error>
               </mat-form-field>
             </div>
@@ -52,7 +52,7 @@
                 </mat-select>
                 <mat-icon matSuffix>category</mat-icon>
                 <mat-error *ngIf="habitacionForm.get('tipo')?.hasError('required')">
-                  El tipo de habitación es requerido
+                  🏠 El tipo de habitación es obligatorio
                 </mat-error>
               </mat-form-field>
             </div>
@@ -64,10 +64,10 @@
                 <input matInput type="number" formControlName="piso" min="1" max="50">
                 <mat-icon matSuffix>layers</mat-icon>
                 <mat-error *ngIf="habitacionForm.get('piso')?.hasError('required')">
-                  El piso es requerido
+                  🏢 El piso es obligatorio
                 </mat-error>
                 <mat-error *ngIf="habitacionForm.get('piso')?.hasError('min') || habitacionForm.get('piso')?.hasError('max')">
-                  El piso debe estar entre 1 y 50
+                  🏢 El piso debe estar entre 1 y 50
                 </mat-error>
               </mat-form-field>
             </div>
@@ -79,10 +79,10 @@
                 <input matInput type="number" formControlName="capacidad" min="1" max="10">
                 <mat-icon matSuffix>people</mat-icon>
                 <mat-error *ngIf="habitacionForm.get('capacidad')?.hasError('required')">
-                  La capacidad es requerida
+                  👥 La capacidad es obligatoria
                 </mat-error>
                 <mat-error *ngIf="habitacionForm.get('capacidad')?.hasError('min') || habitacionForm.get('capacidad')?.hasError('max')">
-                  La capacidad debe estar entre 1 y 10 personas
+                  👥 La capacidad debe estar entre 1 y 10 personas
                 </mat-error>
               </mat-form-field>
             </div>
@@ -106,13 +106,13 @@
                 <mat-icon matSuffix>monetization_on</mat-icon>
                 <mat-hint>Precio estándar de la habitación</mat-hint>
                 <mat-error *ngIf="habitacionForm.get('precioBase')?.hasError('required')">
-                  El precio base es requerido
+                  💰 El precio base es obligatorio
                 </mat-error>
                 <mat-error *ngIf="habitacionForm.get('precioBase')?.hasError('min')">
-                  El precio debe ser mayor o igual a 0
+                  💰 El precio debe ser mayor a $0
                 </mat-error>
                 <mat-error *ngIf="habitacionForm.get('precioBase')?.hasError('max')">
-                  El precio no puede superar los $500,000
+                  💰 El precio no puede superar los $500,000
                 </mat-error>
               </mat-form-field>
             </div>
@@ -148,7 +148,7 @@
                 </mat-select>
                 <mat-icon matSuffix>flag</mat-icon>
                 <mat-error *ngIf="habitacionForm.get('estado')?.hasError('required')">
-                  El estado es requerido
+                  📋 El estado es obligatorio
                 </mat-error>
               </mat-form-field>
             </div>

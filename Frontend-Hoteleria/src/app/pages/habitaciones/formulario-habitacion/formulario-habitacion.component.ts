@@ -196,8 +196,18 @@ export class FormularioHabitacionComponent implements OnInit {
   }
 
   onSubmit(): void {
+    // Marcar todos los campos como tocados para mostrar errores
+    this.marcarTodosLosCamposComoTocados();
+    
+    // Validación específica de campos obligatorios
+    const erroresFaltantes = this.validarCamposObligatorios();
+    if (erroresFaltantes.length > 0) {
+      this.mostrarMensaje(`❌ Complete los siguientes campos: ${erroresFaltantes.join(', ')}`, 'error');
+      return;
+    }
+    
     if (this.habitacionForm.invalid || this.submitting) {
-      this.mostrarErroresFormulario();
+      this.mostrarMensaje('❌ Por favor, corrija los errores mostrados en el formulario', 'error');
       return;
     }
 
@@ -250,18 +260,7 @@ export class FormularioHabitacionComponent implements OnInit {
               },
               error: (error) => {
                 console.error(`Error al ${this.isEditMode ? 'actualizar' : 'crear'} la habitación`, error);
-                
-                let mensajeError = `Error al ${this.isEditMode ? 'actualizar' : 'crear'} la habitación.`;
-                
-                if (error.error?.message) {
-                  mensajeError += ` ${error.error.message}`;
-                } else if (error.status === 409) {
-                  mensajeError = 'Ya existe una habitación con este número. Por favor, elija otro número.';
-                } else if (error.status === 401 || error.status === 403) {
-                  mensajeError = 'No tienes permisos para realizar esta acción. Por favor, inicia sesión nuevamente.';
-                }
-                
-                this.mostrarMensaje(mensajeError, 'error');
+                this.manejarErrorHabitacion(error, this.isEditMode ? 'actualizar' : 'crear');
                 this.submitting = false;
               }
             });
@@ -274,6 +273,138 @@ export class FormularioHabitacionComponent implements OnInit {
       });
   }
   
+  /**
+   * Maneja errores específicos de habitaciones
+   */
+  private manejarErrorHabitacion(error: any, accion: string): void {
+    console.error(`Error al ${accion} habitación:`, error);
+    console.error('Error completo:', error);
+    console.error('Error details:', error.error);
+    
+    let mensajeError = `Error al ${accion} la habitación`;
+    
+    // Manejo específico de errores de validación del backend
+    if (error.error && error.error.errors && Array.isArray(error.error.errors)) {
+      console.error('Errores de validación:', error.error.errors);
+      
+      // Mapear errores específicos a mensajes personalizados
+      const erroresPersonalizados = error.error.errors.map((err: any) => {
+        const campo = err.param || err.field || '';
+        const mensaje = err.msg || err.message || '';
+        
+        // Mensajes personalizados por campo
+        switch (campo) {
+          case 'numero':
+            return '🏨 El número de habitación es obligatorio';
+          case 'tipo':
+            return '🏠 El tipo de habitación es obligatorio';
+          case 'capacidad':
+            return '👥 La capacidad debe ser mayor a 0';
+          case 'precioBase':
+            return '💰 El precio base debe ser mayor a $0';
+          case 'piso':
+            return '🏢 El piso es obligatorio';
+          case 'estado':
+            return '📋 El estado de la habitación es obligatorio';
+          case 'servicios':
+            return '🛎️ Debe seleccionar al menos un servicio';
+          default:
+            return mensaje || 'Campo inválido';
+        }
+      });
+      
+      this.mostrarMensaje(erroresPersonalizados.join('. '), 'error');
+      return;
+    }
+    
+    // Manejo específico de diferentes tipos de errores HTTP
+    if (error.status === 400) {
+      if (error.error?.message) {
+        if (error.error.message.includes('número')) {
+          mensajeError = '🏨 Ya existe una habitación con este número. Por favor, elija otro número.';
+        } else if (error.error.message.includes('tipo')) {
+          mensajeError = '🏠 Tipo de habitación inválido. Por favor, seleccione un tipo válido.';
+        } else if (error.error.message.includes('capacidad')) {
+          mensajeError = '👥 La capacidad debe ser un número mayor a 0.';
+        } else if (error.error.message.includes('precio')) {
+          mensajeError = '💰 El precio debe ser un número mayor a $0.';
+        } else {
+          mensajeError = `❌ ${error.error.message}`;
+        }
+      } else {
+        mensajeError = '❌ Los datos ingresados no son válidos. Por favor, revise la información.';
+      }
+    } else if (error.status === 401) {
+      mensajeError = '🔐 Su sesión ha expirado. Por favor, inicie sesión nuevamente.';
+    } else if (error.status === 403) {
+      mensajeError = '🚫 No tiene permisos para realizar esta acción.';
+    } else if (error.status === 404) {
+      mensajeError = '🔍 No se encontró la habitación especificada.';
+    } else if (error.status === 409) {
+      mensajeError = '⚠️ Ya existe una habitación con este número. Por favor, elija otro número.';
+    } else if (error.status === 422) {
+      mensajeError = '📝 Error de validación: Los datos enviados no son válidos.';
+    } else if (error.status === 429) {
+      mensajeError = '⏰ Demasiadas solicitudes. Por favor, espere un momento e intente nuevamente.';
+    } else if (error.status === 500) {
+      if (error.error?.message && error.error.message.includes('required')) {
+        mensajeError = '❌ Faltan datos obligatorios. Por favor, complete todos los campos requeridos.';
+      } else if (error.error?.message && error.error.message.includes('validation')) {
+        mensajeError = '❌ Error de validación. Por favor, revise los datos ingresados.';
+      } else {
+        mensajeError = '🔧 Error interno del servidor. Por favor, intente nuevamente en unos minutos.';
+      }
+    } else if (error.status === 503) {
+      mensajeError = '🚧 El servicio no está disponible temporalmente. Por favor, intente más tarde.';
+    } else if (error.status === 0) {
+      mensajeError = '🌐 Error de conexión. Verifique su conexión a internet y intente nuevamente.';
+    } else if (error.error?.message) {
+      mensajeError = `❌ ${error.error.message}`;
+    } else {
+      mensajeError = `❌ Error inesperado (${error.status || 'desconocido'}). Por favor, intente nuevamente.`;
+    }
+    
+    this.mostrarMensaje(mensajeError, 'error');
+  }
+
+  /**
+   * Marca todos los campos como tocados para mostrar errores
+   */
+  private marcarTodosLosCamposComoTocados(): void {
+    Object.keys(this.habitacionForm.controls).forEach(key => {
+      const control = this.habitacionForm.get(key);
+      if (control) {
+        control.markAsTouched();
+      }
+    });
+  }
+
+  /**
+   * Valida campos obligatorios y retorna lista de campos faltantes
+   */
+  private validarCamposObligatorios(): string[] {
+    const camposFaltantes: string[] = [];
+    
+    // Campos obligatorios con sus nombres amigables
+    const camposObligatorios = [
+      { control: 'numero', nombre: 'Número de Habitación' },
+      { control: 'tipo', nombre: 'Tipo de Habitación' },
+      { control: 'capacidad', nombre: 'Capacidad' },
+      { control: 'precioBase', nombre: 'Precio Base' },
+      { control: 'piso', nombre: 'Piso' },
+      { control: 'estado', nombre: 'Estado' }
+    ];
+    
+    camposObligatorios.forEach(campo => {
+      const control = this.habitacionForm.get(campo.control);
+      if (!control || !control.value || (typeof control.value === 'string' && control.value.trim() === '')) {
+        camposFaltantes.push(campo.nombre);
+      }
+    });
+    
+    return camposFaltantes;
+  }
+
   /**
    * Muestra los errores de validación del formulario
    */
