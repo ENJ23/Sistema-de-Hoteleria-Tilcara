@@ -667,9 +667,53 @@ router.post('/', [
         
     } catch (error) {
         console.error('❌ Error al crear reserva:', error);
+        
+        // Categorizar el tipo de error para enviar mensaje más específico
+        let errorType = 'unknown';
+        let errorMessage = 'Error al crear la reserva';
+        
+        if (error.name === 'ValidationError') {
+            errorType = 'validation';
+            errorMessage = 'Error de validación de datos';
+        } else if (error.name === 'CastError') {
+            errorType = 'type';
+            errorMessage = 'Error de tipo de datos';
+        } else if (error.name === 'MongoError' || error.name === 'MongoServerError') {
+            errorType = 'MongoDB';
+            errorMessage = 'Error de base de datos';
+        } else if (error.message.includes('duplicate')) {
+            errorType = 'duplicate';
+            errorMessage = 'Ya existe una reserva con estos datos';
+        } else if (error.message.includes('required')) {
+            errorType = 'required';
+            errorMessage = 'Faltan datos obligatorios';
+        } else if (error.message.includes('habitacion')) {
+            errorType = 'habitacion';
+            errorMessage = 'Error con la habitación seleccionada';
+        } else if (error.message.includes('fecha')) {
+            errorType = 'fecha';
+            errorMessage = 'Error con las fechas seleccionadas';
+        } else if (error.message.includes('precio')) {
+            errorType = 'precio';
+            errorMessage = 'Error con el precio';
+        } else if (error.message.includes('cliente')) {
+            errorType = 'cliente';
+            errorMessage = 'Error con los datos del cliente';
+        } else if (error.message.includes('estado')) {
+            errorType = 'estado';
+            errorMessage = 'Error con el estado de la reserva';
+        }
+        
         res.status(500).json({ 
-            message: 'Error al crear la reserva', 
-            error: error.message 
+            message: errorMessage,
+            error: error.message,
+            errorType: errorType,
+            details: {
+                name: error.name,
+                code: error.code,
+                keyPattern: error.keyPattern,
+                keyValue: error.keyValue
+            }
         });
     }
 });

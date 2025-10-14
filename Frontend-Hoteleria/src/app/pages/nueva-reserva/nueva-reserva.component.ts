@@ -1104,14 +1104,49 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     } else if (error.status === 429) {
       mensajeError = '⏰ Demasiadas solicitudes. Por favor, espere un momento e intente nuevamente.';
     } else if (error.status === 500) {
-      // Verificar si es un error de datos faltantes
-      if (error.error?.message && error.error.message.includes('required')) {
+      // Análisis detallado del error 500
+      const errorMessage = error.error?.message || '';
+      const errorDetails = error.error?.error || '';
+      const errorType = error.error?.errorType || '';
+      
+      // Logging detallado para debugging
+      console.error('🔍 DEBUGGING ERROR 500:');
+      console.error('Error message:', errorMessage);
+      console.error('Error details:', errorDetails);
+      console.error('Error type:', errorType);
+      console.error('Full error object:', error.error);
+      
+      // Usar errorType del backend si está disponible, sino usar detección por texto
+      if (errorType === 'required' || errorMessage.includes('required') || errorDetails.includes('required')) {
         mensajeError = '❌ Faltan datos obligatorios. Por favor, complete todos los campos requeridos.';
-      } else if (error.error?.message && error.error.message.includes('validation')) {
+      } else if (errorType === 'validation' || errorMessage.includes('validation') || errorDetails.includes('validation')) {
         mensajeError = '❌ Error de validación. Por favor, revise los datos ingresados.';
-      } else if (error.error?.message && error.error.message.includes('informacionTransporte')) {
+      } else if (errorType === 'habitacion' || errorMessage.includes('habitacion') || errorDetails.includes('habitacion')) {
+        mensajeError = '🏨 Error con la habitación seleccionada. Por favor, seleccione otra habitación.';
+      } else if (errorType === 'fecha' || errorMessage.includes('fecha') || errorDetails.includes('fecha')) {
+        mensajeError = '📅 Error con las fechas seleccionadas. Por favor, verifique las fechas de entrada y salida.';
+      } else if (errorType === 'precio' || errorMessage.includes('precio') || errorDetails.includes('precio')) {
+        mensajeError = '💰 Error con el precio. Por favor, verifique que el precio sea un número válido mayor a 0.';
+      } else if (errorType === 'cliente' || errorMessage.includes('cliente') || errorDetails.includes('cliente')) {
+        mensajeError = '👤 Error con los datos del cliente. Por favor, verifique la información del cliente.';
+      } else if (errorType === 'estado' || errorMessage.includes('estado') || errorDetails.includes('estado')) {
+        mensajeError = '📋 Error con el estado de la reserva. Por favor, seleccione un estado válido.';
+      } else if (errorType === 'MongoDB' || errorMessage.includes('MongoDB') || errorDetails.includes('MongoDB')) {
+        mensajeError = '🗄️ Error de base de datos. Por favor, intente nuevamente en unos minutos.';
+      } else if (errorType === 'duplicate' || errorMessage.includes('duplicate') || errorDetails.includes('duplicate')) {
+        mensajeError = '⚠️ Ya existe una reserva con estos datos. Por favor, verifique la información.';
+      } else if (errorType === 'type' || errorMessage.includes('type') || errorDetails.includes('type')) {
+        mensajeError = '📝 Error de tipo de datos. Por favor, verifique que todos los campos tengan el formato correcto.';
+      } else if (errorMessage.includes('informacionTransporte') || errorDetails.includes('informacionTransporte')) {
         mensajeError = '🚗 Error en la información de transporte. Por favor, complete los datos de transporte o déjelos vacíos.';
+      } else if (errorMessage.includes('constraint') || errorDetails.includes('constraint')) {
+        mensajeError = '🔗 Error de restricción de datos. Por favor, verifique que todos los datos sean válidos.';
+      } else if (errorMessage.includes('length') || errorDetails.includes('length')) {
+        mensajeError = '📏 Error de longitud de datos. Por favor, verifique que los campos no excedan el límite permitido.';
+      } else if (errorMessage.includes('format') || errorDetails.includes('format')) {
+        mensajeError = '📋 Error de formato de datos. Por favor, verifique que todos los campos tengan el formato correcto.';
       } else {
+        // Solo mostrar error interno si realmente no se puede identificar la causa
         mensajeError = '🔧 Error interno del servidor. Por favor, intente nuevamente en unos minutos.';
       }
     } else if (error.status === 503) {
