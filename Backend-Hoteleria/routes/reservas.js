@@ -44,6 +44,50 @@ function parseLocalDate(dateString) {
 
 // Validaciones mejoradas para crear/actualizar reservas
 const validarReserva = [
+    // Validación de campos obligatorios
+    body('habitacion')
+        .notEmpty()
+        .withMessage('La habitación es obligatoria')
+        .isMongoId()
+        .withMessage('ID de habitación inválido'),
+    
+    body('fechaEntrada')
+        .notEmpty()
+        .withMessage('La fecha de entrada es obligatoria')
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage('Formato de fecha inválido. Use el formato YYYY-MM-DD (ejemplo: 2024-12-25)'),
+    
+    body('fechaSalida')
+        .notEmpty()
+        .withMessage('La fecha de salida es obligatoria')
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage('Formato de fecha inválido. Use el formato YYYY-MM-DD (ejemplo: 2024-12-25)'),
+    
+    body('horaEntrada')
+        .notEmpty()
+        .withMessage('La hora de entrada es obligatoria')
+        .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+        .withMessage('Formato de hora inválido. Use el formato HH:MM (24 horas)'),
+    
+    body('horaSalida')
+        .notEmpty()
+        .withMessage('La hora de salida es obligatoria')
+        .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+        .withMessage('Formato de hora inválido. Use el formato HH:MM (24 horas)'),
+    
+    body('precioPorNoche')
+        .notEmpty()
+        .withMessage('El precio por noche es obligatorio')
+        .isFloat({ min: 0.01 })
+        .withMessage('El precio por noche debe ser mayor a 0'),
+    
+    body('estado')
+        .notEmpty()
+        .withMessage('El estado de la reserva es obligatorio')
+        .isIn(['Pendiente', 'Confirmada', 'Cancelada', 'Completada'])
+        .withMessage('Estado de reserva inválido'),
+    
+    // Validación de campos opcionales del cliente
     body('cliente.nombre')
         .optional()
         .custom((value) => {
@@ -52,10 +96,10 @@ const validarReserva = [
             }
             const trimmed = value.trim();
             if (trimmed.length < 2 || trimmed.length > 50) {
-                throw new Error('El nombre debe tener entre 2 y 50 caracteres');
+                throw new Error('El nombre debe tener entre 2 y 50 caracteres y solo contener letras');
             }
             if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(trimmed)) {
-                throw new Error('El nombre solo puede contener letras y espacios');
+                throw new Error('El nombre solo puede contener letras y espacios (sin números ni símbolos)');
             }
             return true;
         }),
@@ -68,10 +112,10 @@ const validarReserva = [
             }
             const trimmed = value.trim();
             if (trimmed.length < 2 || trimmed.length > 50) {
-                throw new Error('El apellido debe tener entre 2 y 50 caracteres');
+                throw new Error('El apellido debe tener entre 2 y 50 caracteres y solo contener letras');
             }
             if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(trimmed)) {
-                throw new Error('El apellido solo puede contener letras y espacios');
+                throw new Error('El apellido solo puede contener letras y espacios (sin números ni símbolos)');
             }
             return true;
         }),
@@ -89,7 +133,7 @@ const validarReserva = [
             // Validar formato de email solo si hay contenido
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(trimmed)) {
-                throw new Error('Formato de email inválido');
+                throw new Error('Formato de email inválido. Ejemplo: usuario@ejemplo.com');
             }
             return true;
         }),
@@ -131,14 +175,14 @@ const validarReserva = [
     body('fechaEntrada', 'La fecha de entrada es obligatoria')
         .notEmpty()
         .matches(/^\d{4}-\d{2}-\d{2}$/)
-        .withMessage('Formato de fecha inválido (debe ser YYYY-MM-DD)')
+        .withMessage('Formato de fecha inválido. Use el formato YYYY-MM-DD (ejemplo: 2024-12-25)')
         .custom((value) => {
             try {
                 const fecha = parseLocalDate(value);
                 const hoy = new Date();
                 hoy.setHours(0, 0, 0, 0);
                 if (fecha < hoy) {
-                    throw new Error('La fecha de entrada no puede ser anterior a hoy');
+                    throw new Error('La fecha de entrada no puede ser anterior a hoy. Seleccione una fecha actual o futura.');
                 }
                 return true;
             } catch (error) {
@@ -149,13 +193,13 @@ const validarReserva = [
     body('fechaSalida', 'La fecha de salida es obligatoria')
         .notEmpty()
         .matches(/^\d{4}-\d{2}-\d{2}$/)
-        .withMessage('Formato de fecha inválido (debe ser YYYY-MM-DD)')
+        .withMessage('Formato de fecha inválido. Use el formato YYYY-MM-DD (ejemplo: 2024-12-25)')
         .custom((value, { req }) => {
             try {
                 const fechaSalida = parseLocalDate(value);
                 const fechaEntrada = parseLocalDate(req.body.fechaEntrada);
                 if (fechaSalida <= fechaEntrada) {
-                    throw new Error('La fecha de salida debe ser posterior a la fecha de entrada');
+                    throw new Error('La fecha de salida debe ser posterior a la fecha de entrada. Debe haber al menos un día de diferencia.');
                 }
                 return true;
             } catch (error) {
@@ -166,16 +210,16 @@ const validarReserva = [
     body('horaEntrada', 'Formato de hora inválido')
         .optional()
         .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
-        .withMessage('Formato de hora debe ser HH:MM'),
+        .withMessage('Formato de hora inválido. Use formato HH:MM (24 horas). Ejemplo: 14:30'),
     
     body('horaSalida', 'Formato de hora inválido')
         .optional()
         .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
-        .withMessage('Formato de hora debe ser HH:MM'),
+        .withMessage('Formato de hora inválido. Use formato HH:MM (24 horas). Ejemplo: 11:00'),
     
     body('precioPorNoche', 'El precio por noche es obligatorio')
         .isFloat({ min: 0 })
-        .withMessage('El precio debe ser un número positivo'),
+        .withMessage('El precio debe ser un número positivo mayor a 0'),
     
     body('estado', 'Estado inválido')
         .optional()
@@ -244,14 +288,36 @@ const validarConsultaReservas = [
 const manejarErroresValidacion = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        // Categorizar errores por tipo
+        const erroresRequeridos = errors.array().filter(err => err.msg.includes('obligatorio') || err.msg.includes('requerido'));
+        const erroresFormato = errors.array().filter(err => err.msg.includes('formato') || err.msg.includes('inválido'));
+        const erroresLongitud = errors.array().filter(err => err.msg.includes('caracteres') || err.msg.includes('longitud'));
+        
+        let mensajePrincipal = 'Los datos enviados contienen errores.';
+        let sugerencia = 'Verifique que todos los campos requeridos estén completos y con el formato correcto.';
+        
+        if (erroresRequeridos.length > 0) {
+            mensajePrincipal = 'Faltan campos obligatorios.';
+            sugerencia = 'Complete todos los campos marcados como obligatorios.';
+        } else if (erroresFormato.length > 0) {
+            mensajePrincipal = 'Formato de datos incorrecto.';
+            sugerencia = 'Verifique el formato de los datos ingresados.';
+        } else if (erroresLongitud.length > 0) {
+            mensajePrincipal = 'Longitud de datos incorrecta.';
+            sugerencia = 'Ajuste la longitud de los campos según los requisitos.';
+        }
+        
         return res.status(400).json({
             success: false,
-            message: 'Error de validación',
+            message: mensajePrincipal,
             errors: errors.array().map(error => ({
                 field: error.path,
                 message: error.msg,
-                value: error.value
-            }))
+                value: error.value,
+                location: error.location
+            })),
+            sugerencia: sugerencia,
+            camposFaltantes: erroresRequeridos.map(err => err.path)
         });
     }
     next();
@@ -533,7 +599,10 @@ router.post('/', [
         // Verificar que la habitación existe y está disponible
         const habitacionDoc = await Habitacion.findById(habitacion);
         if (!habitacionDoc) {
-            return res.status(404).json({ message: 'Habitación no encontrada' });
+            return res.status(404).json({ 
+                message: 'La habitación seleccionada no existe. Por favor, seleccione una habitación válida.',
+                sugerencia: 'Verifique que la habitación esté disponible en el sistema.'
+            });
         }
         
         // NO verificar el estado de la habitación aquí, solo verificar conflictos de fechas
@@ -555,13 +624,14 @@ router.post('/', [
         });
         
         if (reservasExistentes.length > 0) {
-            return res.status(400).json({ 
-                message: 'La habitación ya está reservada para esas fechas',
+            return res.status(409).json({ 
+                message: 'La habitación ya está reservada para esas fechas. Por favor, seleccione otras fechas o una habitación diferente.',
                 conflictos: reservasExistentes.map(r => ({
                     fechaEntrada: r.fechaEntrada,
                     fechaSalida: r.fechaSalida,
                     estado: r.estado
-                }))
+                })),
+                sugerencia: 'Intente con fechas diferentes o seleccione otra habitación disponible.'
             });
         }
         

@@ -259,6 +259,9 @@
                 {{ metodo }}
               </mat-option>
             </mat-select>
+            <mat-error *ngIf="isFieldInvalid('metodoPago')">
+              {{ getErrorMessage('metodoPago') }}
+            </mat-error>
             <mat-hint>Seleccione el método de pago utilizado</mat-hint>
           </mat-form-field>
         </div>
@@ -408,6 +411,9 @@
             <textarea matInput formControlName="observaciones" 
                       rows="4"
                       placeholder="Agregue observaciones especiales, solicitudes del cliente, etc..."></textarea>
+            <mat-error *ngIf="isFieldInvalid('observaciones')">
+              {{ getErrorMessage('observaciones') }}
+            </mat-error>
             <mat-hint>Información adicional sobre la reserva</mat-hint>
           </mat-form-field>
         </div>

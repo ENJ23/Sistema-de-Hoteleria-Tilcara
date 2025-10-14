@@ -114,25 +114,25 @@ export interface DetalleReservaData {
             </mat-card-content>
           </mat-card>
 
-                     <!-- Estado y Pago -->
-           <mat-card class="info-card">
-             <mat-card-header>
-               <mat-icon mat-card-avatar>info</mat-icon>
-               <mat-card-title>Estado y Pago</mat-card-title>
-             </mat-card-header>
-             <mat-card-content>
-               <div class="info-row">
-                 <span class="label">Estado:</span>
-                 <mat-chip [ngClass]="'estado-' + data.reserva.estado?.toLowerCase()" class="estado-chip">
-                   {{ data.reserva.estado }}
-                 </mat-chip>
-               </div>
-               <div class="info-row">
+          <!-- Estado y Pago -->
+          <mat-card class="info-card">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>info</mat-icon>
+              <mat-card-title>Estado y Pago</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-row">
+                <span class="label">Estado:</span>
+                <mat-chip [ngClass]="'estado-' + data.reserva.estado?.toLowerCase()" class="estado-chip">
+                  {{ data.reserva.estado }}
+                </mat-chip>
+              </div>
+              <div class="info-row">
                  <span class="label">Estado de Pago:</span>
                  <mat-chip [ngClass]="isCompletamentePagado() ? 'pagado' : 'pendiente'" class="pago-chip">
                    {{ getEstadoPagoText() }}
-                 </mat-chip>
-               </div>
+                </mat-chip>
+              </div>
                <div class="info-row" *ngIf="data.reserva.montoPagado !== undefined">
                  <span class="label">Monto Pagado:</span>
                  <span class="value precio">{{ data.reserva.montoPagado }}$</span>
@@ -205,9 +205,9 @@ export interface DetalleReservaData {
                      </div>
                    </div>
                  </div>
-               </div>
-             </mat-card-content>
-           </mat-card>
+              </div>
+            </mat-card-content>
+          </mat-card>
 
           <!-- Precios -->
           <mat-card class="info-card">
@@ -500,10 +500,10 @@ export interface DetalleReservaData {
       color: white;
     }
 
-         .pendiente {
-       background-color: #ff9800;
-       color: white;
-     }
+    .pendiente {
+      background-color: #ff9800;
+      color: white;
+    }
 
      .precio.restante {
        color: #f44336;
@@ -524,8 +524,8 @@ export interface DetalleReservaData {
      }
 
      .pago-header {
-       display: flex;
-       justify-content: space-between;
+      display: flex;
+      justify-content: space-between;
        align-items: flex-start;
        margin-bottom: 8px;
        padding-bottom: 8px;
@@ -534,7 +534,7 @@ export interface DetalleReservaData {
      }
 
      .pago-info-header {
-       display: flex;
+      display: flex;
        flex-direction: column;
        gap: 4px;
        flex: 1;
@@ -554,7 +554,7 @@ export interface DetalleReservaData {
 
      .pago-details {
        display: grid;
-       gap: 8px;
+      gap: 8px;
      }
 
      .pago-monto {
@@ -586,9 +586,9 @@ export interface DetalleReservaData {
        gap: 8px;
        flex-shrink: 0; /* Evita que los botones se compriman */
        align-items: center;
-     }
+    }
 
-     .action-btn {
+    .action-btn {
        width: 40px;
        height: 40px;
        min-width: 40px;
@@ -748,9 +748,9 @@ export interface DetalleReservaData {
      .modificado-info {
        color: #e65100;
        font-size: 0.85em;
-       display: flex;
-       align-items: center;
-       gap: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
      }
 
      .modificado-icon {
@@ -1263,7 +1263,7 @@ export class DetalleReservaModalComponent {
           result.monto,
           result.observaciones
         ).subscribe({
-          next: (reservaActualizada) => {
+      next: (reservaActualizada) => {
             const mensaje = reservaActualizada.estaCompletamentePagado ? 
               `✅ Pago completado exitosamente por $${result.monto}` :
               `✅ Pago parcial registrado por $${result.monto}. Restante: $${reservaActualizada.montoRestante}`;
@@ -1283,9 +1283,9 @@ export class DetalleReservaModalComponent {
               monto: result.monto,
               observaciones: result.observaciones
             });
-          },
-          error: (error) => {
-            console.error('Error al registrar pago:', error);
+      },
+      error: (error) => {
+        console.error('Error al registrar pago:', error);
             
             let mensajeError = '❌ Error al registrar el pago. Intente nuevamente.';
             
@@ -1999,24 +1999,30 @@ export class DetalleReservaModalComponent {
       error: (error) => {
         console.error('Error al eliminar reserva:', error);
         
-        let mensajeError = 'Error al eliminar la reserva';
+        let mensajeError = '❌ Error al eliminar la reserva';
         
         if (error.status === 404) {
-          mensajeError = 'La reserva no fue encontrada';
+          mensajeError = '🔍 La reserva no fue encontrada. Puede que ya haya sido eliminada.';
         } else if (error.status === 403) {
-          mensajeError = 'No tiene permisos para eliminar esta reserva';
+          mensajeError = '🚫 No tiene permisos para eliminar esta reserva. Contacte al administrador.';
         } else if (error.status === 400) {
-          mensajeError = 'No se puede eliminar esta reserva en su estado actual';
+          mensajeError = '⚠️ No se puede eliminar esta reserva en su estado actual. Intente cancelarla primero.';
         } else if (error.status === 401) {
-          mensajeError = 'Sesión expirada. Debe iniciar sesión nuevamente';
+          mensajeError = '🔐 Su sesión ha expirado. Será redirigido al login.';
           this.authService.logout();
         } else if (error.status === 0) {
-          mensajeError = 'Error de conexión. Verifique que el servidor esté ejecutándose';
+          mensajeError = '🌐 Error de conexión. Verifique su internet y que el servidor esté ejecutándose.';
+        } else if (error.status === 500) {
+          mensajeError = '🔧 Error interno del servidor. Por favor, intente nuevamente.';
+        } else if (error.status === 503) {
+          mensajeError = '🚧 El servicio no está disponible temporalmente. Intente más tarde.';
         } else if (error.error?.message) {
-          mensajeError = error.error.message;
+          mensajeError = `❌ ${error.error.message}`;
+        } else {
+          mensajeError = `❌ Error inesperado (${error.status || 'desconocido'}). Por favor, intente nuevamente.`;
         }
 
-        this.snackBar.open(`❌ ${mensajeError}`, 'Cerrar', {
+        this.snackBar.open(mensajeError, 'Cerrar', {
           duration: 5000,
           panelClass: ['snackbar-error']
         });

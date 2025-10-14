@@ -193,7 +193,7 @@ const reservaSchema = new mongoose.Schema({
         tipo: {
             type: String,
             enum: ['vehiculo_propio', 'colectivo', 'taxi', 'otro'],
-            required: true
+            required: false
         },
         detalles: {
             type: String,
