@@ -108,72 +108,71 @@ export class ReservasComponent implements OnInit, OnDestroy {
   cargarReservas(): void {
     this.cargando = true;
     
-    this.reservaService.getReservas().pipe(
+    console.log('🔍 Cargando todas las reservas...');
+    
+    // ✅ CARGAR TODAS LAS RESERVAS CON PAGINACIÓN ALTA
+    this.reservaService.getReservas({}, 1, 1000).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response) => {
+        console.log('📊 Total reservas en BD:', response.total);
+        console.log('📊 Reservas cargadas:', response.reservas.length);
+        console.log('📊 Reservas recibidas:', response.reservas);
+        
         this.reservas = response.reservas;
         this.cargando = false;
       },
       error: (error) => {
         console.error('Error al cargar reservas:', error);
         this.cargando = false;
-        //this.mostrarMensaje('Error al cargar las reservas');
+        this.snackBar.open('❌ Error al cargar las reservas', 'Cerrar', { duration: 3000 });
       }
     });
   }
 
   aplicarFiltros(): void {
     const filtros = this.formFiltros.value;
-    let reservasFiltradas = [...this.reservas];
+    
+    console.log('🔍 Aplicando filtros:', filtros);
+    
+    // ✅ RECARGAR DATOS CON FILTROS APLICADOS
+    this.cargarReservasConFiltros(filtros);
+  }
 
-    // Filtro por estado
-    if (filtros.estado) {
-      reservasFiltradas = reservasFiltradas.filter(
-        reserva => reserva.estado === filtros.estado
-      );
-    }
-
-    // Filtro por fecha de inicio
-    if (filtros.fechaInicio) {
-      const fechaInicio = new Date(filtros.fechaInicio);
-      reservasFiltradas = reservasFiltradas.filter(
-        reserva => new Date(reserva.fechaEntrada) >= fechaInicio
-      );
-    }
-
-    // Filtro por fecha de fin
-    if (filtros.fechaFin) {
-      const fechaFin = new Date(filtros.fechaFin);
-      reservasFiltradas = reservasFiltradas.filter(
-        reserva => new Date(reserva.fechaSalida) <= fechaFin
-      );
-    }
-
-    // Filtro por cliente (búsqueda en nombre)
-    if (filtros.cliente) {
-      const terminoCliente = filtros.cliente.toLowerCase();
-      reservasFiltradas = reservasFiltradas.filter(reserva => {
-        const cliente = reserva.cliente as any;
-        return cliente?.nombre?.toLowerCase().includes(terminoCliente) ||
-               cliente?.apellido?.toLowerCase().includes(terminoCliente);
-      });
-    }
-
-    // Filtro por habitación
-    if (filtros.habitacion) {
-      const numeroHabitacion = filtros.habitacion.toString();
-      reservasFiltradas = reservasFiltradas.filter(reserva => {
-        const habitacion = reserva.habitacion as any;
-        return habitacion?.numero?.toString().includes(numeroHabitacion);
-      });
-    }
-
-    this.reservas = reservasFiltradas;
+  private cargarReservasConFiltros(filtros: any): void {
+    this.cargando = true;
+    
+    console.log('🔍 Cargando reservas con filtros:', filtros);
+    
+    // ✅ CARGAR RESERVAS CON FILTROS DEL SERVIDOR
+    this.reservaService.getReservas(filtros, 1, 1000).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response) => {
+        console.log('📊 Total reservas filtradas en BD:', response.total);
+        console.log('📊 Reservas filtradas cargadas:', response.reservas.length);
+        console.log('📊 Reservas filtradas recibidas:', response.reservas);
+        
+        this.reservas = response.reservas;
+        this.cargando = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar reservas filtradas:', error);
+        this.cargando = false;
+        this.snackBar.open('❌ Error al cargar las reservas filtradas', 'Cerrar', { duration: 3000 });
+      }
+    });
   }
 
   limpiarFiltros(): void {
     this.formFiltros.reset();
+    // ✅ RECARGAR TODAS LAS RESERVAS AL LIMPIAR FILTROS
+    this.cargarReservas();
+  }
+
+  // ✅ MÉTODO PARA CARGAR TODAS LAS RESERVAS SIN FILTROS
+  cargarTodasLasReservas(): void {
+    console.log('🔄 Cargando todas las reservas...');
     this.cargarReservas();
   }
 

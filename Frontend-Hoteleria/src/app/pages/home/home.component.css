@@ -4,6 +4,18 @@
   background-color: #f8f9fa;
 }
 
+/* ✅ Clase por defecto para celdas sin ocupación */
+.celda-disponible {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.celda-disponible:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
 /* Hero Section */
 .hero-section {
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);

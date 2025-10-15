@@ -921,7 +921,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   };
 
   // Método para verificar si es check-out hoy (para indicador de urgencia)
-  esCheckOutHoy(fecha: Date, estado: EstadoOcupacion): boolean {
+  esCheckOutHoy(fecha: Date, estado: EstadoOcupacion | undefined): boolean {
+    // ✅ VALIDACIÓN: Verificar si el estado existe
     if (!estado || !estado.reservaPrincipal) return false;
     
     const hoy = new Date();
@@ -1051,7 +1052,12 @@ export class HomeComponent implements OnInit, OnDestroy {
 
 
 
-  obtenerClaseOcupacion(estado: EstadoOcupacion, fecha?: Date, habitacionNumero?: string): string {
+  obtenerClaseOcupacion(estado: EstadoOcupacion | undefined, fecha?: Date, habitacionNumero?: string): string {
+    // ✅ VALIDACIÓN: Verificar si el estado existe
+    if (!estado) {
+      return 'celda-disponible'; // Clase por defecto para celdas sin ocupación
+    }
+    
     const clases: string[] = [];
     
     // 1. Clase base según el tipo (prioridad 1)
@@ -1166,7 +1172,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     return clases;
   }
 
-  obtenerIconoOcupacion(estado: EstadoOcupacion): string {
+  obtenerIconoOcupacion(estado: EstadoOcupacion | undefined): string {
+    // ✅ VALIDACIÓN: Verificar si el estado existe
+    if (!estado) return 'hotel';
+    
     if (estado.esTransicion) {
       if (estado.checkIn && estado.checkOut) {
         return 'swap_horiz';
@@ -1344,9 +1353,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  obtenerTooltipOcupacion(estado: EstadoOcupacion, habitacion: Habitacion, dia: DiaCalendario): string {
+  obtenerTooltipOcupacion(estado: EstadoOcupacion | undefined, habitacion: Habitacion, dia: DiaCalendario): string {
     let tooltip = `Habitación ${habitacion.numero} - ${this.dateTimeService.formatDateForDisplay(dia.fecha)}`;
     
+    // ✅ VALIDACIÓN: Verificar si el estado existe
     if (!estado) {
       return tooltip + ' - Disponible';
     }

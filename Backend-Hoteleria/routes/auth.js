@@ -4,6 +4,7 @@ const { check, validationResult } = require('express-validator');
 const authController = require('../controllers/auth.controller');
 const { verifyToken } = require('../middlewares/authJwt');
 const { ROLES } = require('../config/auth.config');
+const securityMiddleware = require('../middlewares/security.middleware');
 
 // Validaciones mejoradas para registro
 const validarRegistro = [
@@ -78,10 +79,19 @@ router.post(
     authController.registro
 );
 
-// Ruta de login
+// Ruta de login con rate limiting
 router.post(
     '/login',
     [
+        (req, res, next) => {
+            // Verificar que el middleware esté disponible
+            if (securityMiddleware && securityMiddleware.authLimiter) {
+                return securityMiddleware.authLimiter(req, res, next);
+            } else {
+                console.warn('⚠️ Rate limiting no disponible, continuando sin protección');
+                return next();
+            }
+        },
         ...validarLogin,
         manejarErroresValidacion
     ],
@@ -93,5 +103,19 @@ router.get('/perfil', verifyToken, authController.obtenerPerfil);
 
 // Verificar token (para rutas protegidas)
 router.get('/verificar-token', verifyToken, authController.verificarToken);
+
+// Ruta para refresh token con rate limiting
+router.post('/refresh', 
+    (req, res, next) => {
+        // Verificar que el middleware esté disponible
+        if (securityMiddleware && securityMiddleware.authLimiter) {
+            return securityMiddleware.authLimiter(req, res, next);
+        } else {
+            console.warn('⚠️ Rate limiting no disponible, continuando sin protección');
+            return next();
+        }
+    }, 
+    authController.refreshToken
+);
 
 module.exports = router;

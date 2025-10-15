@@ -1,6 +1,6 @@
 const Usuario = require('../models/Usuario');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/auth.config');
+const { JWT_SECRET, JWT_EXPIRES_IN, JWT_REFRESH_SECRET } = require('../config/auth.config');
 const { validationResult } = require('express-validator');
 
 // Generar token JWT
@@ -106,8 +106,9 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Generar token
-        const token = generateToken(usuario._id, usuario.rol);
+        // Generar tokens
+        const accessToken = generateToken(usuario._id, usuario.rol);
+        const refreshToken = usuario.generateRefreshToken();
 
         // Devolver respuesta exitosa
         res.json({
@@ -118,7 +119,8 @@ exports.login = async (req, res) => {
                 email: usuario.email,
                 rol: usuario.rol
             },
-            token
+            accessToken,
+            refreshToken
         });
     } catch (error) {
         console.error('Error en login:', error);
@@ -146,4 +148,49 @@ exports.obtenerPerfil = async (req, res) => {
 exports.verificarToken = (req, res) => {
     // Si el middleware de autenticación pasa, el token es válido
     res.json({ message: 'Token válido', usuario: req.userId });
+};
+
+// Refresh token
+exports.refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({ message: 'Refresh token requerido' });
+        }
+
+        // Verificar refresh token
+        const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+        
+        if (decoded.type !== 'refresh') {
+            return res.status(401).json({ message: 'Token inválido' });
+        }
+
+        // Buscar usuario
+        const usuario = await Usuario.findById(decoded.id);
+        if (!usuario || !usuario.activo) {
+            return res.status(401).json({ message: 'Usuario no encontrado o inactivo' });
+        }
+
+        // Generar nuevo access token
+        const newAccessToken = generateToken(usuario._id, usuario.rol);
+
+        res.json({
+            message: 'Token renovado exitosamente',
+            accessToken: newAccessToken
+        });
+
+    } catch (error) {
+        console.error('Error en refresh token:', error);
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Refresh token expirado' });
+        }
+        
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Refresh token inválido' });
+        }
+        
+        res.status(500).json({ message: 'Error al renovar token', error: error.message });
+    }
 };

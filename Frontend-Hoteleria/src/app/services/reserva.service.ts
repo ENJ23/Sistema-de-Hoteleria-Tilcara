@@ -22,6 +22,8 @@ export class ReservaService {
 
   // Obtener todas las reservas con filtros opcionales
   getReservas(filtros?: ReservaFilters, pagina: number = 1, porPagina: number = 10): Observable<ReservaResponse> {
+    console.log('🔧 ReservaService.getReservas llamado con:', { filtros, pagina, porPagina });
+    
     let params = new HttpParams()
       .set('pagina', pagina.toString())
       .set('porPagina', porPagina.toString());
@@ -41,6 +43,7 @@ export class ReservaService {
       if (filtros.pagado !== undefined) params = params.set('pagado', filtros.pagado.toString());
     }
 
+    console.log('🌐 Llamando a:', this.apiUrl, 'con params:', params.toString());
     return this.http.get<ReservaResponse>(this.apiUrl, { params });
   }
 

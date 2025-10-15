@@ -134,6 +134,7 @@ export class ReservasComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    console.log('🎯 ngOnInit ejecutándose - llamando a cargarReservas()');
     this.cargarReservas();
     this.configurarFiltros();
   }
@@ -149,23 +150,25 @@ export class ReservasComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private cargarReservas(): void {
+  private cargarReservas(filtros?: any): void {
+    console.log('🚀 INICIANDO cargarReservas con filtros:', filtros);
     this.loading = true;
     
-    // Cargar reservas futuras y de hoy
-    const hoy = new Date();
-    const fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    
-    this.reservaService.getReservas({
-      fechaInicio: fechaInicio.toISOString(),
+    // ✅ CARGAR TODAS LAS RESERVAS SIN FILTRO DE FECHA INICIAL
+    const filtrosReserva = filtros || {
       estado: '' // Cargar todos los estados
-    }).pipe(
+    };
+    
+    console.log('🔍 Cargando reservas con filtros:', filtrosReserva);
+    
+    this.reservaService.getReservas(filtrosReserva, 1, 1000).pipe(
       map((response: ReservaResponse) => {
-        // Filtrar solo reservas futuras o de hoy
-        return response.reservas.filter(reserva => {
-          const fechaEntrada = new Date(reserva.fechaEntrada);
-          return fechaEntrada >= fechaInicio;
-        });
+        console.log('📊 Total reservas en BD:', response.total);
+        console.log('📊 Reservas cargadas:', response.reservas.length);
+        console.log('📊 Reservas recibidas:', response.reservas);
+        
+        // ✅ DEVOLVER TODAS LAS RESERVAS SIN FILTRO ADICIONAL
+        return response.reservas;
       }),
       catchError(error => {
         console.error('Error al cargar reservas:', error);
@@ -174,6 +177,7 @@ export class ReservasComponent implements OnInit, AfterViewInit {
       }),
       finalize(() => this.loading = false)
     ).subscribe(reservas => {
+      console.log('📊 Procesando reservas:', reservas.length);
       this.procesarReservas(reservas);
     });
   }
@@ -221,10 +225,15 @@ export class ReservasComponent implements OnInit, AfterViewInit {
           const diasEstancia = this.calcularDiasEstancia(reserva.fechaEntrada, reserva.fechaSalida);
           const estadoInfo = this.obtenerInfoEstado(reserva.estado);
           
+          // ✅ CALCULAR PRECIO POR NOCHE
+          const precioPorNoche = diasEstancia > 0 ? reserva.precioTotal / diasEstancia : 0;
+          console.log(`💰 Precio por noche calculado: ${precioPorNoche} (precioTotal: ${reserva.precioTotal}, diasEstancia: ${diasEstancia})`);
+          
           return {
             ...reserva,
             habitacionDetalle,
             diasEstancia,
+            precioPorNoche, // ✅ AGREGAR PRECIO POR NOCHE
             estadoColor: estadoInfo.color,
             estadoIcon: estadoInfo.icon
           };
@@ -243,10 +252,15 @@ export class ReservasComponent implements OnInit, AfterViewInit {
       const diasEstancia = this.calcularDiasEstancia(reserva.fechaEntrada, reserva.fechaSalida);
       const estadoInfo = this.obtenerInfoEstado(reserva.estado);
       
+      // ✅ CALCULAR PRECIO POR NOCHE
+      const precioPorNoche = diasEstancia > 0 ? reserva.precioTotal / diasEstancia : 0;
+      console.log(`💰 Precio por noche calculado: ${precioPorNoche} (precioTotal: ${reserva.precioTotal}, diasEstancia: ${diasEstancia})`);
+      
       return {
         ...reserva,
         habitacionDetalle,
         diasEstancia,
+        precioPorNoche, // ✅ AGREGAR PRECIO POR NOCHE
         estadoColor: estadoInfo.color,
         estadoIcon: estadoInfo.icon
       };
@@ -289,6 +303,12 @@ export class ReservasComponent implements OnInit, AfterViewInit {
   private aplicarFiltros(): void {
     const filtros = this.filtrosForm.value;
     
+    console.log('🔍 Aplicando filtros:', filtros);
+    
+    // ✅ RECARGAR DATOS CON FILTROS APLICADOS
+    this.cargarReservas(filtros);
+    
+    // ✅ MANTENER FILTRO LOCAL PARA BÚSQUEDA RÁPIDA ADICIONAL
     this.dataSource.filterPredicate = (data: ReservaConDetalles, filter: string): boolean => {
       const matchEstado = !filtros.estado || data.estado === filtros.estado;
       const matchHabitacion = !filtros.habitacion || 
@@ -347,6 +367,8 @@ export class ReservasComponent implements OnInit, AfterViewInit {
 
   limpiarFiltros(): void {
     this.filtrosForm.reset();
+    // ✅ RECARGAR TODAS LAS RESERVAS AL LIMPIAR FILTROS
+    this.cargarReservas();
   }
 
   exportarReservas(): void {
@@ -356,6 +378,12 @@ export class ReservasComponent implements OnInit, AfterViewInit {
 
   nuevaReserva(): void {
     this.router.navigate(['/nueva-reserva']);
+  }
+
+  // ✅ MÉTODO PARA CARGAR TODAS LAS RESERVAS SIN FILTROS
+  cargarTodasLasReservas(): void {
+    console.log('🔄 Cargando todas las reservas...');
+    this.cargarReservas();
   }
 
   // Métodos para la tabla

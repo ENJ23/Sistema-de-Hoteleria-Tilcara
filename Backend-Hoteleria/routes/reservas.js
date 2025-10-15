@@ -13,6 +13,7 @@ const {
     validatePaymentLimits, 
     logPaymentOperation 
 } = require('../middlewares/paymentValidation.middleware');
+const { requireLock, autoReleaseLock } = require('../middlewares/concurrency.middleware');
 const mongoose = require('mongoose'); // Importar mongoose para transacciones
 const pdfService = require('../services/pdf.service'); // Importar servicio de PDF
 
@@ -307,6 +308,8 @@ router.get('/', [
     manejarErroresValidacion
 ], async (req, res) => {
     try {
+        console.log('🔍 Backend recibió petición GET /reservas con query:', req.query);
+        
         const { 
             page = 1, 
             limit = 10, 
@@ -363,6 +366,13 @@ router.get('/', [
                 montoRestante: Math.max(0, reserva.precioTotal - totalPagos),
                 totalPagos
             };
+        });
+        
+        console.log('📊 Backend devolviendo:', {
+            reservas: reservasConCalculos.length,
+            totalPages: Math.ceil(total / limit),
+            currentPage: page,
+            total
         });
         
         res.json({
@@ -563,6 +573,9 @@ router.post('/', [
     ...validarReserva,
     manejarErroresValidacion
 ], async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         console.log('🔍 DEBUGGING POST - Datos recibidos:', req.body);
         console.log('🔍 DEBUGGING POST - Configuración de camas:', req.body.configuracionCamas);
@@ -588,6 +601,7 @@ router.post('/', [
         const fechaEntradaParsed = parseLocalDate(fechaEntrada);
         const fechaSalidaParsed = parseLocalDate(fechaSalida);
         
+        // OPTIMIZADO: Verificar conflictos dentro de la transacción
         const reservasExistentes = await Reserva.find({
             habitacion: habitacion,
             estado: { $nin: ['Cancelada'] }, // Excluir reservas canceladas
@@ -597,7 +611,7 @@ router.post('/', [
                     fechaSalida: { $gt: fechaEntradaParsed }
                 }
             ]
-        });
+        }).session(session);
         
         if (reservasExistentes.length > 0) {
             return res.status(409).json({ 
@@ -625,8 +639,11 @@ router.post('/', [
             necesidadesEspeciales: req.body.necesidadesEspeciales || undefined
         });
         
-        console.log('💾 Guardando reserva...');
-        await reserva.save();
+        console.log('💾 Guardando reserva en transacción...');
+        await reserva.save({ session });
+        
+        // Confirmar transacción
+        await session.commitTransaction();
         
         // NO actualizar el estado de la habitación aquí
         // El estado se maneja dinámicamente basado en las reservas activas
@@ -642,6 +659,8 @@ router.post('/', [
         });
         
     } catch (error) {
+        // OPTIMIZADO: Abortar transacción en caso de error
+        await session.abortTransaction();
         console.error('❌ Error al crear reserva:', error);
         
         // Categorizar el tipo de error para enviar mensaje más específico
@@ -691,6 +710,9 @@ router.post('/', [
                 keyValue: error.keyValue
             }
         });
+    } finally {
+        // OPTIMIZADO: Cerrar sesión de transacción
+        await session.endSession();
     }
 });
 
@@ -945,6 +967,8 @@ router.delete('/:id', [
 router.patch('/:id/checkin', [
     verifyToken,
     isEncargado,
+    requireLock(10000), // Lock por 10 segundos
+    autoReleaseLock,
     body('horaCheckIn').optional().matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Formato de hora inválido')
 ], async (req, res) => {
     try {
@@ -984,6 +1008,8 @@ router.patch('/:id/checkin', [
 router.patch('/:id/checkout', [
     verifyToken,
     isEncargado,
+    requireLock(10000), // Lock por 10 segundos
+    autoReleaseLock,
     body('horaCheckOut').optional().matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Formato de hora inválido')
 ], async (req, res) => {
     try {

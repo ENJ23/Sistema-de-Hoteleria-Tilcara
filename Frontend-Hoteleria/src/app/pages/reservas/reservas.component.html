@@ -34,6 +34,10 @@
           <mat-icon>clear</mat-icon>
           Limpiar
         </button>
+        <button mat-button (click)="cargarTodasLasReservas()">
+          <mat-icon>refresh</mat-icon>
+          Cargar Todas
+        </button>
         <button mat-button (click)="exportarReservas()">
           <mat-icon>download</mat-icon>
           Exportar
@@ -168,8 +172,8 @@
           <td mat-cell *matCellDef="let reserva">
             <div class="precio-cell">
               <div class="precio-total">{{ formatearPrecio(reserva.precioTotal) }}</div>
-              <div class="precio-noche" *ngIf="reserva.diasEstancia">
-                {{ formatearPrecio(reserva.precioPorNoche) }}/noche
+              <div class="precio-noche" *ngIf="reserva.diasEstancia && reserva.diasEstancia > 0">
+                {{ formatearPrecio(reserva.precioPorNoche || (reserva.precioTotal / reserva.diasEstancia)) }}/noche
               </div>
             </div>
           </td>

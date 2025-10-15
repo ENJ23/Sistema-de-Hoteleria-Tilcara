@@ -50,6 +50,18 @@ UsuarioSchema.pre('save', async function(next) {
     }
 });
 
+// Método para generar refresh token
+UsuarioSchema.methods.generateRefreshToken = function() {
+    const jwt = require('jsonwebtoken');
+    const { JWT_REFRESH_SECRET } = require('../config/auth.config');
+    
+    return jwt.sign(
+        { id: this._id, type: 'refresh' },
+        JWT_REFRESH_SECRET,
+        { expiresIn: '7d' }
+    );
+};
+
 // Método para comparar contraseñas
 UsuarioSchema.methods.compararPassword = async function(password) {
     return await bcrypt.compare(password, this.password);

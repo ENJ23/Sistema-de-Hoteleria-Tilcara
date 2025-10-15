@@ -7,6 +7,8 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { ReservaService } from './services/reserva.service';
 import { HabitacionService } from './services/habitacion.service';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { tokenRefreshInterceptor } from './core/interceptors/token-refresh.interceptor';
+import { httpCacheInterceptor } from './core/interceptors/http-cache.interceptor';
 
 // Proveedor para el servicio de reservas (siempre real)
 const reservaServiceProvider = {
@@ -25,7 +27,11 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }), 
     provideRouter(routes), 
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withFetch(), withInterceptors([AuthInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([
+      AuthInterceptor,
+      tokenRefreshInterceptor,
+      httpCacheInterceptor
+    ])),
     reservaServiceProvider,
     habitacionServiceProvider
   ]

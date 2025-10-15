@@ -13,16 +13,17 @@ module.exports = {
             standardHeaders: true,
             legacyHeaders: false,
         },
-        // Rate limiting para autenticación
+        // Rate limiting para autenticación (más restrictivo)
         auth: {
             windowMs: 15 * 60 * 1000, // 15 minutos
-            max: 500, // máximo 500 intentos de login por ventana (aumentado)
+            max: process.env.NODE_ENV === 'production' ? 5 : 50, // 5 en producción, 50 en desarrollo
             message: {
                 success: false,
                 message: 'Demasiados intentos de inicio de sesión, intenta de nuevo en 15 minutos'
             },
             standardHeaders: true,
             legacyHeaders: false,
+            skipSuccessfulRequests: true, // No contar requests exitosos
         },
         // Rate limiting para creación de reservas
         reservas: {

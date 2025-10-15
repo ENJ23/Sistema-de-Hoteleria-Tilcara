@@ -1,6 +1,6 @@
 import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, map, tap } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { StorageService } from '../core/services/storage.service';
 import { environment } from '../../environments/environment';
@@ -20,7 +20,8 @@ export interface LoginResponse {
     email: string;
     rol: 'encargado' | 'limpieza' | 'mantenimiento';
   };
-  token: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 @Injectable({
@@ -53,7 +54,8 @@ export class AuthService {
         tap(response => {
           const user = response.usuario;
           this.storageService.setItem('currentUser', JSON.stringify(user));
-          this.storageService.setItem('token', response.token);
+          this.storageService.setItem('accessToken', response.accessToken);
+          this.storageService.setItem('refreshToken', response.refreshToken);
           this.currentUserSubject.next(user);
         })
       );
@@ -70,13 +72,18 @@ export class AuthService {
 
   logout(): void {
     this.storageService.removeItem('currentUser');
-    this.storageService.removeItem('token');
+    this.storageService.removeItem('accessToken');
+    this.storageService.removeItem('refreshToken');
     this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
   }
 
   getToken(): string | null {
-    return this.storageService.getItem('token');
+    return this.storageService.getItem('accessToken');
+  }
+
+  getRefreshToken(): string | null {
+    return this.storageService.getItem('refreshToken');
   }
 
   isAuthenticated(): boolean {
@@ -123,6 +130,21 @@ export class AuthService {
     return this.http.get<{valid: boolean}>(`${this.apiUrl}/verificar-token`)
       .pipe(
         map(response => response.valid)
+      );
+  }
+
+  refreshToken(): Observable<any> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    return this.http.post(`${this.apiUrl}/refresh`, { refreshToken })
+      .pipe(
+        tap((response: any) => {
+          // Actualizar el access token
+          this.storageService.setItem('accessToken', response.accessToken);
+        })
       );
   }
 }

@@ -175,39 +175,39 @@
                     *ngFor="let dia of diasCalendario" 
                     class="celda-ocupacion"
                     [ngClass]="[
-                      obtenerClaseOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)], dia.fecha, ocupacion.habitacion.numero),
+                      obtenerClaseOcupacion(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)], dia.fecha, ocupacion.habitacion.numero),
                       'clickeable'
                     ]"
-                    [style.--color-reserva]="obtenerColorReserva(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.reservaPrincipal)"
+                    [style.--color-reserva]="obtenerColorReserva(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.reservaPrincipal)"
                     [attr.data-habitacion]="ocupacion.habitacion.numero"
                     [attr.data-fecha]="formatearFecha(dia.fecha)"
                     (click)="seleccionarCelda(ocupacion.habitacion, dia)"
-                    [title]="obtenerTooltipOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)], ocupacion.habitacion, dia)">
+                    [title]="obtenerTooltipOcupacion(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)], ocupacion.habitacion, dia)">
                     
                     <!-- Indicador especial para días de transición -->
-                    <div class="indicador-transicion" *ngIf="ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.esDiaTransicion">
+                    <div class="indicador-transicion" *ngIf="ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.esDiaTransicion">
                       <mat-icon class="icono-transicion-multiple">swap_horiz</mat-icon>
                     </div>
                     
                     <!-- Indicador de estado de pago -->
                     <div class="indicador-pago" 
                          [ngClass]="{
-                           'pagado': ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
-                           'parcial': (ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.montoPagado || 0) > 0 && !ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
-                           'sin-pago': !ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.estaCompletamentePagado && (ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.montoPagado || 0) === 0
+                           'pagado': ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
+                           'parcial': (ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.montoPagado || 0) > 0 && !ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
+                           'sin-pago': !ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.estaCompletamentePagado && (ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.montoPagado || 0) === 0
                          }"
-                         *ngIf="ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.tipo === 'ocupada' || ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.tipo === 'reservada' || ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.tipo === 'finalizada'">
+                         *ngIf="ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.tipo === 'ocupada' || ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.tipo === 'reservada' || ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.tipo === 'finalizada'">
                     </div>
                     
                     <!-- Indicador de urgencia (ejemplo: check-out hoy) -->
                     <div class="indicador-urgencia" 
-                         *ngIf="esCheckOutHoy(dia.fecha, ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)])">
+                         *ngIf="esCheckOutHoy(dia.fecha, ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)])">
                     </div>
                     
                     <!-- Estado completo para días intermedios -->
-                    <div class="estado-completo" *ngIf="!ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.esDiaEntrada && !ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.esDiaSalida && ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]">
+                    <div class="estado-completo" *ngIf="!ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.esDiaEntrada && !ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.esDiaSalida && ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]">
                       <mat-icon class="icono-ocupacion">
-                        {{ obtenerIconoOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]) }}
+                        {{ obtenerIconoOcupacion(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]) }}
                       </mat-icon>
                     </div>
                   </td>
@@ -424,40 +424,4 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Notas Rápidas -->
-  <mat-card class="content-card notas-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>note</mat-icon>
-        Notas del Día
-      </mat-card-title>
-      <mat-card-subtitle>Recordatorios y observaciones importantes</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="notas-container">
-        <div class="nota-item" *ngFor="let nota of notasDia; let i = index">
-          <div class="nota-contenido">
-            <mat-icon class="nota-icon">{{ nota.tipo === 'importante' ? 'priority_high' : 'info' }}</mat-icon>
-            <span class="nota-texto">{{ nota.texto }}</span>
-          </div>
-          <button mat-icon-button color="warn" (click)="eliminarNota(i)">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </div>
-        
-        <div class="nueva-nota">
-          <mat-form-field appearance="outline" class="nota-input">
-            <mat-label>Agregar nota</mat-label>
-            <textarea matInput [(ngModel)]="nuevaNota" rows="2" 
-                      placeholder="Escribir nota o recordatorio..."></textarea>
-          </mat-form-field>
-          <button mat-raised-button color="primary" (click)="agregarNota()" 
-                  [disabled]="!nuevaNota.trim()">
-            <mat-icon>add</mat-icon>
-            Agregar
-          </button>
-        </div>
-      </div>
-    </mat-card-content>
-  </mat-card>
 </div>
