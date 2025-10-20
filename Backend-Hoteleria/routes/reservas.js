@@ -4,6 +4,7 @@ const Reserva = require('../models/Reserva');
 const Habitacion = require('../models/Habitacion');
 const Cliente = require('../models/Cliente');
 const Tarea = require('../models/Tarea');
+const CancelacionReserva = require('../models/CancelacionReserva');
 const { body, validationResult, query } = require('express-validator');
 const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/authJwt');
 const { 
@@ -327,7 +328,7 @@ router.get('/', [
                 const estados = estado.split(',').map(e => e.trim());
                 query.estado = { $in: estados };
             } else {
-                query.estado = estado;
+            query.estado = estado;
             }
         }
         
@@ -489,6 +490,69 @@ router.get('/check-disponibilidad', [
         console.error('Error al verificar disponibilidad:', error);
         res.status(500).json({ 
             message: 'Error al verificar disponibilidad', 
+            error: error.message 
+        });
+    }
+});
+
+// ========================================
+// ENDPOINTS PARA GESTIÓN DE REEMBOLSOS
+// ========================================
+
+// GET - Endpoint de prueba para cancelaciones (sin autenticación)
+router.get('/cancelaciones/test', async (req, res) => {
+    try {
+        console.log('🔍 Endpoint de prueba /cancelaciones/test llamado');
+        res.json({ 
+            message: 'Endpoint de cancelaciones funcionando',
+            timestamp: new Date().toISOString(),
+            modelAvailable: !!CancelacionReserva
+        });
+    } catch (error) {
+        console.error('❌ Error en endpoint de prueba:', error);
+        res.status(500).json({ 
+            message: 'Error en endpoint de prueba', 
+            error: error.message 
+        });
+    }
+});
+
+// GET - Obtener cancelaciones con reembolsos pendientes
+router.get('/cancelaciones', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        console.log('🔍 Endpoint /cancelaciones llamado');
+        console.log('📋 Query params:', req.query);
+        
+        const { estadoReembolso = '', fechaInicio = '', fechaFin = '' } = req.query;
+        
+        let query = {};
+        
+        if (estadoReembolso) {
+            query.estadoReembolso = estadoReembolso;
+        }
+        
+        if (fechaInicio && fechaFin) {
+            query.fechaCancelacion = {
+                $gte: new Date(fechaInicio),
+                $lte: new Date(fechaFin)
+            };
+        }
+        
+        const cancelaciones = await CancelacionReserva.find(query)
+            .sort({ fechaCancelacion: -1 })
+            .limit(100);
+        
+        res.json({
+            cancelaciones,
+            total: cancelaciones.length
+        });
+    } catch (error) {
+        console.error('Error al obtener cancelaciones:', error);
+        res.status(500).json({ 
+            message: 'Error al obtener cancelaciones', 
             error: error.message 
         });
     }
@@ -898,7 +962,7 @@ router.patch('/:id/pago', [
         } else if (req.body.pagado !== undefined) {
             // Solo actualizar estado de pago (para compatibilidad)
             reserva.pagado = req.body.pagado;
-            await reserva.save();
+        await reserva.save();
         }
         
         await reserva.populate('cliente');
@@ -920,46 +984,109 @@ router.patch('/:id/pago', [
 });
 
 // DELETE - Eliminar una reserva (usuarios autenticados)
+// DELETE - Cancelar una reserva (cambiar estado a Cancelada en lugar de eliminar)
 router.delete('/:id', [
     verifyToken,
-    isUsuarioValido, // Cualquier usuario autenticado puede eliminar reservas
-    async (req, res, next) => {
-        try {
-            console.log('🔍 Verificando permisos para eliminar reserva:', req.params.id);
-            console.log('👤 Usuario actual:', req.userId);
-            
-            const reserva = await Reserva.findById(req.params.id);
+    isUsuarioValido,
+    body('motivoCancelacion').notEmpty().withMessage('El motivo de cancelación es obligatorio'),
+    body('motivoCancelacion').isLength({ min: 5, max: 500 }).withMessage('El motivo debe tener entre 5 y 500 caracteres')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        
+        const reserva = await Reserva.findById(req.params.id).populate('habitacion');
             if (!reserva) {
-                console.log('❌ Reserva no encontrada:', req.params.id);
                 return res.status(404).json({ message: 'Reserva no encontrada' });
             }
             
-            console.log('✅ Reserva encontrada:', reserva.numero);
-            console.log('🔐 Usuario rol:', req.userId.rol);
-            
-            // Cualquier usuario autenticado puede eliminar reservas
-            // (ya verificado por el middleware isUsuarioValido)
-            return next();
+        // Verificar que la reserva no esté ya cancelada
+        if (reserva.estado === 'Cancelada') {
+            return res.status(400).json({ 
+                message: 'La reserva ya está cancelada',
+                estado: reserva.estado
+            });
+        }
+        
+        console.log('🚫 Cancelando reserva:', {
+            reservaId: reserva._id,
+            cliente: reserva.cliente,
+            montoPagado: reserva.montoPagado,
+            motivo: req.body.motivoCancelacion
+        });
+        
+        // ✅ CREAR REGISTRO DE CANCELACIÓN ANTES DE CAMBIAR ESTADO
+        const cancelacionData = {
+            reservaId: reserva._id,
+            cliente: {
+                nombre: reserva.cliente.nombre,
+                apellido: reserva.cliente.apellido,
+                email: reserva.cliente.email,
+                telefono: reserva.cliente.telefono,
+                documento: reserva.cliente.documento
+            },
+            habitacion: {
+                numero: reserva.habitacion.numero,
+                tipo: reserva.habitacion.tipo
+            },
+            fechaEntrada: reserva.fechaEntrada,
+            fechaSalida: reserva.fechaSalida,
+            precioTotal: reserva.precioTotal,
+            montoPagado: reserva.montoPagado,
+            montoRestante: reserva.calcularMontoRestante(),
+            historialPagos: reserva.historialPagos.map(pago => ({
+                monto: pago.monto,
+                metodoPago: pago.metodoPago,
+                fechaPago: pago.fechaPago,
+                observaciones: pago.observaciones,
+                registradoPor: pago.registradoPor
+            })),
+            motivoCancelacion: req.body.motivoCancelacion,
+            canceladoPor: req.userId ? req.userId.nombre : 'Sistema'
+        };
+        
+        // ✅ GUARDAR INFORMACIÓN DE CANCELACIÓN
+        const cancelacion = new CancelacionReserva(cancelacionData);
+        await cancelacion.save();
+        
+        // ✅ CAMBIAR ESTADO A CANCELADA EN LUGAR DE ELIMINAR
+        reserva.estado = 'Cancelada';
+        reserva.fechaCancelacion = new Date();
+        await reserva.save();
+        
+        console.log('✅ Reserva cancelada exitosamente:', {
+            reservaId: reserva._id,
+            cancelacionId: cancelacion._id,
+            montoPagado: reserva.montoPagado,
+            puedeReembolso: cancelacion.puedeProcesarReembolso()
+        });
+        
+        // ✅ RESPUESTA CON INFORMACIÓN DE REEMBOLSO
+        const respuesta = {
+            message: 'Reserva cancelada correctamente',
+            reserva: {
+                _id: reserva._id,
+                estado: reserva.estado,
+                fechaCancelacion: reserva.fechaCancelacion
+            },
+            cancelacion: {
+                _id: cancelacion._id,
+                montoPagado: cancelacion.montoPagado,
+                montoRestante: cancelacion.montoRestante,
+                puedeReembolso: cancelacion.puedeProcesarReembolso(),
+                estadoReembolso: cancelacion.estadoReembolso
+            }
+        };
+        
+        res.json(respuesta);
         } catch (error) {
-            console.error('❌ Error al verificar la reserva:', error);
-            return res.status(500).json({ message: 'Error al verificar la reserva', error: error.message });
-        }
-    }
-], async (req, res) => {
-    try {
-        const reserva = await Reserva.findById(req.params.id);
-        if (!reserva) {
-            return res.status(404).json({ message: 'Reserva no encontrada' });
-        }
-        
-        // NO liberar la habitación automáticamente
-        // El estado de la habitación se maneja dinámicamente basado en las reservas activas
-        
-        await Reserva.findByIdAndDelete(req.params.id);
-        
-        res.json({ message: 'Reserva eliminada correctamente' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al eliminar reserva', error: error.message });
+        console.error('❌ Error al cancelar reserva:', error);
+        res.status(500).json({ 
+            message: 'Error al cancelar reserva', 
+            error: error.message 
+        });
     }
 });
 
@@ -1035,7 +1162,7 @@ router.patch('/:id/checkout', [
         await reserva.save();
         
         // Actualizar estado de la habitación
-        await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Disponible' });
+            await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Disponible' });
         
         // Crear tarea de limpieza automáticamente
         try {
@@ -1499,6 +1626,184 @@ router.post('/:id/recalcular-pagos', [
         console.error('Error al recalcular pagos:', error);
         res.status(500).json({ 
             message: 'Error al recalcular pagos', 
+            error: error.message 
+        });
+    }
+});
+
+
+// GET - Obtener una cancelación específica
+router.get('/cancelaciones/:id', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        const cancelacion = await CancelacionReserva.findById(req.params.id);
+        
+        if (!cancelacion) {
+            return res.status(404).json({ message: 'Cancelación no encontrada' });
+        }
+        
+        res.json(cancelacion);
+    } catch (error) {
+        console.error('Error al obtener cancelación:', error);
+        res.status(500).json({ 
+            message: 'Error al obtener cancelación', 
+            error: error.message 
+        });
+    }
+});
+
+// POST - Procesar reembolso de una cancelación
+router.post('/cancelaciones/:id/reembolso', [
+    verifyToken,
+    isEncargado,
+    body('metodoReembolso').notEmpty().withMessage('El método de reembolso es obligatorio'),
+    body('metodoReembolso').isIn(['Efectivo', 'Transferencia', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Cheque']).withMessage('Método de reembolso inválido'),
+    body('observaciones').optional().isLength({ max: 500 }).withMessage('Las observaciones no pueden exceder 500 caracteres')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        
+        const cancelacion = await CancelacionReserva.findById(req.params.id);
+        
+        if (!cancelacion) {
+            return res.status(404).json({ message: 'Cancelación no encontrada' });
+        }
+        
+        if (!cancelacion.puedeProcesarReembolso()) {
+            return res.status(400).json({ 
+                message: 'No se puede procesar el reembolso',
+                estadoActual: cancelacion.estadoReembolso,
+                montoPagado: cancelacion.montoPagado
+            });
+        }
+        
+        const { metodoReembolso, observaciones = '' } = req.body;
+        const procesadoPor = req.userId ? req.userId.nombre : 'Sistema';
+        
+        // Procesar el reembolso
+        await cancelacion.procesarReembolso(metodoReembolso, procesadoPor, observaciones);
+        
+        console.log('💰 Reembolso procesado:', {
+            cancelacionId: cancelacion._id,
+            reservaId: cancelacion.reservaId,
+            monto: cancelacion.reembolso.monto,
+            metodo: cancelacion.reembolso.metodoReembolso,
+            procesadoPor: procesadoPor
+        });
+        
+        res.json({
+            message: 'Reembolso procesado correctamente',
+            cancelacion: {
+                _id: cancelacion._id,
+                estadoReembolso: cancelacion.estadoReembolso,
+                reembolso: cancelacion.reembolso
+            }
+        });
+    } catch (error) {
+        console.error('Error al procesar reembolso:', error);
+        res.status(500).json({ 
+            message: 'Error al procesar reembolso', 
+            error: error.message 
+        });
+    }
+});
+
+// PATCH - Completar reembolso
+router.patch('/cancelaciones/:id/reembolso/completar', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        const cancelacion = await CancelacionReserva.findById(req.params.id);
+        
+        if (!cancelacion) {
+            return res.status(404).json({ message: 'Cancelación no encontrada' });
+        }
+        
+        if (cancelacion.estadoReembolso !== 'Procesado') {
+            return res.status(400).json({ 
+                message: 'El reembolso debe estar en estado Procesado para completarlo',
+                estadoActual: cancelacion.estadoReembolso
+            });
+        }
+        
+        await cancelacion.completarReembolso();
+        
+        console.log('✅ Reembolso completado:', {
+            cancelacionId: cancelacion._id,
+            monto: cancelacion.reembolso.monto,
+            fechaCompletado: new Date()
+        });
+        
+        res.json({
+            message: 'Reembolso completado correctamente',
+            cancelacion: {
+                _id: cancelacion._id,
+                estadoReembolso: cancelacion.estadoReembolso,
+                reembolso: cancelacion.reembolso
+            }
+        });
+    } catch (error) {
+        console.error('Error al completar reembolso:', error);
+        res.status(500).json({ 
+            message: 'Error al completar reembolso', 
+            error: error.message 
+        });
+    }
+});
+
+// GET - Estadísticas de reembolsos
+router.get('/cancelaciones/estadisticas', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        console.log('🔍 Endpoint /cancelaciones/estadisticas llamado');
+        
+        // Verificar si el modelo existe
+        if (!CancelacionReserva) {
+            console.error('❌ Modelo CancelacionReserva no encontrado');
+            return res.status(500).json({ 
+                message: 'Modelo CancelacionReserva no disponible',
+                error: 'Model not found'
+            });
+        }
+        
+        const estadisticas = await CancelacionReserva.aggregate([
+            {
+                $group: {
+                    _id: '$estadoReembolso',
+                    count: { $sum: 1 },
+                    montoTotal: { $sum: '$montoPagado' }
+                }
+            }
+        ]);
+        
+        const totalCancelaciones = await CancelacionReserva.countDocuments();
+        const totalMontoReembolsos = await CancelacionReserva.aggregate([
+            { $match: { estadoReembolso: { $in: ['Procesado', 'Completado'] } } },
+            { $group: { _id: null, total: { $sum: '$montoPagado' } } }
+        ]);
+        
+        console.log('✅ Estadísticas obtenidas:', {
+            totalCancelaciones,
+            estadisticas: estadisticas.length
+        });
+        
+        res.json({
+            estadisticas,
+            totalCancelaciones,
+            totalMontoReembolsos: totalMontoReembolsos[0]?.total || 0
+        });
+    } catch (error) {
+        console.error('❌ Error al obtener estadísticas:', error);
+        res.status(500).json({ 
+            message: 'Error al obtener estadísticas', 
             error: error.message 
         });
     }

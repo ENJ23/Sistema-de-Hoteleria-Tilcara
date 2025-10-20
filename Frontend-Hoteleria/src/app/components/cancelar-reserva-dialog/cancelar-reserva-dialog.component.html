@@ -1,0 +1,168 @@
+<div class="cancelar-reserva-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>
+      <mat-icon>cancel</mat-icon>
+      Cancelar Reserva
+    </h2>
+    <button mat-icon-button (click)="cerrar()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <!-- Información de la reserva -->
+    <mat-card class="reserva-info-card">
+      <mat-card-header>
+        <mat-card-title>Información de la Reserva</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Cliente:</span>
+            <span class="value">{{ data.reserva.cliente.nombre }} {{ data.reserva.cliente.apellido }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Habitación:</span>
+            <span class="value">{{ getHabitacionInfo() }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Fechas:</span>
+            <span class="value">{{ data.reserva.fechaEntrada | date:'dd/MM/yyyy' }} - {{ data.reserva.fechaSalida | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Precio Total:</span>
+            <span class="value precio">{{ formatearPrecio(data.reserva.precioTotal) }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Monto Pagado:</span>
+            <span class="value monto-pagado">{{ formatearPrecio(montoPagado) }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Formulario de cancelación -->
+    <form [formGroup]="cancelacionForm" class="cancelacion-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Motivo de Cancelación *</mat-label>
+        <mat-select formControlName="motivoCancelacion" (selectionChange)="onMotivoChange()">
+          <mat-option *ngFor="let motivo of motivosCancelacion" [value]="motivo">
+            {{ motivo }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="f['motivoCancelacion'].invalid && f['motivoCancelacion'].touched">
+          <span *ngIf="f['motivoCancelacion'].errors?.['required']">El motivo es obligatorio</span>
+          <span *ngIf="f['motivoCancelacion'].errors?.['minlength']">El motivo debe tener al menos 5 caracteres</span>
+          <span *ngIf="f['motivoCancelacion'].errors?.['maxlength']">El motivo no puede exceder 500 caracteres</span>
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Si el motivo es "Otro", permitir texto libre -->
+      <mat-form-field 
+        *ngIf="f['motivoCancelacion'].value === ''" 
+        appearance="outline" 
+        class="full-width">
+        <mat-label>Especifique el motivo *</mat-label>
+        <textarea 
+          matInput 
+          formControlName="motivoCancelacion"
+          placeholder="Describa el motivo de la cancelación..."
+          rows="3">
+        </textarea>
+        <mat-error *ngIf="f['motivoCancelacion'].invalid && f['motivoCancelacion'].touched">
+          <span *ngIf="f['motivoCancelacion'].errors?.['required']">El motivo es obligatorio</span>
+          <span *ngIf="f['motivoCancelacion'].errors?.['minlength']">El motivo debe tener al menos 5 caracteres</span>
+          <span *ngIf="f['motivoCancelacion'].errors?.['maxlength']">El motivo no puede exceder 500 caracteres</span>
+        </mat-error>
+      </mat-form-field>
+    </form>
+
+    <!-- Información de reembolso -->
+    <mat-card *ngIf="puedeReembolso" class="reembolso-info-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>money</mat-icon>
+          Información de Reembolso
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="reembolso-info">
+          <p><strong>Monto a reembolsar:</strong> {{ formatearPrecio(montoPagado) }}</p>
+          <p class="info-text">Se puede procesar un reembolso por el monto pagado después de cancelar la reserva.</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Formulario de reembolso (después de cancelar) -->
+    <div *ngIf="mostrarReembolso && datosCancelacion" class="reembolso-form">
+      <mat-card class="reembolso-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>payment</mat-icon>
+            Procesar Reembolso
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="reembolso-details">
+            <p><strong>Monto a reembolsar:</strong> {{ formatearPrecio(datosCancelacion.montoPagado) }}</p>
+            <p><strong>Estado:</strong> 
+              <mat-chip [class]="'estado-' + datosCancelacion.estadoReembolso.toLowerCase()">
+                {{ datosCancelacion.estadoReembolso }}
+              </mat-chip>
+            </p>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Método de Reembolso *</mat-label>
+            <mat-select formControlName="metodoReembolso">
+              <mat-option *ngFor="let metodo of metodosReembolso" [value]="metodo.value">
+                {{ metodo.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Observaciones (opcional)</mat-label>
+            <textarea 
+              matInput 
+              formControlName="observacionesReembolso"
+              placeholder="Observaciones adicionales sobre el reembolso..."
+              rows="2">
+            </textarea>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button 
+      mat-button 
+      (click)="cerrar()"
+      [disabled]="cargando">
+      Cancelar
+    </button>
+    
+    <button 
+      *ngIf="!mostrarReembolso"
+      mat-raised-button 
+      color="warn"
+      (click)="cancelarReserva()"
+      [disabled]="cargando || cancelacionForm.invalid">
+      <mat-icon *ngIf="!cargando">cancel</mat-icon>
+      <mat-spinner *ngIf="cargando" diameter="20"></mat-spinner>
+      {{ cargando ? 'Cancelando...' : 'Cancelar Reserva' }}
+    </button>
+
+    <button 
+      *ngIf="mostrarReembolso && datosCancelacion"
+      mat-raised-button 
+      color="primary"
+      (click)="procesarReembolso()"
+      [disabled]="cargando || !f['metodoReembolso'].value">
+      <mat-icon *ngIf="!cargando">payment</mat-icon>
+      <mat-spinner *ngIf="cargando" diameter="20"></mat-spinner>
+      {{ cargando ? 'Procesando...' : 'Procesar Reembolso' }}
+    </button>
+  </mat-dialog-actions>
+</div>

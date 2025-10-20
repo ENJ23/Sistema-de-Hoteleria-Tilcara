@@ -6,6 +6,7 @@ import { RegisterComponent } from './pages/register/register.component';
 import { NuevaReservaComponent } from './pages/nueva-reserva/nueva-reserva.component';
 import { ReservasComponent } from './pages/reservas/reservas.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { AuditoriaCancelacionesComponent } from './pages/auditoria-cancelaciones/auditoria-cancelaciones.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -61,6 +62,13 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
+    canActivate: [AuthGuard]
+  },
+  
+  // Auditoría de Cancelaciones
+  {
+    path: 'auditoria-cancelaciones',
+    component: AuditoriaCancelacionesComponent,
     canActivate: [AuthGuard]
   },
   

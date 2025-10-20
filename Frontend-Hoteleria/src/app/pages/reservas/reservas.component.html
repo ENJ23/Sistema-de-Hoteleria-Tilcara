@@ -1,4 +1,26 @@
 <div class="reservas-container">
+  <!-- Notificación de reembolsos pendientes -->
+  <mat-card *ngIf="mostrarNotificacionReembolso" class="notification-card reembolso-pendiente">
+    <div class="notification-content">
+      <div class="notification-icon">
+        <mat-icon>money</mat-icon>
+      </div>
+      <div class="notification-text">
+        <h3>💰 Reembolsos Pendientes</h3>
+        <p>Tienes {{ reembolsosPendientes }} reembolso(s) pendiente(s) por procesar</p>
+      </div>
+      <div class="notification-actions">
+        <button mat-raised-button color="accent" (click)="irAAuditoria()">
+          <mat-icon>payment</mat-icon>
+          Procesar Reembolsos
+        </button>
+        <button mat-icon-button (click)="mostrarNotificacionReembolso = false">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </mat-card>
+
   <!-- Header con estadísticas -->
   <mat-card class="stats-card">
     <div class="stats-header">
@@ -199,10 +221,11 @@
               </button>
               
               <button mat-icon-button 
-                      matTooltip="Eliminar reserva" 
-                      (click)="eliminarReserva(reserva)"
-                      color="warn">
-                <mat-icon>delete</mat-icon>
+                      matTooltip="Cancelar reserva" 
+                      (click)="cancelarReserva(reserva)"
+                      color="warn"
+                      [disabled]="reserva.estado === 'Cancelada'">
+                <mat-icon>cancel</mat-icon>
               </button>
             </div>
           </td>

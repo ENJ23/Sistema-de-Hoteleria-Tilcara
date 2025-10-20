@@ -1,0 +1,101 @@
+<div class="reembolso-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>
+      <mat-icon>payment</mat-icon>
+      Procesar Reembolso
+    </h2>
+    <button mat-icon-button (click)="cerrar()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <!-- Información de la cancelación -->
+    <mat-card class="cancelacion-info-card">
+      <mat-card-header>
+        <mat-card-title>Información de la Cancelación</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Cliente:</span>
+            <span class="value">{{ data.cancelacion.cliente.nombre }} {{ data.cancelacion.cliente.apellido }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Habitación:</span>
+            <span class="value">{{ data.cancelacion.habitacion.numero }} - {{ data.cancelacion.habitacion.tipo }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Fecha Cancelación:</span>
+            <span class="value">{{ data.cancelacion.fechaCancelacion | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Monto a Reembolsar:</span>
+            <span class="value precio">{{ formatearPrecio(montoReembolso) }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Formulario de reembolso -->
+    <form [formGroup]="reembolsoForm" class="reembolso-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Método de Reembolso *</mat-label>
+        <mat-select formControlName="metodoReembolso">
+          <mat-option *ngFor="let metodo of metodosReembolso" [value]="metodo.value">
+            {{ metodo.label }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="f['metodoReembolso'].invalid && f['metodoReembolso'].touched">
+          <span *ngIf="f['metodoReembolso'].errors?.['required']">El método de reembolso es obligatorio</span>
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Observaciones (opcional)</mat-label>
+        <textarea 
+          matInput 
+          formControlName="observaciones"
+          placeholder="Observaciones adicionales sobre el reembolso..."
+          rows="3">
+        </textarea>
+      </mat-form-field>
+    </form>
+
+    <!-- Información adicional -->
+    <mat-card class="info-card">
+      <mat-card-content>
+        <div class="info-text">
+          <mat-icon>info</mat-icon>
+          <div>
+            <p><strong>Importante:</strong></p>
+            <ul>
+              <li>El reembolso será procesado por el monto pagado: <strong>{{ formatearPrecio(montoReembolso) }}</strong></li>
+              <li>Una vez procesado, el estado cambiará a "Procesado"</li>
+              <li>Para completar el reembolso, debe confirmar la entrega del dinero al cliente</li>
+            </ul>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end" class="dialog-actions">
+    <button 
+      mat-button 
+      (click)="cerrar()"
+      [disabled]="cargando">
+      Cancelar
+    </button>
+    
+    <button 
+      mat-raised-button 
+      color="primary"
+      (click)="procesarReembolso()"
+      [disabled]="cargando || reembolsoForm.invalid">
+      <mat-icon *ngIf="!cargando">payment</mat-icon>
+      <mat-spinner *ngIf="cargando" diameter="20"></mat-spinner>
+      {{ cargando ? 'Procesando...' : 'Procesar Reembolso' }}
+    </button>
+  </mat-dialog-actions>
+</div>

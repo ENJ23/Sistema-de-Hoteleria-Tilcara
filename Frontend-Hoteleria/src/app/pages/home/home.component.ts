@@ -1303,12 +1303,13 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.estadisticas.reservasHoy = this.reservasHoy.length;
         this.estadisticas.checkinsHoy = this.reservasHoy.filter(r => r.estado === 'En curso').length;
         this.estadisticas.checkoutsHoy = this.reservasHoy.filter(r => r.estado === 'Completada').length;
-        this.estadisticas.reservasPagadasHoy = this.reservasHoy.filter(r => r.pagado).length;
+        this.estadisticas.reservasPagadasHoy = this.reservasHoy.filter(r => r.pagado && r.estado !== 'Cancelada').length;
     
-    // Ingresos del día (solo reservas completamente pagadas)
+    // Ingresos del día (solo reservas completamente pagadas y NO canceladas)
+    // Considerar el montoPagado real (que ya incluye reembolsos como valores negativos)
         this.estadisticas.ingresosHoy = this.reservasHoy
-          .filter(r => r.pagado)
-      .reduce((total, r) => total + (r.precioTotal || 0), 0);
+          .filter(r => r.estado !== 'Cancelada')
+          .reduce((total, r) => total + Math.max(0, r.montoPagado || 0), 0);
 
     // Calcular reservas y pagos pendientes
     this.calcularReservasPendientes();

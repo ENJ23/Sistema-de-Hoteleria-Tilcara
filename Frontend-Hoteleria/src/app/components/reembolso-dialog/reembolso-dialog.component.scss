@@ -1,0 +1,131 @@
+.reembolso-dialog {
+  min-width: 500px;
+  max-width: 600px;
+
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e0e0e0;
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: #1976d2;
+    }
+
+    .close-button {
+      color: #666;
+    }
+  }
+
+  .dialog-content {
+    padding: 24px;
+    max-height: 70vh;
+    overflow-y: auto;
+
+    .cancelacion-info-card {
+      margin-bottom: 24px;
+      border-left: 4px solid #ff9800;
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+
+        .info-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .label {
+            font-weight: 500;
+            color: #666;
+            font-size: 0.9em;
+          }
+
+          .value {
+            font-weight: 600;
+            color: #333;
+
+            &.precio {
+              color: #2e7d32;
+              font-size: 1.1em;
+            }
+          }
+        }
+      }
+    }
+
+    .reembolso-form {
+      margin-bottom: 24px;
+
+      .full-width {
+        width: 100%;
+      }
+    }
+
+    .info-card {
+      border-left: 4px solid #2196f3;
+      background-color: #f3f4f6;
+
+      .info-text {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+
+        mat-icon {
+          color: #2196f3;
+          margin-top: 4px;
+        }
+
+        div {
+          flex: 1;
+
+          p {
+            margin: 0 0 8px 0;
+            font-weight: 500;
+          }
+
+          ul {
+            margin: 0;
+            padding-left: 20px;
+
+            li {
+              margin-bottom: 4px;
+              color: #666;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .dialog-actions {
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+    gap: 8px;
+
+    button {
+      min-width: 120px;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .reembolso-dialog {
+    min-width: 100%;
+    max-width: 100%;
+
+    .dialog-content {
+      .cancelacion-info-card .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}

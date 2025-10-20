@@ -1,0 +1,245 @@
+<div class="detalle-cancelacion-dialog">
+  <!-- Header -->
+  <div class="dialog-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2>Detalles de Cancelación</h2>
+        <p>Información completa de la cancelación y reembolso</p>
+      </div>
+    </div>
+    <button mat-icon-button (click)="cerrar()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Contenido -->
+  <div class="dialog-content">
+    <!-- Información General -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>info</mat-icon>
+          Información General
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>ID de Cancelación</label>
+            <div class="info-value">
+              <span>{{ cancelacion._id }}</span>
+              <button mat-icon-button 
+                      matTooltip="Copiar ID" 
+                      (click)="copiarAlPortapapeles(cancelacion._id)"
+                      class="copy-btn">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <label>Fecha de Cancelación</label>
+            <div class="info-value">
+              <mat-icon>schedule</mat-icon>
+              {{ formatearFecha(cancelacion.fechaCancelacion) }}
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <label>Motivo de Cancelación</label>
+            <div class="info-value">
+              <mat-icon>description</mat-icon>
+              {{ cancelacion.motivoCancelacion }}
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información del Cliente -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>person</mat-icon>
+          Información del Cliente
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="cliente-info">
+          <div class="cliente-avatar">
+            <mat-icon>account_circle</mat-icon>
+          </div>
+          <div class="cliente-details">
+            <div class="cliente-nombre">
+              {{ cancelacion.cliente.nombre }} {{ cancelacion.cliente.apellido }}
+            </div>
+            <div class="cliente-contacto" *ngIf="cancelacion.cliente.telefono">
+              <mat-icon>phone</mat-icon>
+              {{ cancelacion.cliente.telefono }}
+            </div>
+            <div class="cliente-email" *ngIf="cancelacion.cliente.email">
+              <mat-icon>email</mat-icon>
+              {{ cancelacion.cliente.email }}
+            </div>
+            <div class="cliente-documento" *ngIf="cancelacion.cliente.documento">
+              <mat-icon>badge</mat-icon>
+              {{ cancelacion.cliente.documento }}
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información de la Habitación -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>hotel</mat-icon>
+          Información de la Habitación
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="habitacion-info">
+          <div class="habitacion-numero">{{ cancelacion.habitacion.numero }}</div>
+          <div class="habitacion-details">
+            <div class="habitacion-tipo">{{ cancelacion.habitacion.tipo }}</div>
+            <div class="habitacion-capacidad">Habitación {{ cancelacion.habitacion.numero }}</div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Fechas de la Reserva -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>date_range</mat-icon>
+          Fechas de la Reserva
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="fechas-info">
+          <div class="fecha-item entrada">
+            <mat-icon>login</mat-icon>
+            <div class="fecha-details">
+              <div class="fecha-label">Fecha de Entrada</div>
+              <div class="fecha-fecha">{{ formatearFecha(cancelacion.fechaEntrada) }}</div>
+            </div>
+          </div>
+          
+          <div class="fecha-item salida">
+            <mat-icon>logout</mat-icon>
+            <div class="fecha-details">
+              <div class="fecha-label">Fecha de Salida</div>
+              <div class="fecha-fecha">{{ formatearFecha(cancelacion.fechaSalida) }}</div>
+            </div>
+          </div>
+          
+          <div class="fecha-item estancia">
+            <mat-icon>nights_stay</mat-icon>
+            <div class="fecha-details">
+              <div class="fecha-label">Días de Estancia</div>
+              <div class="fecha-fecha">{{ calcularDiasEstancia() }} días</div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Información Financiera -->
+    <mat-card class="info-card financial">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>attach_money</mat-icon>
+          Información Financiera
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="financial-grid">
+          <div class="financial-item">
+            <label>Precio por Noche</label>
+            <div class="financial-value">
+              {{ formatearPrecio(calcularPrecioPorNoche()) }}
+            </div>
+          </div>
+          
+          <div class="financial-item">
+            <label>Precio Total</label>
+            <div class="financial-value total">
+              {{ formatearPrecio(cancelacion.precioTotal) }}
+            </div>
+          </div>
+          
+          <div class="financial-item">
+            <label>Monto Pagado</label>
+            <div class="financial-value paid">
+              {{ formatearPrecio(cancelacion.montoPagado) }}
+            </div>
+          </div>
+          
+          <div class="financial-item" *ngIf="cancelacion.montoPagado < cancelacion.precioTotal">
+            <label>Monto Restante</label>
+            <div class="financial-value remaining">
+              {{ formatearPrecio(cancelacion.precioTotal - cancelacion.montoPagado) }}
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Estado del Reembolso -->
+    <mat-card class="info-card status">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>payment</mat-icon>
+          Estado del Reembolso
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="status-info">
+          <div class="status-chip">
+            <mat-chip [ngClass]="'estado-chip ' + cancelacion.estadoReembolso.toLowerCase()">
+              <mat-icon>{{ getEstadoIcon(cancelacion.estadoReembolso) }}</mat-icon>
+              {{ cancelacion.estadoReembolso }}
+            </mat-chip>
+          </div>
+          
+          <div class="status-details" *ngIf="cancelacion.montoPagado > 0">
+            <div class="reembolso-info">
+              <div class="reembolso-monto">
+                <label>Monto a Reembolsar:</label>
+                <span class="monto">{{ formatearPrecio(cancelacion.montoPagado) }}</span>
+              </div>
+              
+              <div class="reembolso-metodo" *ngIf="cancelacion.reembolso?.metodoReembolso">
+                <label>Método de Reembolso:</label>
+                <span>{{ cancelacion.reembolso?.metodoReembolso }}</span>
+              </div>
+              
+              <div class="reembolso-fecha" *ngIf="cancelacion.reembolso?.fechaReembolso">
+                <label>Fecha de Reembolso:</label>
+                <span>{{ formatearFecha(cancelacion.reembolso?.fechaReembolso || '') }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="no-reembolso" *ngIf="cancelacion.montoPagado === 0">
+            <mat-icon>info</mat-icon>
+            <span>No hay monto a reembolsar (reserva sin pago previo)</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Footer -->
+  <div class="dialog-footer">
+    <button mat-button (click)="cerrar()">
+      <mat-icon>close</mat-icon>
+      Cerrar
+    </button>
+  </div>
+</div>

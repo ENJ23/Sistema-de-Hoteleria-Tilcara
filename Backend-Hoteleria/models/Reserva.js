@@ -133,8 +133,8 @@ const reservaSchema = new mongoose.Schema({
     historialPagos: [{
         monto: {
             type: Number,
-            required: true,
-            min: 0
+            required: true
+            // Removido min: 0 para permitir valores negativos (reembolsos)
         },
         metodoPago: {
             type: String,
@@ -359,7 +359,7 @@ reservaSchema.methods.eliminarPago = function(pagoId, eliminadoPor = 'Encargado'
 };
 
 // Método para recalcular totales de pagos (útil para correcciones)
-reservaSchema.methods.recalcularPagos = function() {
+reservaSchema.methods.recalcularPagos = async function() {
     this.montoPagado = this.historialPagos.reduce((total, pago) => total + pago.monto, 0);
     this.pagado = this.estaCompletamentePagado();
     return this.save();

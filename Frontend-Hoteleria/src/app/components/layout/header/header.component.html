@@ -86,7 +86,13 @@
                 <mat-icon>assessment</mat-icon>
                 <span>Reportes</span>
               </a>
-              
+            </li>
+            
+            <li class="nav-item" *ngIf="isEncargado">
+              <a class="nav-link" [routerLink]="['/auditoria-cancelaciones']" routerLinkActive="active">
+                <mat-icon>audit</mat-icon>
+                <span>Auditoría</span>
+              </a>
             </li>
           </ul>
         </div>

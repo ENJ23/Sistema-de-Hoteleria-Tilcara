@@ -1,0 +1,342 @@
+<div class="auditoria-cancelaciones-container">
+  <!-- Header con gradiente -->
+  <div class="page-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>account_balance_wallet</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>Auditoría de Cancelaciones</h1>
+        <p>Gestión y seguimiento de cancelaciones y reembolsos</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button mat-fab color="primary" matTooltip="Actualizar datos" (click)="cargarCancelaciones()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Estadísticas mejoradas -->
+  <div class="estadisticas-section" *ngIf="estadisticas && estadisticas.totalCancelaciones > 0">
+    <div class="estadisticas-grid">
+      <div class="stat-card total-cancelaciones">
+        <div class="stat-icon">
+          <mat-icon>cancel</mat-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ estadisticas.totalCancelaciones }}</div>
+          <div class="stat-label">Total Cancelaciones</div>
+        </div>
+      </div>
+      
+      <div class="stat-card monto-reembolsos">
+        <div class="stat-icon">
+          <mat-icon>attach_money</mat-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ formatearPrecio(estadisticas.totalMontoReembolsos) }}</div>
+          <div class="stat-label">Monto Total Reembolsos</div>
+        </div>
+      </div>
+      
+      <div class="stat-card" *ngFor="let stat of estadisticas.estadisticas" [ngClass]="'estado-' + stat._id.toLowerCase()">
+        <div class="stat-icon">
+          <mat-icon>{{ getEstadoIcon(stat._id) }}</mat-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ stat.count }}</div>
+          <div class="stat-label">{{ stat._id }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros mejorados -->
+  <div class="filtros-section">
+    <div class="filtros-header">
+      <h2>
+        <mat-icon>filter_list</mat-icon>
+        Filtros de Búsqueda
+      </h2>
+    </div>
+    <form [formGroup]="filtrosForm" class="filtros-form">
+      <div class="filtros-grid">
+        <div class="filtro-group">
+          <label class="filtro-label">
+            <mat-icon>payment</mat-icon>
+            Estado de Reembolso
+          </label>
+          <mat-form-field appearance="outline" class="filtro-field">
+            <mat-select formControlName="estadoReembolso">
+              <mat-option value="">Todos los estados</mat-option>
+              <mat-option value="Pendiente">
+                <span class="estado-option pendiente">Pendiente</span>
+              </mat-option>
+              <mat-option value="Procesado">
+                <span class="estado-option procesado">Procesado</span>
+              </mat-option>
+              <mat-option value="Completado">
+                <span class="estado-option completado">Completado</span>
+              </mat-option>
+              <mat-option value="Rechazado">
+                <span class="estado-option rechazado">Rechazado</span>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="filtro-group">
+          <label class="filtro-label">
+            <mat-icon>date_range</mat-icon>
+            Rango de Fechas
+          </label>
+          <div class="fecha-group">
+            <mat-form-field appearance="outline" class="fecha-field">
+              <mat-label>Fecha Inicio</mat-label>
+              <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio">
+              <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+              <mat-datepicker #pickerInicio></mat-datepicker>
+            </mat-form-field>
+            <span class="fecha-separator">hasta</span>
+            <mat-form-field appearance="outline" class="fecha-field">
+              <mat-label>Fecha Fin</mat-label>
+              <input matInput [matDatepicker]="pickerFin" formControlName="fechaFin">
+              <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
+              <mat-datepicker #pickerFin></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="filtros-actions">
+          <button mat-raised-button color="primary" (click)="aplicarFiltros()" class="action-btn primary">
+            <mat-icon>search</mat-icon>
+            Buscar
+          </button>
+          <button mat-stroked-button (click)="limpiarFiltros()" class="action-btn secondary">
+            <mat-icon>clear</mat-icon>
+            Limpiar
+          </button>
+          <button mat-stroked-button (click)="exportarCancelaciones()" class="action-btn export">
+            <mat-icon>download</mat-icon>
+            Exportar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabla de Cancelaciones mejorada -->
+  <div class="tabla-section">
+    <div class="tabla-header">
+      <div class="tabla-title">
+        <h2>
+          <mat-icon>list_alt</mat-icon>
+          Cancelaciones Registradas
+        </h2>
+        <div class="tabla-count">
+          <span class="count-badge">{{ totalCancelaciones }}</span>
+          <span class="count-label">cancelaciones</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabla-container">
+      <!-- Loading -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading-content">
+          <mat-spinner diameter="50"></mat-spinner>
+          <h3>Cargando cancelaciones...</h3>
+          <p>Por favor espera mientras obtenemos los datos</p>
+        </div>
+      </div>
+
+      <!-- No data -->
+      <div *ngIf="!loading && cancelaciones.length === 0" class="no-data">
+        <div class="no-data-content">
+          <mat-icon>inbox</mat-icon>
+          <h3>No se encontraron cancelaciones</h3>
+          <p>No hay cancelaciones que coincidan con los filtros aplicados</p>
+          <button mat-raised-button color="primary" (click)="limpiarFiltros()">
+            <mat-icon>refresh</mat-icon>
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="!loading && cancelaciones.length > 0" class="tabla-wrapper">
+        <table mat-table [dataSource]="cancelaciones" class="cancelaciones-table">
+          <!-- Fecha Cancelación -->
+          <ng-container matColumnDef="fechaCancelacion">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-cell">
+                <mat-icon>schedule</mat-icon>
+                Fecha Cancelación
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let cancelacion">
+              <div class="fecha-cancelacion">
+                <div class="fecha-fecha">{{ cancelacion.fechaCancelacion | date:'dd/MM/yyyy' }}</div>
+                <div class="fecha-hora">{{ cancelacion.fechaCancelacion | date:'HH:mm' }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Cliente -->
+          <ng-container matColumnDef="cliente">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-cell">
+                <mat-icon>person</mat-icon>
+                Cliente
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let cancelacion">
+              <div class="cliente-info">
+                <div class="cliente-avatar">
+                  <mat-icon>account_circle</mat-icon>
+                </div>
+                <div class="cliente-details">
+                  <div class="cliente-nombre">
+                    {{ cancelacion.cliente.nombre }} {{ cancelacion.cliente.apellido }}
+                  </div>
+                  <div class="cliente-contacto" *ngIf="cancelacion.cliente.telefono">
+                    <mat-icon>phone</mat-icon>
+                    {{ cancelacion.cliente.telefono }}
+                  </div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Habitación -->
+          <ng-container matColumnDef="habitacion">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-cell">
+                <mat-icon>hotel</mat-icon>
+                Habitación
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let cancelacion">
+              <div class="habitacion-info">
+                <div class="habitacion-numero">{{ cancelacion.habitacion.numero }}</div>
+                <div class="habitacion-tipo">{{ cancelacion.habitacion.tipo }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Fechas -->
+          <ng-container matColumnDef="fechas">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-cell">
+                <mat-icon>date_range</mat-icon>
+                Fechas Reserva
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let cancelacion">
+              <div class="fechas-info">
+                <div class="fecha-item entrada">
+                  <mat-icon>login</mat-icon>
+                  <div class="fecha-text">
+                    <div class="fecha-label">Entrada</div>
+                    <div class="fecha-fecha">{{ cancelacion.fechaEntrada | date:'dd/MM/yyyy' }}</div>
+                  </div>
+                </div>
+                <div class="fecha-item salida">
+                  <mat-icon>logout</mat-icon>
+                  <div class="fecha-text">
+                    <div class="fecha-label">Salida</div>
+                    <div class="fecha-fecha">{{ cancelacion.fechaSalida | date:'dd/MM/yyyy' }}</div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Monto Pagado -->
+          <ng-container matColumnDef="montoPagado">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-cell">
+                <mat-icon>attach_money</mat-icon>
+                Monto Pagado
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let cancelacion">
+              <div class="monto-info">
+                <div class="monto-pagado">{{ formatearPrecio(cancelacion.montoPagado) }}</div>
+                <div class="monto-total" *ngIf="cancelacion.precioTotal > cancelacion.montoPagado">
+                  <span class="total-label">Total:</span>
+                  <span class="total-amount">{{ formatearPrecio(cancelacion.precioTotal) }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Estado Reembolso -->
+          <ng-container matColumnDef="estadoReembolso">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-cell">
+                <mat-icon>payment</mat-icon>
+                Estado Reembolso
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let cancelacion">
+              <div class="estado-container">
+                <mat-chip [ngClass]="'estado-chip ' + cancelacion.estadoReembolso.toLowerCase()">
+                  <mat-icon>{{ getEstadoIcon(cancelacion.estadoReembolso) }}</mat-icon>
+                  {{ cancelacion.estadoReembolso }}
+                </mat-chip>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef>
+              <div class="header-cell">
+                <mat-icon>settings</mat-icon>
+                Acciones
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let cancelacion">
+              <div class="acciones-cell">
+                <button mat-icon-button 
+                        matTooltip="Ver detalles completos" 
+                        (click)="verDetalles(cancelacion)"
+                        class="action-btn view">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                
+                <button mat-icon-button 
+                        matTooltip="Procesar reembolso" 
+                        (click)="procesarReembolso(cancelacion)"
+                        class="action-btn process"
+                        [disabled]="cancelacion.estadoReembolso !== 'Pendiente'">
+                  <mat-icon>payment</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="header-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              class="cancelacion-row"
+              [ngClass]="'row-' + row.estadoReembolso.toLowerCase()">
+          </tr>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <mat-paginator 
+        *ngIf="!loading && cancelaciones.length > 0"
+        [length]="totalCancelaciones"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        showFirstLastButtons
+        class="paginador">
+      </mat-paginator>
+    </div>
+  </div>
+</div>

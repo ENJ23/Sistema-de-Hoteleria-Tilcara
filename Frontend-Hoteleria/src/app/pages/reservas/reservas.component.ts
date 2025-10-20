@@ -25,9 +25,11 @@ import { map, catchError, finalize } from 'rxjs/operators';
 
 import { ReservaService } from '../../services/reserva.service';
 import { HabitacionService } from '../../services/habitacion.service';
+import { CancelacionService } from '../../services/cancelacion.service';
 import { Reserva, ReservaResponse } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
 import { DetalleReservaModalComponent } from '../../components/detalle-reserva-modal/detalle-reserva-modal.component';
+import { CancelarReservaDialogComponent } from '../../components/cancelar-reserva-dialog/cancelar-reserva-dialog.component';
 
 // Configuración de formato de fecha DD/MM/YYYY
 export const DD_MM_YYYY_FORMAT = {
@@ -115,10 +117,15 @@ export class ReservasComponent implements OnInit, AfterViewInit {
   totalReservas = 0;
   reservasFuturas = 0;
   reservasHoy = 0;
+  
+  // Reembolsos pendientes
+  reembolsosPendientes = 0;
+  mostrarNotificacionReembolso = false;
 
   constructor(
     private reservaService: ReservaService,
     private habitacionService: HabitacionService,
+    private cancelacionService: CancelacionService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router,
@@ -137,6 +144,7 @@ export class ReservasComponent implements OnInit, AfterViewInit {
     console.log('🎯 ngOnInit ejecutándose - llamando a cargarReservas()');
     this.cargarReservas();
     this.configurarFiltros();
+    this.cargarReembolsosPendientes();
   }
 
   ngAfterViewInit(): void {
@@ -346,23 +354,38 @@ export class ReservasComponent implements OnInit, AfterViewInit {
     });
   }
 
-  eliminarReserva(reserva: ReservaConDetalles): void {
-    const confirmacion = confirm(
-      `¿Estás seguro de que deseas eliminar la reserva de ${reserva.cliente.nombre} ${reserva.cliente.apellido}?`
-    );
-    
-    if (confirmacion) {
-      this.reservaService.deleteReserva(reserva._id).subscribe({
-        next: () => {
-          this.snackBar.open('✅ Reserva eliminada exitosamente', 'Cerrar', { duration: 3000 });
-          this.cargarReservas();
-        },
-        error: (error) => {
-          console.error('Error al eliminar reserva:', error);
-          this.snackBar.open('❌ Error al eliminar la reserva', 'Cerrar', { duration: 3000 });
+  cancelarReserva(reserva: ReservaConDetalles): void {
+    const dialogRef = this.dialog.open(CancelarReservaDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+      data: { reserva: reserva },
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.success) {
+        console.log('✅ Reserva cancelada:', result);
+        this.snackBar.open('Reserva cancelada correctamente', 'Cerrar', { 
+          duration: 5000,
+          panelClass: ['success-snackbar']
+        });
+        
+        if (result.reembolsoProcesado) {
+          this.snackBar.open('Reembolso procesado exitosamente', 'Cerrar', { 
+            duration: 5000,
+            panelClass: ['success-snackbar']
+          });
         }
-      });
-    }
+        
+        // Si se solicita navegar a auditoría
+        if (result.navegarAAuditoria) {
+          this.router.navigate(['/auditoria-cancelaciones']);
+        }
+        
+        this.cargarReservas();
+        this.cargarReembolsosPendientes(); // Recargar reembolsos pendientes
+      }
+    });
   }
 
   limpiarFiltros(): void {
@@ -416,5 +439,36 @@ export class ReservasComponent implements OnInit, AfterViewInit {
     const hoy = new Date();
     const fechaReserva = new Date(fechaEntrada);
     return fechaReserva.toDateString() === hoy.toDateString();
+  }
+
+  // Cargar reembolsos pendientes
+  cargarReembolsosPendientes(): void {
+    this.cancelacionService.getCancelaciones({ estadoReembolso: 'Pendiente' }).subscribe({
+      next: (response) => {
+        this.reembolsosPendientes = response.total;
+        this.mostrarNotificacionReembolso = this.reembolsosPendientes > 0;
+        
+        if (this.mostrarNotificacionReembolso) {
+          this.snackBar.open(
+            `💰 Tienes ${this.reembolsosPendientes} reembolso(s) pendiente(s) por procesar`, 
+            'Ver Auditoría', 
+            {
+              duration: 8000,
+              panelClass: ['info-snackbar']
+            }
+          ).onAction().subscribe(() => {
+            this.router.navigate(['/auditoria-cancelaciones']);
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error al cargar reembolsos pendientes:', error);
+      }
+    });
+  }
+
+  // Ir a auditoría de cancelaciones
+  irAAuditoria(): void {
+    this.router.navigate(['/auditoria-cancelaciones']);
   }
 }

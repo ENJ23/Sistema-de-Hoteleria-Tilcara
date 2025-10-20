@@ -62,9 +62,39 @@ export class ReservaService {
     return this.http.put<Reserva>(`${this.apiUrl}/${id}`, reserva);
   }
 
-  // Eliminar una reserva
-  deleteReserva(id: string): Observable<{message: string}> {
-    return this.http.delete<{message: string}>(`${this.apiUrl}/${id}`);
+  // Cancelar una reserva (con motivo de cancelación)
+  cancelarReserva(id: string, motivoCancelacion: string): Observable<{
+    message: string;
+    reserva: {
+      _id: string;
+      estado: string;
+      fechaCancelacion: string;
+    };
+    cancelacion: {
+      _id: string;
+      montoPagado: number;
+      montoRestante: number;
+      puedeReembolso: boolean;
+      estadoReembolso: string;
+    };
+  }> {
+    return this.http.delete<{
+      message: string;
+      reserva: {
+        _id: string;
+        estado: string;
+        fechaCancelacion: string;
+      };
+      cancelacion: {
+        _id: string;
+        montoPagado: number;
+        montoRestante: number;
+        puedeReembolso: boolean;
+        estadoReembolso: string;
+      };
+    }>(`${this.apiUrl}/${id}`, {
+      body: { motivoCancelacion }
+    });
   }
 
   // Actualizar el estado de una reserva
@@ -123,11 +153,6 @@ export class ReservaService {
     return this.http.get<any>(`${this.apiUrl}/estadisticas`);
   }
 
-  // Cancelar una reserva
-  cancelarReserva(id: string, motivo?: string): Observable<Reserva> {
-    const data = motivo ? { motivo } : {};
-    return this.http.patch<Reserva>(`${this.apiUrl}/${id}/cancelar`, data);
-  }
 
   // Confirmar una reserva
   confirmarReserva(id: string): Observable<Reserva> {

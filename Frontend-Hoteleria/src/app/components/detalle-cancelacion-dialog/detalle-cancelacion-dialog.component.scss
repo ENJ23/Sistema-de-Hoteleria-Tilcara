@@ -1,0 +1,437 @@
+.detalle-cancelacion-dialog {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .header-icon {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 12px;
+        backdrop-filter: blur(10px);
+
+        mat-icon {
+          font-size: 2rem;
+          width: 2rem;
+          height: 2rem;
+        }
+      }
+
+      .header-text {
+        h2 {
+          margin: 0 0 4px 0;
+          font-size: 1.5rem;
+          font-weight: 600;
+        }
+
+        p {
+          margin: 0;
+          opacity: 0.9;
+          font-size: 0.9rem;
+        }
+      }
+    }
+
+    .close-btn {
+      color: white;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+
+  .dialog-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    .info-card {
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e0e0e0;
+
+      &.financial {
+        background: linear-gradient(135deg, #f8f9ff, #e8f0ff);
+        border-color: #667eea;
+      }
+
+      &.status {
+        background: linear-gradient(135deg, #fff8f0, #ffe8d6);
+        border-color: #f39c12;
+      }
+
+      mat-card-header {
+        mat-card-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #2c3e50;
+          font-weight: 600;
+
+          mat-icon {
+            color: #667eea;
+          }
+        }
+      }
+
+      mat-card-content {
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 16px;
+
+          .info-item {
+            label {
+              display: block;
+              font-weight: 600;
+              color: #2c3e50;
+              margin-bottom: 8px;
+              font-size: 0.9rem;
+            }
+
+            .info-value {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              color: #34495e;
+              font-size: 1rem;
+
+              mat-icon {
+                color: #667eea;
+                font-size: 1.2rem;
+              }
+
+              .copy-btn {
+                color: #667eea;
+                width: 32px;
+                height: 32px;
+                line-height: 32px;
+
+                &:hover {
+                  background: #667eea;
+                  color: white;
+                }
+              }
+            }
+          }
+        }
+
+        .cliente-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .cliente-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            mat-icon {
+              color: white;
+              font-size: 2rem;
+              width: 2rem;
+              height: 2rem;
+            }
+          }
+
+          .cliente-details {
+            flex: 1;
+
+            .cliente-nombre {
+              font-size: 1.2rem;
+              font-weight: 600;
+              color: #2c3e50;
+              margin-bottom: 8px;
+            }
+
+            .cliente-contacto,
+            .cliente-email,
+            .cliente-documento {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              color: #7f8c8d;
+              margin-bottom: 4px;
+              font-size: 0.9rem;
+
+              mat-icon {
+                font-size: 1rem;
+                color: #667eea;
+              }
+            }
+          }
+        }
+
+        .habitacion-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .habitacion-numero {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            min-width: 80px;
+            text-align: center;
+          }
+
+          .habitacion-details {
+            .habitacion-tipo {
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: #2c3e50;
+              margin-bottom: 4px;
+            }
+
+            .habitacion-capacidad {
+              color: #7f8c8d;
+              font-size: 0.9rem;
+            }
+          }
+        }
+
+        .fechas-info {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+
+          .fecha-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+
+            &.entrada {
+              border-left-color: #2ecc71;
+            }
+
+            &.salida {
+              border-left-color: #e74c3c;
+            }
+
+            &.estancia {
+              border-left-color: #f39c12;
+            }
+
+            mat-icon {
+              color: #667eea;
+              font-size: 1.5rem;
+            }
+
+            .fecha-details {
+              .fecha-label {
+                font-size: 0.8rem;
+                color: #7f8c8d;
+                text-transform: uppercase;
+                font-weight: 600;
+                margin-bottom: 4px;
+              }
+
+              .fecha-fecha {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #2c3e50;
+              }
+            }
+          }
+        }
+
+        .financial-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 16px;
+
+          .financial-item {
+            text-align: center;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+
+            label {
+              display: block;
+              font-weight: 600;
+              color: #2c3e50;
+              margin-bottom: 8px;
+              font-size: 0.9rem;
+            }
+
+            .financial-value {
+              font-size: 1.2rem;
+              font-weight: 700;
+
+              &.total {
+                color: #2c3e50;
+              }
+
+              &.paid {
+                color: #2ecc71;
+              }
+
+              &.remaining {
+                color: #e74c3c;
+              }
+            }
+          }
+        }
+
+        .status-info {
+          .status-chip {
+            margin-bottom: 16px;
+
+            .estado-chip {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              padding: 12px 20px;
+              border-radius: 20px;
+              font-weight: 600;
+              font-size: 0.9rem;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+
+              mat-icon {
+                font-size: 1.2rem;
+              }
+
+              &.pendiente {
+                background: linear-gradient(135deg, #f39c12, #e67e22);
+                color: white;
+              }
+
+              &.procesado {
+                background: linear-gradient(135deg, #3498db, #2980b9);
+                color: white;
+              }
+
+              &.completado {
+                background: linear-gradient(135deg, #2ecc71, #27ae60);
+                color: white;
+              }
+
+              &.rechazado {
+                background: linear-gradient(135deg, #e74c3c, #c0392b);
+                color: white;
+              }
+            }
+          }
+
+          .status-details {
+            .reembolso-info {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 16px;
+
+              .reembolso-monto,
+              .reembolso-metodo,
+              .reembolso-fecha {
+                label {
+                  display: block;
+                  font-weight: 600;
+                  color: #2c3e50;
+                  margin-bottom: 4px;
+                  font-size: 0.9rem;
+                }
+
+                span {
+                  color: #34495e;
+                  font-size: 1rem;
+
+                  &.monto {
+                    font-weight: 700;
+                    color: #2ecc71;
+                    font-size: 1.1rem;
+                  }
+                }
+              }
+            }
+          }
+
+          .no-reembolso {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #7f8c8d;
+            font-style: italic;
+
+            mat-icon {
+              color: #bdc3c7;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .dialog-footer {
+    padding: 16px 24px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    justify-content: flex-end;
+
+    button {
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 600;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .detalle-cancelacion-dialog {
+    .dialog-content {
+      padding: 16px;
+
+      .info-card mat-card-content {
+        .info-grid,
+        .financial-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .cliente-info,
+        .habitacion-info {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .fechas-info {
+          .fecha-item {
+            flex-direction: column;
+            text-align: center;
+          }
+        }
+      }
+    }
+  }
+}

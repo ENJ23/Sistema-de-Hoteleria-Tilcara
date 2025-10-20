@@ -1981,32 +1981,35 @@ export class DetalleReservaModalComponent {
       duration: 2000
     });
 
-    this.reservaService.deleteReserva(this.data.reserva._id).subscribe({
-      next: (response) => {
-        console.log('Reserva eliminada exitosamente:', response);
+    // Usar cancelarReserva en lugar de deleteReserva
+    const motivoCancelacion = 'Cancelación desde modal de detalles';
+    this.reservaService.cancelarReserva(this.data.reserva._id, motivoCancelacion).subscribe({
+      next: (response: any) => {
+        console.log('Reserva cancelada exitosamente:', response);
         
-        this.snackBar.open('✅ Reserva eliminada exitosamente', 'Cerrar', {
+        this.snackBar.open('✅ Reserva cancelada exitosamente', 'Cerrar', {
           duration: 4000,
           panelClass: ['snackbar-success']
         });
 
         // Cerrar el modal y retornar resultado para actualizar la vista
         this.dialogRef.close({
-          action: 'eliminada',
-          reserva: this.data.reserva
+          action: 'cancelada',
+          reserva: this.data.reserva,
+          cancelacion: response.cancelacion
         });
       },
-      error: (error) => {
-        console.error('Error al eliminar reserva:', error);
+      error: (error: any) => {
+        console.error('Error al cancelar reserva:', error);
         
-        let mensajeError = '❌ Error al eliminar la reserva';
+        let mensajeError = '❌ Error al cancelar la reserva';
         
         if (error.status === 404) {
-          mensajeError = '🔍 La reserva no fue encontrada. Puede que ya haya sido eliminada.';
+          mensajeError = '🔍 La reserva no fue encontrada. Puede que ya haya sido cancelada.';
         } else if (error.status === 403) {
-          mensajeError = '🚫 No tiene permisos para eliminar esta reserva. Contacte al administrador.';
+          mensajeError = '🚫 No tiene permisos para cancelar esta reserva. Contacte al administrador.';
         } else if (error.status === 400) {
-          mensajeError = '⚠️ No se puede eliminar esta reserva en su estado actual. Intente cancelarla primero.';
+          mensajeError = '⚠️ No se puede cancelar esta reserva en su estado actual.';
         } else if (error.status === 401) {
           mensajeError = '🔐 Su sesión ha expirado. Será redirigido al login.';
           this.authService.logout();
