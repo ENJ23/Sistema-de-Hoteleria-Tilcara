@@ -47,17 +47,20 @@ export class TodoListComponent implements OnInit, OnDestroy {
   }
 
   cargarTareasPendientes(): void {
+    console.log('🔍 TodoListComponent - Cargando tareas pendientes...');
     this.cargando = true;
     
     this.tareaService.getTareasPendientes()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
+          console.log('🔍 TodoListComponent - Respuesta del backend:', response);
           this.tareas = response.data || [];
+          console.log('🔍 TodoListComponent - Tareas cargadas:', this.tareas.length);
           this.cargando = false;
         },
         error: (error) => {
-          console.error('Error al cargar tareas pendientes:', error);
+          console.error('❌ TodoListComponent - Error al cargar tareas pendientes:', error);
           this.mostrarMensaje('Error al cargar tareas pendientes', 'error');
           this.cargando = false;
         }
@@ -65,7 +68,10 @@ export class TodoListComponent implements OnInit, OnDestroy {
   }
 
   completarTarea(tarea: Tarea): void {
+    console.log('🔍 TodoListComponent - Completando tarea:', tarea._id);
+    
     if (this.completando.has(tarea._id)) {
+      console.log('⚠️ TodoListComponent - Tarea ya se está completando');
       return; // Ya se está completando
     }
 
@@ -78,15 +84,17 @@ export class TodoListComponent implements OnInit, OnDestroy {
     .pipe(takeUntil(this.destroy$))
     .subscribe({
       next: (response) => {
+        console.log('✅ TodoListComponent - Tarea completada exitosamente:', response);
         this.mostrarMensaje('Tarea completada exitosamente', 'success');
         
         // Remover la tarea de la lista (ya que se elimina al completarse)
         this.tareas = this.tareas.filter(t => t._id !== tarea._id);
+        console.log('🔍 TodoListComponent - Tareas restantes:', this.tareas.length);
         
         this.completando.delete(tarea._id);
       },
       error: (error) => {
-        console.error('Error al completar tarea:', error);
+        console.error('❌ TodoListComponent - Error al completar tarea:', error);
         this.mostrarMensaje('Error al completar tarea', 'error');
         this.completando.delete(tarea._id);
       }

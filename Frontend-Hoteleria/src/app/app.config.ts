@@ -9,6 +9,8 @@ import { HabitacionService } from './services/habitacion.service';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { tokenRefreshInterceptor } from './core/interceptors/token-refresh.interceptor';
 import { httpCacheInterceptor } from './core/interceptors/http-cache.interceptor';
+import { timeoutInterceptor } from './core/interceptors/timeout.interceptor';
+import { retryInterceptor } from './core/interceptors/retry.interceptor';
 
 // Proveedor para el servicio de reservas (siempre real)
 const reservaServiceProvider = {
@@ -28,6 +30,8 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes), 
     provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([
+      timeoutInterceptor,
+      retryInterceptor,
       AuthInterceptor,
       tokenRefreshInterceptor,
       httpCacheInterceptor

@@ -327,8 +327,10 @@ router.get('/', [
             if (typeof estado === 'string' && estado.includes(',')) {
                 const estados = estado.split(',').map(e => e.trim());
                 query.estado = { $in: estados };
+                console.log('🔍 Backend - Estados filtrados:', estados);
             } else {
             query.estado = estado;
+            console.log('🔍 Backend - Estado único:', estado);
             }
         }
         
@@ -337,7 +339,10 @@ router.get('/', [
                 $gte: parseLocalDate(fechaInicio),
                 $lte: parseLocalDate(fechaFin)
             };
+            console.log('🔍 Backend - Filtro de fechas aplicado:', { fechaInicio, fechaFin });
         }
+        
+        console.log('🔍 Backend - Query final:', JSON.stringify(query, null, 2));
         
         const populateOptions = [
             { path: 'habitacion', select: 'numero tipo precioActual' }
@@ -354,6 +359,10 @@ router.get('/', [
             
         // OPTIMIZADO: Usar countDocuments con el mismo query para consistencia
         const total = await Reserva.countDocuments(query);
+        
+        console.log('🔍 Backend - Reservas encontradas:', reservas.length);
+        console.log('🔍 Backend - Total en BD:', total);
+        console.log('🔍 Backend - Estados de reservas encontradas:', reservas.map(r => r.estado));
         
         // OPTIMIZADO: Calcular campos en una sola pasada
         const reservasConCalculos = reservas.map(reserva => {

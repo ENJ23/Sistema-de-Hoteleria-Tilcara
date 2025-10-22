@@ -131,6 +131,7 @@ mongoose.connect(MONGODB_URI, {
 const apiRouter = express.Router();
 
 // Importar rutas
+const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth');
 const reservasRoutes = require('./routes/reservas');
 const habitacionesRoutes = require('./routes/habitaciones');
@@ -138,6 +139,7 @@ const clientesRoutes = require('./routes/clientes');
 const tareasRoutes = require('./routes/tareas');
 
 // Configurar rutas con rate limiting específico
+apiRouter.use('/health', healthRoutes); // Sin rate limiting para health checks
 apiRouter.use('/auth', securityMiddleware.authLimiter, authRoutes);
 apiRouter.use('/reservas', securityMiddleware.reservasLimiter, reservasRoutes);
 apiRouter.use('/habitaciones', habitacionesRoutes);

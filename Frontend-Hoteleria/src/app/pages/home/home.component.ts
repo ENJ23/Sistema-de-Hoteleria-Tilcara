@@ -73,11 +73,6 @@ interface Estadisticas {
   ocupacionActual: number;
   totalHabitaciones: number;
   porcentajeOcupacion: number;
-  reservasHoy: number;
-  checkinsHoy: number;
-  checkoutsHoy: number;
-  ingresosHoy: number;
-  reservasPagadasHoy: number;
   reservasPendientes: number;
   pagosPendientes: number;
 }
@@ -146,11 +141,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     ocupacionActual: 0,
     totalHabitaciones: 0,
     porcentajeOcupacion: 0,
-    reservasHoy: 0,
-    checkinsHoy: 0,
-    checkoutsHoy: 0,
-    ingresosHoy: 0,
-    reservasPagadasHoy: 0,
     reservasPendientes: 0,
     pagosPendientes: 0
   };
@@ -1259,12 +1249,42 @@ export class HomeComponent implements OnInit, OnDestroy {
     
     this.cargandoReservas = true;
     const hoy = this.dateTimeService.getCurrentDateString();
+    console.log('🔍 DEBUG - Fecha de hoy para buscar reservas:', hoy);
+    console.log('🔍 DEBUG - Fecha actual completa:', new Date());
+    console.log('🔍 DEBUG - Fecha formateada por DateTimeService:', this.dateTimeService.formatDateToLocalString(new Date()));
     
+    // Buscar TODAS las reservas activas sin filtro de fechas
     this.reservaService.getReservas({
-      fechaInicio: hoy,
-      fechaFin: hoy
-    }, 1, 100).subscribe({
+      estado: 'Pendiente,Confirmada,En curso'
+      // NO enviar fechaInicio ni fechaFin para evitar filtros del backend
+    }, 1, 1000).subscribe({
       next: (response) => {
+        console.log('🔍 DEBUG - Respuesta del backend:', response);
+        console.log('🔍 DEBUG - Número de reservas encontradas:', response.reservas?.length || 0);
+        console.log('🔍 DEBUG - Detalle de reservas del backend:', response.reservas?.map(r => ({
+          _id: r._id,
+          estado: r.estado,
+          habitacion: typeof r.habitacion === 'object' ? r.habitacion?.numero || 'N/A' : 'N/A',
+          cliente: typeof r.cliente === 'object' ? r.cliente?.nombre || 'N/A' : 'N/A'
+        })));
+        
+        // ANÁLISIS PROFUNDO: Verificar cada reserva individualmente
+        console.log('🔍 ANÁLISIS PROFUNDO - Todas las reservas del backend:');
+        response.reservas?.forEach((r, index) => {
+          console.log(`🔍 Reserva ${index + 1}:`, {
+            _id: r._id,
+            estado: r.estado,
+            estadoExacto: `"${r.estado}"`,
+            longitudEstado: r.estado?.length,
+            esEnCurso: r.estado === 'En curso',
+            habitacion: typeof r.habitacion === 'object' ? r.habitacion?.numero : r.habitacion,
+            cliente: typeof r.cliente === 'object' ? r.cliente?.nombre : r.cliente
+          });
+        });
+        
+        // Usar todas las reservas sin filtro de fechas
+        console.log('🔍 DEBUG - Usando todas las reservas sin filtro de fechas:', response.reservas.length);
+        
         this.reservasHoy = response.reservas.map(reserva => ({
           horaEntrada: reserva.horaEntrada,
           horaSalida: reserva.horaSalida,
@@ -1275,6 +1295,24 @@ export class HomeComponent implements OnInit, OnDestroy {
           precioTotal: reserva.precioTotal || 0,
           montoPagado: reserva.montoPagado || 0
         }));
+        
+        console.log('🔍 DEBUG - Reservas procesadas para hoy:', this.reservasHoy.length);
+        console.log('🔍 DEBUG - Estados de las reservas:', this.reservasHoy.map(r => r.estado));
+        console.log('🔍 DEBUG - Reservas "En curso" encontradas:', this.reservasHoy.filter(r => r.estado === 'En curso').length);
+        console.log('🔍 DEBUG - Detalle de reservas "En curso":', this.reservasHoy.filter(r => r.estado === 'En curso').map(r => ({
+          estado: r.estado,
+          habitacion: r.habitacion,
+          cliente: r.cliente
+        })));
+        
+        // Mostrar fechas de las reservas para comparar
+        if (this.reservasHoy.length > 0) {
+          console.log('🔍 DEBUG - Fechas de las reservas encontradas:', this.reservasHoy.map(r => ({
+            fechaEntrada: r.horaEntrada,
+            fechaSalida: r.horaSalida,
+            estado: r.estado
+          })));
+        }
         
         // Actualizar estadísticas del día
         this.actualizarEstadisticas();
@@ -1289,27 +1327,53 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private actualizarEstadisticas(): void {
-    // Estadísticas de ocupación
+    console.log('🔍 DEBUG - actualizarEstadisticas() llamado');
+    console.log('🔍 DEBUG - this.habitaciones.length:', this.habitaciones.length);
+    console.log('🔍 DEBUG - this.reservasHoy.length:', this.reservasHoy.length);
+    console.log('🔍 DEBUG - this.reservasHoy:', this.reservasHoy);
+    
+    // Estadísticas de ocupación - CONTAR RESERVAS "EN CURSO"
     if (this.habitaciones.length > 0) {
-      const habitacionesOcupadas = this.habitaciones.filter(h => h.estado === 'ocupada').length;
-      const habitacionesReservadas = this.habitaciones.filter(h => h.estado === 'reservada').length;
+      console.log('🔍 DEBUG - ANTES del filtro - this.reservasHoy:', this.reservasHoy);
+      console.log('🔍 DEBUG - ANTES del filtro - this.reservasHoy.length:', this.reservasHoy.length);
       
-      this.estadisticas.ocupacionActual = habitacionesOcupadas + habitacionesReservadas;
+      // Contar reservas con estado "En curso" (manejar variaciones de capitalización)
+      const habitacionesOcupadasHoy = this.reservasHoy.filter(r => 
+        r.estado === 'En curso' || r.estado === 'En Curso'
+      ).length;
+      
+      console.log('🔍 DEBUG - habitacionesOcupadasHoy (En curso):', habitacionesOcupadasHoy);
+      console.log('🔍 DEBUG - Estados de reservas:', this.reservasHoy.map(r => ({ 
+        estado: r.estado, 
+        esEnCurso: r.estado === 'En curso',
+        habitacion: r.habitacion?.numero || 'N/A'
+      })));
+      
+      // ANÁLISIS PROFUNDO: Verificar cada reserva en el filtro
+      console.log('🔍 ANÁLISIS PROFUNDO - Filtro "En curso":');
+      this.reservasHoy.forEach((r, index) => {
+        console.log(`🔍 Reserva ${index + 1} en filtro:`, {
+          _id: r._id || 'N/A',
+          estado: r.estado,
+          estadoExacto: `"${r.estado}"`,
+          longitudEstado: r.estado?.length,
+          esEnCurso: r.estado === 'En curso' || r.estado === 'En Curso',
+          comparacion1: `"${r.estado}" === "En curso" = ${r.estado === 'En curso'}`,
+          comparacion2: `"${r.estado}" === "En Curso" = ${r.estado === 'En Curso'}`,
+          habitacion: r.habitacion?.numero || 'N/A'
+        });
+      });
+      
+      this.estadisticas.ocupacionActual = habitacionesOcupadasHoy;
       this.estadisticas.totalHabitaciones = this.habitaciones.length;
       this.estadisticas.porcentajeOcupacion = Math.round((this.estadisticas.ocupacionActual / this.estadisticas.totalHabitaciones) * 100);
+      
+      console.log('🔍 DEBUG - estadisticas.ocupacionActual:', this.estadisticas.ocupacionActual);
+      console.log('🔍 DEBUG - estadisticas.totalHabitaciones:', this.estadisticas.totalHabitaciones);
+      console.log('🔍 DEBUG - estadisticas.porcentajeOcupacion:', this.estadisticas.porcentajeOcupacion);
     }
 
-    // Estadísticas de reservas del día
-        this.estadisticas.reservasHoy = this.reservasHoy.length;
-        this.estadisticas.checkinsHoy = this.reservasHoy.filter(r => r.estado === 'En curso').length;
-        this.estadisticas.checkoutsHoy = this.reservasHoy.filter(r => r.estado === 'Completada').length;
-        this.estadisticas.reservasPagadasHoy = this.reservasHoy.filter(r => r.pagado && r.estado !== 'Cancelada').length;
-    
-    // Ingresos del día (solo reservas completamente pagadas y NO canceladas)
-    // Considerar el montoPagado real (que ya incluye reembolsos como valores negativos)
-        this.estadisticas.ingresosHoy = this.reservasHoy
-          .filter(r => r.estado !== 'Cancelada')
-          .reduce((total, r) => total + Math.max(0, r.montoPagado || 0), 0);
+    // Estadísticas de reservas del día - ELIMINADAS
 
     // Calcular reservas y pagos pendientes
     this.calcularReservasPendientes();
