@@ -670,7 +670,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       hoy.setHours(0, 0, 0, 0);
       
       // Validar fecha de entrada
-      if (entrada < hoy) {
+      if (!this.modoEdicion && entrada < hoy) {
         this.reservaForm.get('fechaEntrada')?.setErrors({ fechaAnterior: true });
       } else {
         this.reservaForm.get('fechaEntrada')?.setErrors(null);
@@ -689,6 +689,9 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   validarFechaEntrada(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
     
+    // En modo edición permitimos fecha de entrada anterior a hoy (reserva en curso)
+    if (this.modoEdicion) return null;
+
     const fecha = new Date(control.value);
     const hoy = this.dateTimeService.getCurrentDate();
     hoy.setHours(0, 0, 0, 0);
@@ -738,13 +741,15 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       const hoy = this.dateTimeService.getCurrentDate();
       hoy.setHours(0, 0, 0, 0);
       
-      // Validar que la fecha de entrada no sea anterior a hoy
-      if (entrada < hoy) {
-        this.reservaForm.get('fechaEntrada')?.setErrors({ fechaAnterior: true });
-        this.mostrarMensaje('📅 La fecha de entrada no puede ser anterior a hoy', 'error');
-        return false;
-      } else {
-        this.reservaForm.get('fechaEntrada')?.setErrors(null);
+      // Validar que la fecha de entrada no sea anterior a hoy (solo creación)
+      if (!this.modoEdicion) {
+        if (entrada < hoy) {
+          this.reservaForm.get('fechaEntrada')?.setErrors({ fechaAnterior: true });
+          this.mostrarMensaje('📅 La fecha de entrada no puede ser anterior a hoy', 'error');
+          return false;
+        } else {
+          this.reservaForm.get('fechaEntrada')?.setErrors(null);
+        }
       }
       
       // Validar que la fecha de salida sea posterior a la entrada
