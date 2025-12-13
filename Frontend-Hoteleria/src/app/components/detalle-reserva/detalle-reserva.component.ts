@@ -1,7 +1,7 @@
 import { Component, Inject, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn, ReactiveFormsModule } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -14,10 +14,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatNativeDateModule, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ReservaService } from '../../services/reserva.service';
@@ -28,7 +27,6 @@ import { Cliente } from '../../models/cliente.model';
 import { Habitacion } from '../../models/habitacion.model';
 import { Reserva } from '../../models/reserva.model';
 
-// Configuración de formato de fecha DD/MM/YYYY
 export const DD_MM_YYYY_FORMAT = {
   parse: {
     dateInput: 'DD/MM/YYYY',
@@ -63,29 +61,37 @@ export const DD_MM_YYYY_FORMAT = {
     MatDialogModule,
     MatProgressSpinnerModule,
     ReactiveFormsModule,
+    FormsModule,
     DatePipe
   ],
   standalone: true,
   providers: [
     { provide: MAT_DATE_FORMATS, useValue: DD_MM_YYYY_FORMAT },
-    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
+    DatePipe
   ]
 })
 export class DetalleReservaComponent implements OnInit {
   form: FormGroup;
   cliente: Cliente | null = null;
   habitacion: Habitacion | null = null;
-  estados: string[] = ['Pendiente', 'Confirmada', 'En curso', 'Completada', 'Cancelada', 'No Show'];
+  estados: string[] = ['Pendiente', 'Confirmada', 'En curso', 'Finalizada', 'Cancelada', 'No Show'];
   metodosPago: string[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Otro'];
   enEdicion = false;
   cargando = false;
   @Input() reserva: Reserva | null = null;
-  
-  // Alias para compatibilidad con el template
+
+  // Split Reservation Properties
+  modoDivision = false;
+  fechaDivision: Date | null = null;
+  habitacionDestinoId: string | null = null;
+  habitacionesDisponiblesDivision: Habitacion[] = [];
+  cargandoHabitaciones = false;
+
   get estadosReserva(): string[] {
     return this.estados;
   }
-  
+
   get editando(): boolean {
     return this.enEdicion;
   }
@@ -98,322 +104,194 @@ export class DetalleReservaComponent implements OnInit {
     private snackBar: MatSnackBar,
     private datePipe: DatePipe,
     @Inject(MAT_DIALOG_DATA) public data: { reserva?: Reserva; fechaSeleccionada?: Date; nuevaReserva?: boolean } = {},
-    public dialogRef: MatDialogRef<DetalleReservaComponent>
+    private dialogRef: MatDialogRef<DetalleReservaComponent>
   ) {
+    if (data.reserva) {
+      this.reserva = data.reserva;
+    }
+
     this.form = this.fb.group({
-      cliente: ['', Validators.required],
-      habitacion: ['', Validators.required],
-      fechaEntrada: ['', [Validators.required, this.validarFecha]],
-      fechaSalida: ['', [Validators.required]],
-      horaEntrada: ['', Validators.required],
-      horaSalida: ['', Validators.required],
-      precio: ['', [Validators.required, Validators.min(0)]],
-      estado: ['', [Validators.required]],
-      metodoPago: ['', [Validators.required]],
+      cliente: [null, Validators.required],
+      habitacion: [null, Validators.required],
+      fechaEntrada: [data.fechaSeleccionada || new Date(), Validators.required],
+      fechaSalida: [new Date(new Date().setDate(new Date().getDate() + 1)), Validators.required],
+      horaEntrada: ['14:00', Validators.required],
+      horaSalida: ['11:00', Validators.required],
+      precio: [0, [Validators.required, Validators.min(0)]],
+      estado: ['Pendiente', Validators.required],
+      metodoPago: ['Efectivo', Validators.required],
       pagado: [false],
       observaciones: ['']
     });
-  }
 
-  mostrarError(mensaje: string): void {
-    this.snackBar.open(mensaje, 'Cerrar', {
-      duration: 4000,
-      panelClass: ['error-snackbar']
-    });
-  }
-
-  cargarDatosRelacionados(): void {
-    try {
-      const habitacionCtrl = this.form.get('habitacion');
-      const fechaEntradaCtrl = this.form.get('fechaEntrada');
-      const fechaSalidaCtrl = this.form.get('fechaSalida');
-
-      if (!habitacionCtrl || !fechaEntradaCtrl || !fechaSalidaCtrl) {
-        this.mostrarError('Controles de formulario no encontrados');
-        return;
-      }
-
-      const habitacionId = habitacionCtrl.value;
-      const fechaEntrada = fechaEntradaCtrl.value;
-      const fechaSalida = fechaSalidaCtrl.value;
-
-      if (!habitacionId || !fechaEntrada || !fechaSalida) {
-        this.mostrarError('Por favor, complete todos los campos necesarios');
-        return;
-      }
-
-      this.reservasService.checkDisponibilidad(
-        habitacionId,
-        fechaEntrada,
-        fechaSalida,
-        this.reserva?._id
-      ).subscribe({
-        next: (disponible: boolean) => {
-          if (disponible) {
-            this.guardar();
-          } else {
-            this.mostrarError('La habitación no está disponible para las fechas seleccionadas');
-          }
-        },
-        error: (error) => {
-          console.error('Error al verificar disponibilidad:', error);
-          this.mostrarError('Error al verificar disponibilidad de la habitación');
-        }
-      });
-    } catch (error) {
-      console.error('Error en cargarDatosRelacionados:', error);
-      this.mostrarError('Error al cargar datos relacionados');
+    if (data.nuevaReserva) {
+      this.enEdicion = true;
     }
   }
 
   ngOnInit(): void {
-    try {
-      // Inicializar valores por defecto
-      this.cliente = null;
-      this.habitacion = null;
-      this.reserva = this.data.reserva || null;
-
-      // Si es una nueva reserva, inicializar con la fecha seleccionada
-      if (this.data.nuevaReserva && this.data.fechaSeleccionada) {
-        const fechaFormateada = this.datePipe.transform(this.data.fechaSeleccionada, 'yyyy-MM-dd');
-        if (fechaFormateada) {
-          this.form.patchValue({
-            fechaEntrada: fechaFormateada,
-            fechaSalida: fechaFormateada,
-            horaEntrada: '14:00',
-            horaSalida: '12:00'
-          });
-        }
-      }
-
-      // Suscribirse a cambios en el formulario
-      this.form.valueChanges.subscribe((valores) => {
-        this.actualizarDatosRelacionados(valores);
-      });
-
-      // Si hay reserva inicial, cargar datos
-      if (this.reserva) {
-        this.cargarDatosRelacionados();
-      }
-
-      // Inicializar suscripciones
-      this.inicializarSuscripciones();
-    } catch (error: unknown) {
-      console.error('Error en ngOnInit:', error);
-      this.mostrarError('Error al inicializar el componente');
+    console.log('DetalleReservaComponent init - Version Split Button'); // Verify update
+    if (this.reserva) {
+      this.cargarDatosReserva();
     }
   }
 
-  inicializarSuscripciones(): void {
-    // Suscribirse a cambios en fechaEntrada para validar fechas
-    this.form.get('fechaEntrada')?.valueChanges.subscribe(() => {
-      this.validarFechas();
+  cargarDatosReserva() {
+    if (!this.reserva) return;
+
+    this.form.patchValue({
+      cliente: this.reserva.cliente,
+      habitacion: this.reserva.habitacion,
+      fechaEntrada: this.reserva.fechaEntrada,
+      fechaSalida: this.reserva.fechaSalida,
+      horaEntrada: this.reserva.horaEntrada,
+      horaSalida: this.reserva.horaSalida,
+      precio: this.reserva.precioPorNoche,
+      estado: this.reserva.estado,
+      metodoPago: this.reserva.metodoPago,
+      pagado: this.reserva.pagado,
+      observaciones: this.reserva.observaciones
     });
 
-    // Suscribirse a cambios en habitación
-    this.form.get('habitacion')?.valueChanges.subscribe((habitacionId: string | null) => {
-      if (!habitacionId) return;
-      
-      this.habitacionService.getHabitacion(habitacionId).subscribe({
-        next: (habitacion) => {
-          if (habitacion) {
-            this.habitacion = habitacion;
-            this.form.patchValue({ habitacion: habitacion._id });
-          }
-        },
-        error: (error) => {
-          console.error('Error al obtener habitación:', error);
-          this.mostrarError('Error al cargar la habitación');
-        }
-      });
-    });
-
-    // Suscribirse a cambios en cliente
-    this.form.get('cliente')?.valueChanges.subscribe((clienteId: string | null) => {
-      if (!clienteId) return;
-      
-      this.clienteService.getCliente(clienteId).subscribe({
-        next: (cliente) => {
-          if (cliente) {
-            this.cliente = cliente;
-            this.form.patchValue({ cliente: cliente });
-          }
-        },
-        error: (error) => {
-          console.error('Error al obtener cliente:', error);
-          this.mostrarError('Error al cargar el cliente');
-        }
-      });
-    });
-
-    // Suscribirse a cambios en fechaEntrada para cargar datos relacionados
-    this.form.get('fechaEntrada')?.valueChanges.subscribe(() => {
-      this.cargarDatosRelacionados();
-    });
-  }
-
-  validarFecha(control: AbstractControl): ValidationErrors | null {
-    const fecha = control.value;
-    if (!fecha) return null;
-
-    try {
-      const fechaActual = new Date();
-      const fechaSeleccionada = new Date(fecha);
-
-      if (isNaN(fechaSeleccionada.getTime())) {
-        return { fechaInvalida: true };
-      }
-
-      if (fechaSeleccionada < fechaActual) {
-        return { fechaPasada: true };
-      }
-
-      const fechaMaxima = new Date();
-      fechaMaxima.setFullYear(fechaActual.getFullYear() + 1);
-      if (fechaSeleccionada > fechaMaxima) {
-        return { fechaFutura: true };
-      }
-
-      if (fechaSeleccionada.toDateString() === fechaActual.toDateString()) {
-        return { fechaHoy: true };
-      }
-
-    } catch (error) {
-      console.error('Error al validar fecha:', error);
-      return { fechaInvalida: true };
+    if (typeof this.reserva.cliente === 'string') {
+      this.clienteService.getCliente(this.reserva.cliente).subscribe(c => this.cliente = c);
+    } else {
+      this.cliente = this.reserva.cliente as any;
     }
 
-    return null;
-  }
-
-  validarEstado(control: AbstractControl): ValidationErrors | null {
-    const estado = control.value;
-    if (!estado) return null;
-
-    if (!this.estados.includes(estado)) {
-      return { estadoInvalido: true };
+    if (typeof this.reserva.habitacion === 'string') {
+      this.habitacionService.getHabitacion(this.reserva.habitacion).subscribe(h => this.habitacion = h);
+    } else {
+      this.habitacion = this.reserva.habitacion as any;
     }
-    
-    return null;
   }
 
-  validarMetodoPago(control: AbstractControl): ValidationErrors | null {
-    const metodo = control.value;
-    if (!metodo) return null;
+  getPrecioPorNoche(): string {
+    const val = this.form.get('precio')?.value || 0;
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+  }
 
-    if (!this.metodosPago.includes(metodo)) {
-      return { metodoInvalido: true };
+  getPrecioTotal(): string {
+    const precio = this.form.get('precio')?.value || 0;
+    const entrada = this.form.get('fechaEntrada')?.value;
+    const salida = this.form.get('fechaSalida')?.value;
+
+    if (entrada && salida) {
+      const diffTime = Math.abs(new Date(salida).getTime() - new Date(entrada).getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const total = precio * (diffDays || 1);
+      return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(total);
     }
-    
-    return null;
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(0);
   }
 
-  mostrarExito(mensaje: string): void {
+  mostrarExito(mensaje: string) {
+    this.snackBar.open(mensaje, 'Cerrar', {
+      duration: 3000,
+      panelClass: ['snackbar-success']
+    });
+  }
+
+  mostrarError(mensaje: string) {
     this.snackBar.open(mensaje, 'Cerrar', {
       duration: 5000,
-      panelClass: ['success-snackbar']
+      panelClass: ['snackbar-error']
     });
   }
 
-  // Método auxiliar para obtener el precio por noche de manera segura
-  getPrecioPorNoche(): string {
-    if (!this.reserva || this.reserva.precioPorNoche == null) {
-      return 'No especificado';
+  // ==========================================
+  // Lógica para Dividir Reserva / Cambio de Habitación
+  // ==========================================
+
+  activarDivision() {
+    this.modoDivision = true;
+    this.enEdicion = false;
+    if (this.reserva?.fechaEntrada) {
+      const fecha = new Date(this.reserva.fechaEntrada);
+      fecha.setDate(fecha.getDate() + 1);
+      this.fechaDivision = fecha;
+      this.buscarHabitacionesDivision();
     }
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(this.reserva.precioPorNoche);
   }
 
-  // Método auxiliar para obtener el precio total de manera segura
-  getPrecioTotal(): string {
-    if (!this.reserva || this.reserva.precioTotal == null) {
-      return 'No especificado';
-    }
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(this.reserva.precioTotal);
+  cancelarDivision() {
+    this.modoDivision = false;
+    this.fechaDivision = null;
+    this.habitacionDestinoId = null;
+    this.habitacionesDisponiblesDivision = [];
   }
 
-  validarFechas(): ValidationErrors | null {
-    const fechaEntradaCtrl = this.form.get('fechaEntrada');
-    const fechaSalidaCtrl = this.form.get('fechaSalida');
-    const horaEntradaCtrl = this.form.get('horaEntrada');
-    const horaSalidaCtrl = this.form.get('horaSalida');
-
-    if (!fechaEntradaCtrl || !fechaSalidaCtrl || !horaEntradaCtrl || !horaSalidaCtrl) {
-      return null;
-    }
-
-    const fechaEntrada = fechaEntradaCtrl.value;
-    const fechaSalida = fechaSalidaCtrl.value;
-    const horaEntrada = horaEntradaCtrl.value;
-    const horaSalida = horaSalidaCtrl.value;
-
-    if (!fechaEntrada || !fechaSalida || !horaEntrada || !horaSalida) {
-      return null;
-    }
-
-    const fechaEntradaCompleta = new Date(`${fechaEntrada}T${horaEntrada}`);
-    const fechaSalidaCompleta = new Date(`${fechaSalida}T${horaSalida}`);
-
-    if (fechaEntradaCompleta >= fechaSalidaCompleta) {
-      return { fechaInvalida: true };
-    }
-
-    return null;
+  onFechaDivisionChange(event: any) {
+    this.fechaDivision = event.value;
+    this.buscarHabitacionesDivision();
   }
 
-  actualizarDatosRelacionados(valores: any): void {
-    try {
-      const habitacionCtrl = this.form.get('habitacion');
-      const fechaEntradaCtrl = this.form.get('fechaEntrada');
-      const fechaSalidaCtrl = this.form.get('fechaSalida');
+  buscarHabitacionesDivision() {
+    if (!this.reserva || !this.fechaDivision) return;
 
-      if (!habitacionCtrl || !fechaEntradaCtrl || !fechaSalidaCtrl) {
-        this.mostrarError('Controles de formulario no encontrados');
-        return;
+    const fechaEntrada = new Date(this.reserva.fechaEntrada);
+    const fechaSalida = new Date(this.reserva.fechaSalida);
+
+    fechaEntrada.setHours(0, 0, 0, 0);
+    fechaSalida.setHours(0, 0, 0, 0);
+    const fechaDiv = new Date(this.fechaDivision);
+    fechaDiv.setHours(0, 0, 0, 0);
+
+    if (fechaDiv <= fechaEntrada || fechaDiv >= fechaSalida) {
+      this.habitacionesDisponiblesDivision = [];
+      this.snackBar.open('La fecha de cambio debe estar entre la entrada y la salida actual', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.cargandoHabitaciones = true;
+
+    const year = fechaDiv.getFullYear();
+    const month = ('0' + (fechaDiv.getMonth() + 1)).slice(-2);
+    const day = ('0' + fechaDiv.getDate()).slice(-2);
+    const startStr = `${year}-${month}-${day}`;
+
+    const endYear = fechaSalida.getFullYear();
+    const endMonth = ('0' + (fechaSalida.getMonth() + 1)).slice(-2);
+    const endDay = ('0' + fechaSalida.getDate()).slice(-2);
+    const endStr = `${endYear}-${endMonth}-${endDay}`;
+
+    this.habitacionService.getHabitacionesDisponibles(startStr, endStr).subscribe({
+      next: (disponibles) => {
+        this.habitacionesDisponiblesDivision = disponibles;
+        this.cargandoHabitaciones = false;
+      },
+      error: (err) => {
+        console.error('Error cargando habitaciones', err);
+        this.cargandoHabitaciones = false;
+        this.snackBar.open('Error al buscar disponibilidad', 'Cerrar', { duration: 3000 });
       }
+    });
+  }
 
-      const habitacionId = habitacionCtrl.value;
-      const fechaEntrada = fechaEntradaCtrl.value;
-      const fechaSalida = fechaSalidaCtrl.value;
+  confirmarDivision() {
+    if (!this.reserva || !this.fechaDivision || !this.habitacionDestinoId) return;
 
-      if (!habitacionId || !fechaEntrada || !fechaSalida) {
-        this.mostrarError('Por favor, complete todos los campos necesarios');
-        return;
-      }
+    this.cargando = true;
+    const year = this.fechaDivision.getFullYear();
+    const month = ('0' + (this.fechaDivision.getMonth() + 1)).slice(-2);
+    const day = ('0' + this.fechaDivision.getDate()).slice(-2);
+    const fechaLocalStr = `${year}-${month}-${day}`;
 
-      this.habitacionService.getHabitacion(habitacionId).subscribe({
-        next: (habitacion) => {
-          if (habitacion) {
-            this.habitacion = habitacion;
-            this.form.patchValue({ habitacion: habitacion._id });
-            this.form.patchValue({
-              horaEntrada: '',
-              horaSalida: ''
-            });
-            return;
-          }
-
-          // Si la habitación está disponible, cargar datos adicionales
-          this.habitacionService.getHabitacion(habitacionId).subscribe({
-            next: (habitacion: Habitacion) => {
-              this.habitacion = habitacion;
-              this.form.patchValue({ habitacion: habitacion._id });
-              this.guardar();
-            },
-            error: (error: unknown) => {
-              console.error('Error al obtener habitación:', error);
-              this.mostrarError('Error al cargar la habitación');
-            }
-          });
-        },
-        error: (error: unknown) => {
-          console.error('Error al validar disponibilidad:', error);
-          this.mostrarError('Error al validar disponibilidad de la habitación');
+    this.reservasService.dividirReserva(this.reserva._id!, fechaLocalStr, this.habitacionDestinoId).subscribe({
+      next: (res) => {
+        this.snackBar.open('Reserva dividida exitosamente', 'Cerrar', { duration: 3000 });
+        this.cargando = false;
+        this.modoDivision = false;
+        if (this.dialogRef) {
+          this.dialogRef.close(true);
         }
-      });
-    } catch (error: unknown) {
-      console.error('Error en actualizarDatosRelacionados:', error);
-      this.mostrarError('Error al actualizar datos relacionados');
-    }
+      },
+      error: (err) => {
+        console.error('Error dividiendo reserva', err);
+        this.snackBar.open(err.error?.message || 'Error al dividir la reserva', 'Cerrar', { duration: 5000 });
+        this.cargando = false;
+      }
+    });
   }
 
   cerrar(): void {
@@ -424,176 +302,112 @@ export class DetalleReservaComponent implements OnInit {
     this.enEdicion = !this.enEdicion;
   }
 
-  actualizarEstado(nuevoEstado: string): void {
+  realizarCheckIn(): void {
     if (!this.reserva || this.cargando) return;
-
     this.cargando = true;
-    this.reservasService.updateEstado(this.reserva._id, nuevoEstado)
-      .subscribe({
-        next: (reservaActualizada) => {
-          this.reserva = reservaActualizada;
-          this.mostrarExito(`Estado actualizado a: ${nuevoEstado}`);
-          this.cargando = false;
-        },
-        error: (error) => {
-          console.error('Error al actualizar estado:', error);
-          this.mostrarError('Error al actualizar el estado de la reserva');
-          this.cargando = false;
-        }
-      });
+    this.reservasService.updateEstado(this.reserva._id, 'En curso').subscribe({
+      next: (reservaActualizada) => {
+        this.reserva = reservaActualizada;
+        this.mostrarExito('Check-in realizado exitosamente');
+        this.cargando = false;
+      },
+      error: (error) => {
+        console.error('Error al realizar check-in:', error);
+        this.mostrarError('Error al realizar check-in');
+        this.cargando = false;
+      }
+    });
   }
 
-  obtenerColorEstado(estado: string | undefined): string {
-    if (!estado) return '#607D8B'; // Gris por defecto
+  realizarCheckOut(): void {
+    if (!this.reserva || this.cargando) return;
+    this.cargando = true;
+    this.reservasService.checkOut(this.reserva._id).subscribe({
+      next: (reservaActualizada) => {
+        this.reserva = reservaActualizada;
+        this.mostrarExito('Check-out realizado exitosamente');
+        this.cargando = false;
+      },
+      error: (error) => {
+        console.error('Error al realizar check-out:', error);
+        this.mostrarError('Error al realizar check-out');
+        this.cargando = false;
+      }
+    });
+  }
 
-    switch (estado) {
-      case 'Confirmada':
-        return this.reserva?.pagado ? '#4CAF50' : '#FF9800'; // Verde si está pagado, naranja si no
-      case 'Pendiente':
-        return '#FFC107'; // Amarillo
-      case 'Cancelada':
-        return '#F44336'; // Rojo
-      case 'Completada':
-        return '#2196F3'; // Azul
-      case 'No Show':
-        return '#9C27B0'; // Púrpura
-      default:
-        return '#607D8B'; // Gris
-    }
+  cancelarReserva(): void {
+    if (!this.reserva || this.cargando) return;
+    this.cargando = true;
+    this.reservasService.updateEstado(this.reserva._id, 'Cancelada').subscribe({
+      next: (reservaActualizada) => {
+        this.reserva = reservaActualizada;
+        this.mostrarExito('Reserva cancelada exitosamente');
+        this.cargando = false;
+      },
+      error: (error) => {
+        console.error('Error al cancelar reserva:', error);
+        this.mostrarError('Error al cancelar la reserva');
+        this.cargando = false;
+      }
+    });
   }
 
   guardar(): void {
-    try {
-      this.cargando = true;
+    if (!this.form.valid) {
+      this.mostrarError('Por favor, complete todos los campos requeridos');
+      return;
+    }
 
-      const valores = this.form.value;
+    this.cargando = true;
+    const valores = this.form.value;
 
-      // Validar que todos los campos requeridos estén presentes
-      if (!valores.cliente || !valores.habitacion || !valores.fechaEntrada || 
-          !valores.fechaSalida || !valores.horaEntrada || !valores.horaSalida || 
-          !valores.precio || !valores.estado || !valores.metodoPago) {
-        this.mostrarError('Por favor, complete todos los campos requeridos');
-        this.cargando = false;
-        return;
-      }
+    const reservaData: ReservaCreate = {
+      cliente: valores.cliente,
+      habitacion: valores.habitacion,
+      fechaEntrada: valores.fechaEntrada,
+      fechaSalida: valores.fechaSalida,
+      horaEntrada: valores.horaEntrada,
+      horaSalida: valores.horaSalida,
+      precioPorNoche: valores.precio,
+      estado: valores.estado,
+      metodoPago: valores.metodoPago,
+      pagado: valores.pagado,
+      observaciones: valores.observaciones
+    };
 
-      const reservaData: ReservaCreate = {
-        cliente: valores.cliente,
-        habitacion: valores.habitacion,
-        fechaEntrada: valores.fechaEntrada,
-        fechaSalida: valores.fechaSalida,
-        horaEntrada: valores.horaEntrada,
-        horaSalida: valores.horaSalida,
-        precioPorNoche: valores.precio,
-        estado: valores.estado,
-        metodoPago: valores.metodoPago,
-        pagado: valores.pagado,
-        observaciones: valores.observaciones
-      };
-
-      // Si es una nueva reserva
-      if (!this.reserva) {
-        this.reservasService.createReserva(reservaData).subscribe({
-          next: (nuevaReserva: Reserva) => {
-            this.mostrarExito('Reserva creada exitosamente');
-            this.dialogRef.close({ success: true, action: 'create', reserva: nuevaReserva });
-          },
-          error: (error) => {
-            console.error('Error al crear reserva:', error);
-            this.mostrarError('Error al crear la reserva');
-          },
-          complete: () => {
-            this.cargando = false;
-          }
-        });
-      } else {
-        // Si es una actualización
-        this.reservasService.updateReserva(this.reserva._id, reservaData).subscribe({
-          next: (reservaActualizada: Reserva) => {
-            this.mostrarExito('Reserva actualizada exitosamente');
-            this.dialogRef.close({ success: true, action: 'update', reserva: reservaActualizada });
-          },
-          error: (error) => {
-            console.error('Error al actualizar reserva:', error);
-            this.mostrarError('Error al actualizar la reserva');
-          },
-          complete: () => {
-            this.cargando = false;
-          }
-        });
-      }
-    } catch (error: unknown) {
-      console.error('Error en guardar:', error);
-      this.mostrarError('Error al guardar la reserva');
-      this.cargando = false;
+    if (!this.reserva) {
+      this.reservasService.createReserva(reservaData).subscribe({
+        next: (nuevaReserva: Reserva) => {
+          this.mostrarExito('Reserva creada exitosamente');
+          this.dialogRef.close({ success: true, action: 'create', reserva: nuevaReserva });
+          this.cargando = false;
+        },
+        error: (error) => {
+          console.error('Error al crear reserva:', error);
+          this.mostrarError('Error al crear la reserva');
+          this.cargando = false;
+        }
+      });
+    } else {
+      this.reservasService.updateReserva(this.reserva._id!, reservaData).subscribe({
+        next: (reservaActualizada: Reserva) => {
+          this.mostrarExito('Reserva actualizada exitosamente');
+          this.dialogRef.close({ success: true, action: 'update', reserva: reservaActualizada });
+          this.cargando = false;
+        },
+        error: (error) => {
+          console.error('Error al actualizar reserva:', error);
+          this.mostrarError('Error al actualizar la reserva');
+          this.cargando = false;
+        }
+      });
     }
   }
 
-  // Método para realizar check-in
-  realizarCheckIn(): void {
-    if (!this.reserva || this.cargando) return;
-
-    this.cargando = true;
-    this.reservasService.updateEstado(this.reserva._id, 'En curso')
-      .subscribe({
-        next: (reservaActualizada) => {
-          this.reserva = reservaActualizada;
-          this.mostrarExito('Check-in realizado exitosamente');
-          this.cargando = false;
-        },
-        error: (error) => {
-          console.error('Error al realizar check-in:', error);
-          this.mostrarError('Error al realizar check-in');
-          this.cargando = false;
-        }
-      });
-  }
-
-  // Método para realizar check-out
-  realizarCheckOut(): void {
-    if (!this.reserva || this.cargando) return;
-
-    this.cargando = true;
-    this.reservasService.updateEstado(this.reserva._id, 'Completada')
-      .subscribe({
-        next: (reservaActualizada) => {
-          this.reserva = reservaActualizada;
-          this.mostrarExito('Check-out realizado exitosamente');
-          this.cargando = false;
-        },
-        error: (error) => {
-          console.error('Error al realizar check-out:', error);
-          this.mostrarError('Error al realizar check-out');
-          this.cargando = false;
-        }
-      });
-  }
-
-  // Método para cancelar reserva
-  cancelarReserva(): void {
-    if (!this.reserva || this.cargando) return;
-
-    this.cargando = true;
-    this.reservasService.updateEstado(this.reserva._id, 'Cancelada')
-      .subscribe({
-        next: (reservaActualizada) => {
-          this.reserva = reservaActualizada;
-          this.mostrarExito('Reserva cancelada exitosamente');
-          this.cargando = false;
-        },
-        error: (error) => {
-          console.error('Error al cancelar reserva:', error);
-          this.mostrarError('Error al cancelar la reserva');
-          this.cargando = false;
-        }
-      });
-  }
-
-  // Método para imprimir reserva
   imprimirReserva(): void {
     if (!this.reserva) return;
-    
-    // Crear contenido para imprimir
+
     const contenidoImpresion = `
       ========================================
       RESERVA DEL HOSTAL
@@ -618,8 +432,7 @@ export class DetalleReservaComponent implements OnInit {
       Fecha de impresión: ${this.formatDateDDMMYYYY(new Date())}
       ========================================
     `;
-    
-    // Abrir ventana de impresión
+
     const ventanaImpresion = window.open('', '_blank');
     if (ventanaImpresion) {
       ventanaImpresion.document.write(`
@@ -643,7 +456,6 @@ export class DetalleReservaComponent implements OnInit {
     }
   }
 
-  // Método auxiliar para formatear fechas en DD/MM/YYYY
   private formatDateDDMMYYYY(date: Date): string {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -651,7 +463,6 @@ export class DetalleReservaComponent implements OnInit {
     return `${day}/${month}/${year}`;
   }
 
-  // Métodos para obtener labels
   getTipoCamaLabel(tipo: string): string {
     const tipos: { [key: string]: string } = {
       'matrimonial': 'Matrimonial',
@@ -671,5 +482,17 @@ export class DetalleReservaComponent implements OnInit {
       'otro': 'Otro'
     };
     return tipos[tipo] || tipo;
+  }
+
+  getIconoAccion(accion: string): string {
+    const iconos: { [key: string]: string } = {
+      'Creación': 'add_circle',
+      'Modificación': 'edit',
+      'Cambio de Estado': 'swap_horiz',
+      'Cancelación': 'cancel',
+      'Check-in': 'login',
+      'Check-out': 'logout'
+    };
+    return iconos[accion] || 'info';
   }
 }

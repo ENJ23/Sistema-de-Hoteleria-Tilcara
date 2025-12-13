@@ -1,554 +1,7 @@
-import { Component, OnInit, OnDestroy, ViewChild, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { FormsModule } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil, filter } from 'rxjs';
-import { DetalleReservaComponent } from '../../components/detalle-reserva/detalle-reserva.component';
-import { DetalleReservaModalComponent } from '../../components/detalle-reserva-modal/detalle-reserva-modal.component';
-import { SeleccionReservaSimpleComponent } from '../../components/seleccion-reserva-simple/seleccion-reserva-simple.component';
-import { TodoListComponent } from '../../components/todo-list/todo-list.component';
-import { HabitacionService } from '../../services/habitacion.service';
-import { ReservaService } from '../../services/reserva.service';
-import { ClienteService } from '../../services/cliente.service';
-import { DateTimeService } from '../../services/date-time.service';
-import { TareaService } from '../../services/tarea.service';
-
-interface Habitacion {
-  _id: string;
-  numero: string;
-  tipo: string;
-  capacidad: number;
-  estado: 'disponible' | 'ocupada' | 'reservada' | 'mantenimiento' | 'limpieza';
-}
-
-interface DiaCalendario {
-  fecha: Date;
-  numero: number;
-  esMesActual: boolean;
-  esHoy: boolean;
-  esFinDeSemana: boolean;
-}
-
-interface EstadoOcupacion {
-  tipo: 'disponible' | 'ocupada' | 'reservada' | 'mantenimiento' | 'limpieza' | 'transicion' | 'finalizada';
-  checkIn?: boolean;
-  checkOut?: boolean;
-  esTransicion?: boolean;
-  esDiaEntrada?: boolean; // Nuevo
-  esDiaSalida?: boolean; // Nuevo
-  // Campos para estado de pago
-  estaCompletamentePagado?: boolean;
-  montoPagado?: number;
-  precioTotal?: number;
-  montoRestante?: number;
-  // Campos para múltiples reservas
-  reservas?: any[]; // Todas las reservas para este día
-  reservaPrincipal?: any; // La reserva que determina el color principal
-  esDiaTransicion?: boolean; // Si hay entrada y salida de diferentes reservas
-  reservaEntrada?: any; // Reserva que está entrando
-  reservaSalida?: any;   // Reserva que está saliendo
-  claseDinamica?: string; // Clase CSS dinámica para transiciones
-}
-
-interface OcupacionHabitacion {
-  habitacion: Habitacion;
-  ocupacionPorDia: { [fecha: string]: EstadoOcupacion };
-}
-
-interface Nota {
-  texto: string;
-  tipo: 'info' | 'importante';
-  fecha: Date;
-}
-
-interface Estadisticas {
-  ocupacionActual: number;
-  totalHabitaciones: number;
-  porcentajeOcupacion: number;
-  reservasPendientes: number;
-  pagosPendientes: number;
-}
-
-@Component({
-  selector: 'app-home',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatChipsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    FormsModule,
-    MatDialogModule,
-    TodoListComponent
-  ],
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
-})
-export class HomeComponent implements OnInit, OnDestroy {
-  @ViewChild(TodoListComponent) todoListComponent!: TodoListComponent;
-  
-  fechaActual!: Date;
-  mesActual!: Date;
-  diasCalendario: DiaCalendario[] = [];
-  habitaciones: Habitacion[] = [];
-  ocupacionHabitaciones: OcupacionHabitacion[] = [];
-  cargando = false;
-  cargandoOcupacion = false; // Nueva variable para evitar llamadas múltiples
-  cargandoReservas = false; // Nueva variable para evitar llamadas múltiples
-  
-  // Sistema de debounce y cache optimizado
-  private destroy$ = new Subject<void>();
-  private refreshSubject = new Subject<void>();
-  private cacheReservas: { [key: string]: any } = {};
-  private cacheOcupacion: { [key: string]: any } = {}; // Cache específico para ocupación
-  private lastRefreshTime = 0;
-  private readonly CACHE_DURATION = 30000; // 30 segundos
-  private readonly OCUPACION_CACHE_DURATION = 10000; // 10 segundos para ocupación (más sensible a cambios)
-  private readonly CRITICAL_CACHE_DURATION = 2000; // 2 segundos para operaciones críticas
-  
-  // Sistema de control de peticiones
-  private isInitializing = false;
-  private initializationPromise: Promise<void> | null = null;
-  
-  // Sistema de gestión de estilos dinámicos
-  private estilosDinamicos = new Set<string>();
-  private cacheEstilos = new Map<string, string>();
-  
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
-    private dialog: MatDialog,
-    private habitacionService: HabitacionService,
-    private reservaService: ReservaService,
-    private clienteService: ClienteService,
-    private dateTimeService: DateTimeService,
-    private tareaService: TareaService
-  ) {}
-  
-  estadisticas: Estadisticas = {
-    ocupacionActual: 0,
-    totalHabitaciones: 0,
-    porcentajeOcupacion: 0,
-    reservasPendientes: 0,
-    pagosPendientes: 0
-  };
-  
-  reservasHoy: any[] = [];
-  
-  notasDia: Nota[] = [];
-  
-  nuevaNota = '';
-
-  ngOnInit(): void {
-    console.log('🚀 Inicializando Dashboard...');
-    this.fechaActual = this.dateTimeService.getCurrentDate();
-    this.mesActual = this.dateTimeService.getCurrentDate();
-    
-    // Configurar debounce para refrescar datos
-    this.refreshSubject.pipe(
-      debounceTime(500), // Esperar 500ms después de la última llamada
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.generarOcupacion();
-    });
-    
-    // Detectar navegación de vuelta para refrescar datos
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      console.log('🔄 Navegación detectada - invalidando cache y refrescando datos');
-      this.invalidarCacheYRefrescar();
-    });
-    
-    // Detectar query parameters para cambios específicos
-    this.route.queryParams.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      if (params['reservaActualizada'] || params['reservaCreada']) {
-        console.log('🔄 Cambio de reserva detectado - invalidando cache');
-        this.invalidarCacheYRefrescar();
-      }
-      // OPTIMIZADO: Detectar cambios de pago específicamente
-      if (params['pagoRegistrado'] || params['pagoActualizado']) {
-        console.log('💰 Cambio de pago detectado - invalidando cache de ocupación');
-        this.invalidarCacheOcupacion();
-      }
-      // OPTIMIZADO: Detectar check-in/check-out
-      if (params['checkinRealizado'] || params['checkoutRealizado']) {
-        console.log('🏨 Check-in/out detectado - invalidando cache completo');
-        this.invalidarCacheYRefrescar();
-      }
-    });
-    
-    this.inicializarHabitaciones();
-  }
-
-  ngOnDestroy(): void {
-    this.limpiarEstilosDinamicos();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  /**
-   * Invalida el cache y fuerza la actualización de datos
-   */
-  private invalidarCacheYRefrescar(): void {
-    console.log('🗑️ Invalidando cache y refrescando datos...');
-    
-    // Limpiar cache de reservas
-    this.cacheReservas = {};
-    this.cacheOcupacion = {}; // OPTIMIZADO: Limpiar también cache de ocupación
-    this.lastRefreshTime = 0;
-    
-    // Forzar refresh de ocupación (bypass cache)
-    this.generarOcupacion(true);
-    
-    // Recargar estadísticas
-    this.cargarEstadisticas();
-    this.cargarReservasHoy();
-    
-    // Recargar to-do list si está disponible
-    if (this.todoListComponent) {
-      this.todoListComponent.cargarTareasPendientes();
-    }
-    
-    console.log('✅ Cache invalidado y datos refrescados');
-  }
-
-  /**
-   * OPTIMIZADO: Invalidar solo cache de ocupación para cambios de pago
-   */
-  private invalidarCacheOcupacion(): void {
-    console.log('🗑️ Invalidando solo cache de ocupación...');
-    
-    // Limpiar solo cache de ocupación
-    this.cacheOcupacion = {};
-    
-    // Forzar refresh de ocupación (bypass cache)
-    this.generarOcupacion(true);
-  }
-
-  /**
-   * OPTIMIZADO: Invalidar cache específico por habitación
-   */
-  private invalidarCacheHabitacion(habitacionId: string): void {
-    console.log(`🗑️ Invalidando cache para habitación ${habitacionId}...`);
-    
-    // Limpiar cache específico de la habitación
-    Object.keys(this.cacheOcupacion).forEach(key => {
-      if (key.includes(habitacionId)) {
-        delete this.cacheOcupacion[key];
-      }
-    });
-    
-    // Refrescar ocupación solo para esa habitación
-    this.generarOcupacion(true);
-  }
-
-  /**
-   * Refresca datos cuando la ventana vuelve a tener foco
-   */
-  @HostListener('window:focus', ['$event'])
-  onWindowFocus(): void {
-    console.log('👁️ Ventana enfocada - verificando si necesitamos refrescar datos');
-    
-    // Solo refrescar si han pasado más de 5 segundos desde la última actualización
-    const now = Date.now();
-    if (now - this.lastRefreshTime > 5000) {
-      console.log('🔄 Refrescando datos por focus de ventana');
-      this.invalidarCacheYRefrescar();
-    }
-  }
-
-  /**
-   * Método público para refrescar datos manualmente
-   */
-  public refrescarDatos(): void {
-    console.log('🔄 Refrescando datos manualmente...');
-    this.invalidarCacheYRefrescar();
-  }
-
-  private limpiarEstilosDinamicos(): void {
-    this.estilosDinamicos.forEach(id => {
-      const elemento = document.getElementById(id);
-      if (elemento) {
-        elemento.remove();
-      }
-    });
-    this.estilosDinamicos.clear();
-    this.cacheEstilos.clear();
-  }
-
-  // Sistema de inicialización controlada
-  private async initializeSequentially(): Promise<void> {
-    if (this.isInitializing && this.initializationPromise) {
-      return this.initializationPromise;
-    }
-
-    this.isInitializing = true;
-    this.initializationPromise = this.performInitialization();
-    
-    try {
-      await this.initializationPromise;
-    } finally {
-      this.isInitializing = false;
-      this.initializationPromise = null;
-    }
-  }
-
-  private async performInitialization(): Promise<void> {
-    console.log('🏨 Inicializando habitaciones...');
-    this.cargando = true;
-    
-    try {
-      // OPTIMIZADO: Cargar datos en paralelo para mejor rendimiento
-      const [habitacionesResult] = await Promise.all([
-        this.loadHabitaciones(),
-        // Cargar estadísticas en paralelo
-        this.cargarEstadisticas(),
-        // Cargar reservas del día en paralelo
-        this.cargarReservasHoy()
-      ]);
-      
-      // Generar calendario después de cargar habitaciones
-      console.log('📅 Generando calendario...');
-      this.generarCalendario();
-      
-      // Generar ocupación después del calendario
-      console.log('📊 Generando ocupación...');
-      await this.loadOcupacion();
-      
-      console.log('✅ Inicialización completada');
-      
-    } catch (error) {
-      console.error('❌ Error durante la inicialización:', error);
-      this.cargando = false;
-    }
-  }
-
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  private async loadHabitaciones(): Promise<void> {
-    return new Promise((resolve, reject) => {
-    // CORREGIDO: Usar getHabitacionesActivas para el calendario de ocupación
-    this.habitacionService.getHabitacionesActivas().subscribe({
-      next: (response) => {
-        console.log('✅ Habitaciones activas cargadas para calendario:', response.habitaciones.length);
-        this.habitaciones = response.habitaciones.map(hab => ({
-          _id: hab._id,
-          numero: hab.numero,
-          tipo: hab.tipo,
-          capacidad: hab.capacidad,
-          estado: hab.estado.toLowerCase() as any
-        }));
-        this.cargando = false;
-          // Actualizar estadísticas después de cargar habitaciones
-          this.actualizarEstadisticas();
-          resolve();
-      },
-      error: (error) => {
-        console.error('❌ Error al cargar habitaciones activas:', error);
-        console.log('🔄 Usando habitaciones de ejemplo...');
-        // Si hay error, crear habitaciones de ejemplo para mostrar el calendario
-        this.habitaciones = [
-          { _id: '1', numero: '101', tipo: 'Individual', capacidad: 1, estado: 'disponible' },
-          { _id: '2', numero: '102', tipo: 'Doble', capacidad: 2, estado: 'disponible' },
-          { _id: '3', numero: '103', tipo: 'Triple', capacidad: 3, estado: 'disponible' },
-          { _id: '4', numero: '201', tipo: 'Individual', capacidad: 1, estado: 'disponible' },
-          { _id: '5', numero: '202', tipo: 'Doble', capacidad: 2, estado: 'disponible' }
-        ];
-        this.cargando = false;
-          // Actualizar estadísticas después de cargar habitaciones de ejemplo
-          this.actualizarEstadisticas();
-          resolve();
-        }
-      });
-    });
-  }
-
-  private async loadOcupacion(): Promise<void> {
-    return new Promise((resolve, reject) => {
-        this.generarOcupacion();
-      // Resolver después de un tiempo para permitir que la petición se complete
-      setTimeout(resolve, 2000);
-    });
-  }
-
-  inicializarHabitaciones(): void {
-    // Usar el sistema de inicialización secuencial
-    this.initializeSequentially().catch(error => {
-      console.error('❌ Error en la inicialización:', error);
-    });
-  }
-
-  generarCalendario(): void {
-    const primerDia = this.dateTimeService.getFirstDayOfMonth(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1);
-    const ultimoDia = this.dateTimeService.getLastDayOfMonth(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1);
-    
-    this.diasCalendario = [];
-    
-    // Generar todos los días del mes en horario argentino
-    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
-      // Crear fecha en horario argentino
-      const fecha = this.dateTimeService.createArgentinaDate(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, dia);
-      this.diasCalendario.push({
-        fecha: fecha,
-        numero: dia,
-        esMesActual: true,
-        esHoy: this.dateTimeService.isToday(fecha),
-        esFinDeSemana: this.dateTimeService.isWeekend(fecha)
-      });
-    }
-  }
-
-  generarOcupacion(forzarRefresh: boolean = false): void {
-    if (this.habitaciones.length === 0) {
-      console.log('❌ No hay habitaciones para generar ocupación');
-      return;
-    }
-    
-    if (this.cargandoOcupacion) {
-      console.log('⏳ Ya se está cargando la ocupación, esperando...');
-      return;
-    }
-    
-    // OPTIMIZADO: Cache inteligente con invalidación condicional
-    const cacheKey = `${this.mesActual.getFullYear()}-${this.mesActual.getMonth() + 1}-expandido`;
-    const now = Date.now();
-    
-    // Verificar cache solo si no se fuerza refresh
-    if (!forzarRefresh && this.cacheOcupacion[cacheKey]) {
-      const cacheTime = this.cacheOcupacion[cacheKey].timestamp;
-      const cacheAge = now - cacheTime;
-      
-      if (cacheAge < this.OCUPACION_CACHE_DURATION) {
-        console.log('📦 Usando cache de ocupación (edad:', Math.round(cacheAge / 1000), 'segundos)');
-        this.ocupacionHabitaciones = this.cacheOcupacion[cacheKey].data;
-        this.cargandoOcupacion = false;
-        this.cargando = false;
-        return;
-      } else {
-        console.log('⏰ Cache de ocupación expirado, refrescando...');
-        delete this.cacheOcupacion[cacheKey];
-      }
-    }
-    
-    if (forzarRefresh) {
-      console.log('🔄 Forzando refresh de ocupación - invalidando cache');
-      this.cacheOcupacion = {}; // Limpiar cache de ocupación
-    }
-    
-    console.log('📊 Generando ocupación...');
-    console.log('🏨 Habitaciones disponibles:', this.habitaciones.length);
-    console.log('📅 Días del calendario:', this.diasCalendario.length);
-    
-    this.cargandoOcupacion = true;
-    this.cargando = true;
-    
-    // CORRECCIÓN CRÍTICA: Expandir rango de fechas para capturar reservas que abarcan múltiples meses
-    const mesAnterior = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() - 1, 1);
-    const mesSiguiente = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 1);
-    
-    const fechaInicio = this.dateTimeService.getFirstDayOfMonth(mesAnterior.getFullYear(), mesAnterior.getMonth() + 1);
-    const fechaFin = this.dateTimeService.getLastDayOfMonth(mesSiguiente.getFullYear(), mesSiguiente.getMonth() + 1);
-    
-    console.log('📅 Rango de fechas expandido:', {
-      fechaInicio: this.dateTimeService.dateToString(fechaInicio),
-      fechaFin: this.dateTimeService.dateToString(fechaFin),
-      mesActual: this.mesActual.getMonth() + 1,
-      añoActual: this.mesActual.getFullYear()
-    });
-    
-    // Obtener reservas para el rango expandido (mes anterior + mes actual + mes siguiente)
-    this.reservaService.getReservas({
-      fechaInicio: this.dateTimeService.dateToString(fechaInicio),
-      fechaFin: this.dateTimeService.dateToString(fechaFin)
-    }, 1, 1000).subscribe({
-      next: (response) => {
-        console.log('📋 Reservas cargadas:', response.reservas.length);
-        console.log('📋 Detalle de reservas cargadas:', response.reservas.map((r: any) => ({
-          id: r._id,
-          habitacion: typeof r.habitacion === 'string' ? r.habitacion : r.habitacion?.numero,
-          fechaEntrada: r.fechaEntrada,
-          fechaSalida: r.fechaSalida,
-          estado: r.estado
-        })));
-        
-        // Guardar en cache
-        this.cacheReservas[cacheKey] = response;
-        this.lastRefreshTime = now;
-        
-        this.procesarOcupacionConDatos(response);
-      },
-      error: (error) => {
-        console.error('Error al cargar ocupación:', error);
-        
-        // Si hay error 429, esperar un poco y reintentar
-        if (error.status === 429) {
-          console.log('⚠️ Demasiadas peticiones, esperando 2 segundos...');
-          setTimeout(() => {
-            this.cargandoOcupacion = false;
-            this.cargando = false;
-            this.refreshSubject.next(); // Reintentar con debounce
-          }, 2000);
-          return;
-        }
-        
-        // Si hay error, mostrar todas las habitaciones como disponibles
-        this.ocupacionHabitaciones = [];
-        
-        this.habitaciones.forEach(habitacion => {
-          const ocupacion: OcupacionHabitacion = {
-            habitacion: habitacion,
-            ocupacionPorDia: {}
-          };
-          
-          this.diasCalendario.forEach(dia => {
-            if (dia.esMesActual) {
-              const fechaStr = this.formatearFecha(dia.fecha);
-              ocupacion.ocupacionPorDia[fechaStr] = { tipo: 'disponible' };
-            }
-          });
-          
-          this.ocupacionHabitaciones.push(ocupacion);
-        });
-        
-        // OPTIMIZADO: Guardar en cache para futuras consultas
-        this.cacheOcupacion[cacheKey] = {
-          data: [...this.ocupacionHabitaciones],
-          timestamp: Date.now()
-        };
-        console.log('💾 Cache de ocupación guardado para:', cacheKey);
-        
-        this.cargando = false;
-        this.cargandoOcupacion = false;
-      }
-    });
-  }
-
-  private procesarOcupacionConDatos(response: any): void {
-    console.log('📋 Detalle de reservas:', response.reservas.map((r: any) => ({
-          habitacion: typeof r.habitacion === 'string' ? r.habitacion : r.habitacion.numero,
-          fechaEntrada: r.fechaEntrada,
-          fechaSalida: r.fechaSalida,
-          estado: r.estado
-        })));
+// Archivo legacy: contenido deshabilitado para evitar compilación.
+// Mantener solo para referencia histórica.
+export {};
+/*
     
     console.log('🔍 Procesando ocupación para mes:', this.mesActual.getMonth() + 1, this.mesActual.getFullYear());
         
@@ -588,24 +41,8 @@ export class HomeComponent implements OnInit, OnDestroy {
             const esDiaEntrada = fechaStr === fechaEntradaStr;
             const esDiaSalida = fechaStr === fechaSalidaStr;
             
-            // CORRECCIÓN: Para reservas con problemas de zona horaria, también considerar
-            // si la fecha está dentro del rango cuando se ajusta la zona horaria
-            const fechaEntradaObj = new Date(reserva.fechaEntrada);
-            const fechaSalidaObj = new Date(reserva.fechaSalida);
-            
-            // Ajustar fechas a zona horaria local para comparación
-            const fechaEntradaLocal = new Date(fechaEntradaObj.getTime() - (fechaEntradaObj.getTimezoneOffset() * 60000));
-            const fechaSalidaLocal = new Date(fechaSalidaObj.getTime() - (fechaSalidaObj.getTimezoneOffset() * 60000));
-            
-            const fechaEntradaLocalStr = fechaEntradaLocal.toISOString().split('T')[0];
-            const fechaSalidaLocalStr = fechaSalidaLocal.toISOString().split('T')[0];
-            
-            const esDiaEntradaLocal = fechaStr === fechaEntradaLocalStr;
-            const esDiaSalidaLocal = fechaStr === fechaSalidaLocalStr;
-            
             // Para cualquier reserva, incluir si está en rango O si es día de entrada/salida específico
-            // También incluir si hay problemas de zona horaria que hacen que las fechas se vean diferentes
-            const incluir = enRango || esDiaEntrada || esDiaSalida || esDiaEntradaLocal || esDiaSalidaLocal;
+            const incluir = enRango || esDiaEntrada || esDiaSalida;
             
             // Debugging específico para reservas de noviembre
             if (dia.fecha.getMonth() === 10 && incluir) {
@@ -622,15 +59,6 @@ export class HomeComponent implements OnInit, OnDestroy {
                 esDiaEntrada,
                 esDiaSalida
               });
-            }
-            
-            // CASO ESPECIAL: Si las fechas originales son iguales pero las locales son diferentes,
-            // significa que hay un problema de zona horaria y debemos incluir ambos días
-            if (fechaEntradaStr === fechaSalidaStr && fechaEntradaLocalStr !== fechaSalidaLocalStr) {
-              const incluirPorZonaHoraria = fechaStr === fechaEntradaLocalStr || fechaStr === fechaSalidaLocalStr;
-              if (incluirPorZonaHoraria) {
-                return true;
-              }
             }
             
             return incluir;
@@ -673,24 +101,13 @@ export class HomeComponent implements OnInit, OnDestroy {
               // Día normal de reserva
               const reservaPrincipal = this.determinarReservaPrincipal(reservasHabitacion);
               
-              // CORRECCIÓN: Usar la misma lógica de zona horaria que en el filtro
+              // Detectar días de entrada y salida
               const fechaStr = this.formatearFecha(dia.fecha);
               const fechaEntradaStr = reservaPrincipal.fechaEntrada.split('T')[0];
               const fechaSalidaStr = reservaPrincipal.fechaSalida.split('T')[0];
               
-              // Verificar fechas locales para manejar problemas de zona horaria
-              const fechaEntradaObj = new Date(reservaPrincipal.fechaEntrada);
-              const fechaSalidaObj = new Date(reservaPrincipal.fechaSalida);
-              
-              const fechaEntradaLocal = new Date(fechaEntradaObj.getTime() - (fechaEntradaObj.getTimezoneOffset() * 60000));
-              const fechaSalidaLocal = new Date(fechaSalidaObj.getTime() - (fechaSalidaObj.getTimezoneOffset() * 60000));
-              
-              const fechaEntradaLocalStr = fechaEntradaLocal.toISOString().split('T')[0];
-              const fechaSalidaLocalStr = fechaSalidaLocal.toISOString().split('T')[0];
-              
-              // Detectar días de entrada y salida usando ambas comparaciones
-              const esDiaEntrada = fechaStr === fechaEntradaStr || fechaStr === fechaEntradaLocalStr;
-              const esDiaSalida = fechaStr === fechaSalidaStr || fechaStr === fechaSalidaLocalStr;
+              const esDiaEntrada = fechaStr === fechaEntradaStr;
+              const esDiaSalida = fechaStr === fechaSalidaStr;
               
               let estado: EstadoOcupacion = { 
                 tipo: this.mapearEstadoReserva(reservaPrincipal.estado),
@@ -749,7 +166,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       'En curso': 1,      // Máxima prioridad - ya está ocupada
       'Confirmada': 2,     // Alta prioridad - confirmada
       'Pendiente': 3,     // Media prioridad - pendiente
-      'Completada': 4,    // Baja prioridad - ya terminó
+      'Finalizada': 4,    // Baja prioridad - ya terminó
       'Cancelada': 5,     // Muy baja prioridad - cancelada
       'No Show': 6        // Muy baja prioridad - no se presentó
     };
@@ -1209,7 +626,6 @@ export class HomeComponent implements OnInit, OnDestroy {
         return 'reservada';
       case 'finalizada':
         return 'finalizada';
-      case 'completada':
       case 'cancelada':
       case 'no show':
         return 'disponible';
@@ -1249,19 +665,15 @@ export class HomeComponent implements OnInit, OnDestroy {
     
     this.cargandoReservas = true;
     const hoy = this.dateTimeService.getCurrentDateString();
-    console.log('🔍 DEBUG - Fecha de hoy para buscar reservas:', hoy);
-    console.log('🔍 DEBUG - Fecha actual completa:', new Date());
-    console.log('🔍 DEBUG - Fecha formateada por DateTimeService:', this.dateTimeService.formatDateToLocalString(new Date()));
+  // DEBUG reducido: desactivar trazas verbosas en producción
     
     // Buscar TODAS las reservas activas sin filtro de fechas
     this.reservaService.getReservas({
       estado: 'Pendiente,Confirmada,En curso'
       // NO enviar fechaInicio ni fechaFin para evitar filtros del backend
-    }, 1, 1000).subscribe({
+    }, 1, 100).subscribe({
       next: (response) => {
-        console.log('🔍 DEBUG - Respuesta del backend:', response);
-        console.log('🔍 DEBUG - Número de reservas encontradas:', response.reservas?.length || 0);
-        console.log('🔍 DEBUG - Detalle de reservas del backend:', response.reservas?.map(r => ({
+        // console.log('Reservas cargadas hoy:', response.reservas?.length || 0);
           _id: r._id,
           estado: r.estado,
           habitacion: typeof r.habitacion === 'object' ? r.habitacion?.numero || 'N/A' : 'N/A',
@@ -1283,7 +695,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         });
         
         // Usar todas las reservas sin filtro de fechas
-        console.log('🔍 DEBUG - Usando todas las reservas sin filtro de fechas:', response.reservas.length);
+        // console.log('Usando todas las reservas sin filtro de fechas:', response.reservas.length);
         
         this.reservasHoy = response.reservas.map(reserva => ({
           horaEntrada: reserva.horaEntrada,
@@ -1296,10 +708,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           montoPagado: reserva.montoPagado || 0
         }));
         
-        console.log('🔍 DEBUG - Reservas procesadas para hoy:', this.reservasHoy.length);
-        console.log('🔍 DEBUG - Estados de las reservas:', this.reservasHoy.map(r => r.estado));
-        console.log('🔍 DEBUG - Reservas "En curso" encontradas:', this.reservasHoy.filter(r => r.estado === 'En curso').length);
-        console.log('🔍 DEBUG - Detalle de reservas "En curso":', this.reservasHoy.filter(r => r.estado === 'En curso').map(r => ({
+        // console.log('Reservas hoy:', this.reservasHoy.length);
           estado: r.estado,
           habitacion: r.habitacion,
           cliente: r.cliente
@@ -1307,7 +716,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         
         // Mostrar fechas de las reservas para comparar
         if (this.reservasHoy.length > 0) {
-          console.log('🔍 DEBUG - Fechas de las reservas encontradas:', this.reservasHoy.map(r => ({
+          // console.log('Fechas de reservas encontradas (hoy):', this.reservasHoy.length);
             fechaEntrada: r.horaEntrada,
             fechaSalida: r.horaSalida,
             estado: r.estado
@@ -1327,23 +736,18 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private actualizarEstadisticas(): void {
-    console.log('🔍 DEBUG - actualizarEstadisticas() llamado');
-    console.log('🔍 DEBUG - this.habitaciones.length:', this.habitaciones.length);
-    console.log('🔍 DEBUG - this.reservasHoy.length:', this.reservasHoy.length);
-    console.log('🔍 DEBUG - this.reservasHoy:', this.reservasHoy);
+    // DEBUG compacto
     
     // Estadísticas de ocupación - CONTAR RESERVAS "EN CURSO"
     if (this.habitaciones.length > 0) {
-      console.log('🔍 DEBUG - ANTES del filtro - this.reservasHoy:', this.reservasHoy);
-      console.log('🔍 DEBUG - ANTES del filtro - this.reservasHoy.length:', this.reservasHoy.length);
+      // console.log('Pre filtro reservasHoy:', this.reservasHoy.length);
       
       // Contar reservas con estado "En curso" (manejar variaciones de capitalización)
       const habitacionesOcupadasHoy = this.reservasHoy.filter(r => 
         r.estado === 'En curso' || r.estado === 'En Curso'
       ).length;
       
-      console.log('🔍 DEBUG - habitacionesOcupadasHoy (En curso):', habitacionesOcupadasHoy);
-      console.log('🔍 DEBUG - Estados de reservas:', this.reservasHoy.map(r => ({ 
+      // console.log('Habitaciones ocupadas hoy (en curso):', habitacionesOcupadasHoy);
         estado: r.estado, 
         esEnCurso: r.estado === 'En curso',
         habitacion: r.habitacion?.numero || 'N/A'
@@ -1368,7 +772,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.estadisticas.totalHabitaciones = this.habitaciones.length;
       this.estadisticas.porcentajeOcupacion = Math.round((this.estadisticas.ocupacionActual / this.estadisticas.totalHabitaciones) * 100);
       
-      console.log('🔍 DEBUG - estadisticas.ocupacionActual:', this.estadisticas.ocupacionActual);
+      // console.log('Ocupación actual:', this.estadisticas.ocupacionActual);
       console.log('🔍 DEBUG - estadisticas.totalHabitaciones:', this.estadisticas.totalHabitaciones);
       console.log('🔍 DEBUG - estadisticas.porcentajeOcupacion:', this.estadisticas.porcentajeOcupacion);
     }
@@ -1383,7 +787,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Cargar todas las reservas activas para calcular pendientes
     this.reservaService.getReservas({
       estado: 'Pendiente,Confirmada,En curso'
-    }, 1, 1000).subscribe({
+    }, 1, 100).subscribe({
       next: (response) => {
         const reservasActivas = response.reservas;
         
@@ -2311,4 +1715,5 @@ ${habitacionesLimpieza.length > 0 ?
     return habitacion?.numero || 'N/A';
   }
 }
+*/
 

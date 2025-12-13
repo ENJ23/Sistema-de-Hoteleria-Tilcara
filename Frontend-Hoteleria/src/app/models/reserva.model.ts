@@ -18,6 +18,16 @@ export interface PagoHistorial {
   registradoPor: string;
 }
 
+export interface HistorialCambio {
+  fecha: Date;
+  usuario: string;
+  rol?: string;
+  accion: string;
+  detalles?: string;
+  estadoAnterior?: string;
+  estadoNuevo?: string;
+}
+
 export interface Reserva {
   _id: string;
   cliente: ClienteEmbedded;
@@ -28,7 +38,7 @@ export interface Reserva {
   horaSalida: string;
   precioPorNoche: number;
   precioTotal: number;
-  estado: 'Confirmada' | 'Pendiente' | 'En curso' | 'Cancelada' | 'Completada' | 'No Show' | 'Finalizada';
+  estado: 'Confirmada' | 'Pendiente' | 'En curso' | 'Cancelada' | 'No Show' | 'Finalizada';
   pagado: boolean;
   metodoPago?: string;
   observaciones?: string;
@@ -40,6 +50,7 @@ export interface Reserva {
   // Campos para pagos
   montoPagado?: number;
   historialPagos?: PagoHistorial[];
+  historialCambios?: HistorialCambio[];
   fechaPago?: Date;
   // Campos calculados del backend
   montoRestante?: number;
@@ -73,7 +84,7 @@ export interface ReservaCreate {
   horaEntrada: string;
   horaSalida: string;
   precioPorNoche: number;
-  estado?: 'Confirmada' | 'Pendiente' | 'En curso' | 'Cancelada' | 'Completada' | 'No Show' | 'Finalizada';
+  estado?: 'Confirmada' | 'Pendiente' | 'En curso' | 'Cancelada' | 'No Show' | 'Finalizada';
   pagado?: boolean;
   metodoPago?: string;
   observaciones?: string;
@@ -92,7 +103,7 @@ export interface ReservaUpdate {
   horaSalida?: string;
   precioPorNoche?: number;
   precioTotal?: number;
-  estado?: 'Confirmada' | 'Pendiente' | 'En curso' | 'Cancelada' | 'Completada' | 'No Show' | 'Finalizada';
+  estado?: 'Confirmada' | 'Pendiente' | 'En curso' | 'Cancelada' | 'No Show' | 'Finalizada';
   pagado?: boolean;
   metodoPago?: string;
   observaciones?: string;
@@ -114,6 +125,13 @@ export interface ReservaFilters {
 export interface ReservaResponse {
   reservas: Reserva[];
   total: number;
-  pagina: number;
-  porPagina: number;
+  // Compatibilidad con respuestas antiguas
+  pagina?: number;
+  porPagina?: number;
+  // Campos actuales del backend
+  totalPages?: number;
+  currentPage?: number;
+  // Alternativas comunes
+  page?: number;
+  limit?: number;
 } 

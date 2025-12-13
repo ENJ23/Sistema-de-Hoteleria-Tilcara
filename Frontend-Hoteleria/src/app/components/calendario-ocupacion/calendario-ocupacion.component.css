@@ -1,16 +1,17 @@
 .calendario-container {
-  padding: 20px;
-  background: #f5f5f5;
+  padding: 24px;
+  background: var(--bg-secondary);
   min-height: 100vh;
 }
 
 /* Header del Calendario */
 .calendario-header {
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg);
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -26,41 +27,69 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 8px 0;
-  color: #1976d2;
-  font-size: 28px;
-  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--primary-color);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 .calendario-title mat-icon {
   font-size: 32px;
   width: 32px;
   height: 32px;
+  color: var(--secondary-color);
 }
 
 .calendario-subtitle {
   margin: 0;
-  color: #666;
-  font-size: 16px;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
 }
 
 .navegacion-mes {
   display: flex;
   align-items: center;
   gap: 16px;
+  background: var(--bg-secondary);
+  padding: 8px;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--bg-tertiary);
 }
 
 .nav-btn {
-  background: #f0f0f0;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  transition: all 0.3s ease;
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-tertiary);
+  border-radius: 8px;
+  /* Square with rounded corners for modern look */
+  width: 40px;
+  height: 40px;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-btn:hover {
-  background: #e0e0e0;
-  transform: scale(1.05);
+  background: white;
+  color: var(--primary-color);
+  border-color: var(--secondary-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.mes-actual {
+  text-align: center;
+  min-width: 150px;
+}
+
+.mes-actual h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .mes-actual {
@@ -75,23 +104,27 @@
 }
 
 .btn-hoy {
-  background: #4caf50;
+  background: var(--secondary-color);
   color: white;
-  border-radius: 24px;
+  border-radius: 6px;
   padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .btn-hoy:hover {
-  background: #45a049;
+  background: var(--secondary-dark);
 }
 
 /* Calendario Principal */
 .calendario-principal {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--bg-tertiary);
   overflow: hidden;
   margin-bottom: 24px;
 }
@@ -99,19 +132,22 @@
 .calendario-dias-semana {
   display: grid;
   grid-template-columns: 200px repeat(7, 1fr);
-  background: #f8f9fa;
-  border-bottom: 2px solid #e9ecef;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--bg-tertiary);
 }
 
 .dia-header {
   padding: 16px 8px;
   text-align: center;
   font-weight: 600;
-  color: #495057;
-  border-right: 1px solid #e9ecef;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .dia-header:last-child {
@@ -119,11 +155,12 @@
 }
 
 .habitacion-header {
-  background: #e3f2fd;
-  color: #1976d2;
-  font-size: 16px;
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+  font-size: 0.875rem;
   justify-content: flex-start;
-  padding-left: 20px;
+  padding-left: 24px;
+  font-weight: 700;
 }
 
 /* Filas de Habitaciones */
@@ -135,12 +172,12 @@
 .fila-habitacion {
   display: grid;
   grid-template-columns: 200px repeat(7, 1fr);
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--bg-tertiary);
   transition: background-color 0.2s ease;
 }
 
 .fila-habitacion:hover {
-  background: #f8f9fa;
+  background: var(--bg-secondary);
 }
 
 .fila-habitacion:last-child {
@@ -150,45 +187,51 @@
 /* Celda de Habitación */
 .celda-habitacion {
   padding: 16px 20px;
-  border-right: 1px solid #e9ecef;
+  border-right: 1px solid var(--bg-tertiary);
   cursor: pointer;
   transition: background-color 0.2s ease;
-  background: #fafafa;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .celda-habitacion:hover {
-  background: #e3f2fd;
+  background: var(--bg-secondary);
 }
 
 .habitacion-numero {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1976d2;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-color);
   margin-bottom: 4px;
 }
 
 .habitacion-tipo {
-  font-size: 14px;
-  color: #666;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
   margin-bottom: 2px;
 }
 
 .habitacion-capacidad {
-  font-size: 12px;
-  color: #888;
+  font-size: 0.75rem;
+  color: var(--text-muted);
   margin-bottom: 4px;
 }
 
 .habitacion-precio {
-  font-size: 14px;
-  font-weight: 500;
-  color: #4caf50;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--success-color);
+  /* Preserving semantic color */
 }
 
 /* Celdas de Días */
 .celda-dia {
-  padding: 8px;
-  border-right: 1px solid #e9ecef;
+  padding: 4px;
+  border-right: 1px solid var(--bg-tertiary);
   min-height: 80px;
   position: relative;
   cursor: pointer;
@@ -204,22 +247,25 @@
 }
 
 .celda-dia:hover {
-  background: #f0f8ff;
+  background: var(--bg-secondary);
 }
 
 .celda-dia.otro-mes {
-  background: #f8f9fa;
-  color: #ccc;
+  background: var(--bg-secondary);
+  opacity: 0.5;
   cursor: default;
 }
 
 .celda-dia.hoy {
-  background: #fff3e0;
-  border: 2px solid #ff9800;
+  background: #fff;
+  /* Keep white to contrast with the border */
+  border: 2px solid var(--secondary-color);
+  box-shadow: inset 0 0 0 2px var(--bg-primary);
+  /* Double border effect */
 }
 
 .celda-dia.fin-semana {
-  background: #fafafa;
+  background: var(--bg-secondary);
 }
 
 .numero-dia {
@@ -403,7 +449,7 @@
   position: absolute;
   top: 2px;
   right: 2px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   width: 16px;
   height: 16px;
@@ -463,11 +509,12 @@
 
 /* Leyenda */
 .calendario-leyenda {
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg);
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
 }
 
 .calendario-leyenda h3 {
@@ -489,12 +536,15 @@
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
-  background: #f8f9fa;
-  transition: background-color 0.2s ease;
+  background: var(--bg-secondary);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .leyenda-item:hover {
-  background: #e9ecef;
+  background: white;
+  border-color: var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
 }
 
 .leyenda-color {
@@ -502,7 +552,7 @@
   height: 24px;
   border-radius: 4px;
   border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .leyenda-icon {
@@ -519,10 +569,11 @@
 
 /* Información Adicional */
 .calendario-info {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  border: 1px solid var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
 }
 
 .info-stats {
@@ -578,24 +629,24 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .navegacion-mes {
     justify-content: center;
   }
-  
+
   .calendario-dias-semana,
   .fila-habitacion {
     grid-template-columns: 150px repeat(7, 1fr);
   }
-  
+
   .celda-habitacion {
     padding: 12px 16px;
   }
-  
+
   .habitacion-numero {
     font-size: 16px;
   }
-  
+
   .habitacion-tipo,
   .habitacion-capacidad,
   .habitacion-precio {
@@ -607,44 +658,44 @@
   .calendario-container {
     padding: 12px;
   }
-  
+
   .calendario-header {
     padding: 16px;
   }
-  
+
   .calendario-title {
     font-size: 24px;
   }
-  
+
   .calendario-dias-semana,
   .fila-habitacion {
     grid-template-columns: 120px repeat(7, 1fr);
   }
-  
+
   .dia-header {
     padding: 12px 4px;
     font-size: 12px;
   }
-  
+
   .celda-dia {
     min-height: 60px;
     padding: 4px;
   }
-  
+
   .numero-dia {
     font-size: 12px;
   }
-  
+
   .estado-ocupacion {
     height: 20px;
   }
-  
+
   .estado-ocupacion .icono-ocupacion {
     font-size: 14px;
     width: 14px;
     height: 14px;
   }
-  
+
   .leyenda-grid {
     grid-template-columns: 1fr;
   }

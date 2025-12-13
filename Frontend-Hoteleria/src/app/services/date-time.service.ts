@@ -151,7 +151,8 @@ export class DateTimeService {
     const dateStr = this.formatDateToLocalString(date);
     const startStr = startDate.split('T')[0];
     const endStr = endDate.split('T')[0];
-    return dateStr >= startStr && dateStr <= endStr;
+    // fechaSalida es exclusiva: [fechaEntrada, fechaSalida)
+    return dateStr >= startStr && dateStr < endStr;
   }
 
   /**
@@ -329,6 +330,21 @@ export class DateTimeService {
     this.dateCache.clear();
     this.stringCache.clear();
   }
+
+  // ====== Métodos de compatibilidad (wrappers) para API anterior ======
+  addMonths(date: Date, delta: number): Date {
+    const d = new Date(date.getFullYear(), date.getMonth() + delta, date.getDate());
+    return d;
+  }
+
+  nombreMes(date: Date): string { return this.getMonthName(date.getMonth()); }
+  formatYMD(date: Date): string { return this.dateToString(date); }
+  esMismaFecha(a: Date, b: Date): boolean { return this.dateToString(a) === this.dateToString(b); }
+  inicioMes(date: Date): Date { return this.getFirstDayOfMonth(date.getFullYear(), date.getMonth() + 1); }
+  finMes(date: Date): Date { return this.getLastDayOfMonth(date.getFullYear(), date.getMonth() + 1); }
+  addDays(date: Date, n: number): Date { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
+  claveMes(date: Date): string { return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2,'0')}`; }
+  parseYMD(str: string): Date { return this.stringToDate(str.split('T')[0]); }
 }
 
 

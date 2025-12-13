@@ -4,6 +4,10 @@
   max-width: 800px;
   min-width: 600px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  /* Asumimos que el diálogo ocupará hasta el 90% de la altura */
 }
 
 /* Header del diálogo */
@@ -45,8 +49,10 @@
 /* Contenido del diálogo */
 .dialog-content {
   padding: 0;
-  max-height: 70vh;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  /* Importante para Firefox/Flexbox nested scrolling */
 }
 
 /* Tarjetas de información */
@@ -348,6 +354,7 @@
   padding: 20px 0;
   border-top: 1px solid #e0e0e0;
   margin-top: 20px;
+  flex-shrink: 0;
 }
 
 .acciones-principales {
@@ -404,19 +411,19 @@
     min-width: auto;
     max-width: 100%;
   }
-  
+
   .fechas-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .acciones-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .acciones-principales {
     flex-direction: column;
     width: 100%;
@@ -425,8 +432,15 @@
 
 /* Animaciones */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .info-card {

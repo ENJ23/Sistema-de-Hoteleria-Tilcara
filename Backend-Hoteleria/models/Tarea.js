@@ -61,20 +61,34 @@ tareaSchema.pre('save', function(next) {
 });
 
 // Método estático para crear tarea de limpieza
-tareaSchema.statics.crearTareaLimpieza = function(habitacionId, creadoPor = 'Sistema') {
+tareaSchema.statics.crearTareaLimpieza = async function(habitacionId, creadoPor = 'Sistema') {
+  const Habitacion = mongoose.model('Habitacion');
+  const habitacion = await Habitacion.findById(habitacionId).select('numero tipo');
+  
+  if (!habitacion) {
+    throw new Error('Habitación no encontrada');
+  }
+  
   return this.create({
     tipo: 'limpieza',
-    descripcion: `Limpieza en la habitación ${habitacionId}`,
+    descripcion: `Limpieza requerida`,
     habitacion: habitacionId,
     creadoPor: creadoPor
   });
 };
 
 // Método estático para crear tarea de mantenimiento
-tareaSchema.statics.crearTareaMantenimiento = function(habitacionId, descripcion, creadoPor = 'Sistema') {
+tareaSchema.statics.crearTareaMantenimiento = async function(habitacionId, descripcion, creadoPor = 'Sistema') {
+  const Habitacion = mongoose.model('Habitacion');
+  const habitacion = await Habitacion.findById(habitacionId).select('numero tipo');
+  
+  if (!habitacion) {
+    throw new Error('Habitación no encontrada');
+  }
+  
   return this.create({
     tipo: 'mantenimiento',
-    descripcion: descripcion || `Mantenimiento en la habitación ${habitacionId}`,
+    descripcion: descripcion || `Mantenimiento requerido`,
     habitacion: habitacionId,
     creadoPor: creadoPor
   });

@@ -55,7 +55,7 @@ const reservaSchema = new mongoose.Schema({
         type: String,
         default: '14:00',
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
             },
             message: 'Formato de hora inválido (HH:MM)'
@@ -65,7 +65,7 @@ const reservaSchema = new mongoose.Schema({
         type: String,
         default: '11:00',
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
             },
             message: 'Formato de hora inválido (HH:MM)'
@@ -83,7 +83,7 @@ const reservaSchema = new mongoose.Schema({
     },
     estado: {
         type: String,
-        enum: ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show', 'Finalizada'],
+        enum: ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'No Show', 'Finalizada'],
         default: 'Pendiente'
     },
     metodoPago: {
@@ -103,7 +103,7 @@ const reservaSchema = new mongoose.Schema({
     horaCheckIn: {
         type: String,
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return !v || /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
             },
             message: 'Formato de hora inválido (HH:MM)'
@@ -115,7 +115,7 @@ const reservaSchema = new mongoose.Schema({
     horaCheckOut: {
         type: String,
         validate: {
-            validator: function(v) {
+            validator: function (v) {
                 return !v || /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
             },
             message: 'Formato de hora inválido (HH:MM)'
@@ -163,6 +163,32 @@ const reservaSchema = new mongoose.Schema({
         motivoModificacion: {
             type: String,
             trim: true
+        }
+    }],
+    historialCambios: [{
+        fecha: {
+            type: Date,
+            default: Date.now
+        },
+        usuario: {
+            type: String,
+            required: true
+        },
+        rol: {
+            type: String
+        },
+        accion: {
+            type: String,
+            required: true
+        },
+        detalles: {
+            type: String
+        },
+        estadoAnterior: {
+            type: String
+        },
+        estadoNuevo: {
+            type: String
         }
     }],
     fechaPago: {
@@ -226,20 +252,20 @@ reservaSchema.index({ habitacion: 1, estado: 1 }); // Índice para ocupación
 reservaSchema.index({ fechaEntrada: 1, fechaSalida: 1 }); // Índice para rangos de fechas
 
 // Middleware para calcular el precio total automáticamente
-reservaSchema.pre('save', function(next) {
+reservaSchema.pre('save', function (next) {
     try {
         if (this.fechaEntrada && this.fechaSalida && this.precioPorNoche) {
             // Asegurar que las fechas sean objetos Date
             const fechaEntrada = new Date(this.fechaEntrada);
             const fechaSalida = new Date(this.fechaSalida);
-            
+
             // Calcular días
             const diffTime = fechaSalida.getTime() - fechaEntrada.getTime();
             const dias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
+
             // Calcular precio total
             this.precioTotal = dias * this.precioPorNoche;
-            
+
             console.log('💰 Precio calculado:', {
                 dias: dias,
                 precioPorNoche: this.precioPorNoche,
@@ -253,7 +279,7 @@ reservaSchema.pre('save', function(next) {
 });
 
 // Método para calcular el número de días
-reservaSchema.methods.calcularDias = function() {
+reservaSchema.methods.calcularDias = function () {
     if (this.fechaEntrada && this.fechaSalida) {
         const fechaEntrada = new Date(this.fechaEntrada);
         const fechaSalida = new Date(this.fechaSalida);
@@ -264,22 +290,22 @@ reservaSchema.methods.calcularDias = function() {
 };
 
 // Método para verificar si hay conflicto de fechas
-reservaSchema.methods.tieneConflicto = function(fechaEntrada, fechaSalida) {
+reservaSchema.methods.tieneConflicto = function (fechaEntrada, fechaSalida) {
     return (this.fechaEntrada < fechaSalida && this.fechaSalida > fechaEntrada);
 };
 
 // Método para calcular el monto restante
-reservaSchema.methods.calcularMontoRestante = function() {
+reservaSchema.methods.calcularMontoRestante = function () {
     return Math.max(0, this.precioTotal - this.montoPagado);
 };
 
 // Método para verificar si está completamente pagado
-reservaSchema.methods.estaCompletamentePagado = function() {
+reservaSchema.methods.estaCompletamentePagado = function () {
     return this.montoPagado >= this.precioTotal;
 };
 
 // Método para agregar un pago al historial
-reservaSchema.methods.agregarPago = function(monto, metodoPago, observaciones = '', registradoPor = 'Encargado') {
+reservaSchema.methods.agregarPago = function (monto, metodoPago, observaciones = '', registradoPor = 'Encargado') {
     this.historialPagos.push({
         monto: monto,
         metodoPago: metodoPago,
@@ -287,38 +313,38 @@ reservaSchema.methods.agregarPago = function(monto, metodoPago, observaciones = 
         observaciones: observaciones,
         registradoPor: registradoPor
     });
-    
+
     this.montoPagado += monto;
     this.pagado = this.estaCompletamentePagado();
     this.fechaPago = new Date();
-    
+
     return this.save();
 };
 
 // Método para editar un pago específico del historial
-reservaSchema.methods.editarPago = function(pagoId, nuevosDatos, modificadoPor = 'Encargado', motivoModificacion = '') {
+reservaSchema.methods.editarPago = function (pagoId, nuevosDatos, modificadoPor = 'Encargado', motivoModificacion = '') {
     // Validar que la reserva no esté en estado que impida edición
     if (this.estado === 'Finalizada' || this.estado === 'Cancelada') {
         throw new Error('No se pueden editar pagos de reservas finalizadas o canceladas');
     }
-    
+
     const pagoIndex = this.historialPagos.findIndex(pago => pago._id.toString() === pagoId);
     if (pagoIndex === -1) {
         throw new Error('Pago no encontrado');
     }
-    
+
     const pagoOriginal = { ...this.historialPagos[pagoIndex].toObject() };
-    
+
     // Validar que el nuevo monto no exceda el total
     const montoAnterior = pagoOriginal.monto;
     const nuevoMonto = nuevosDatos.monto || pagoOriginal.monto;
     const diferenciaMonto = nuevoMonto - montoAnterior;
     const nuevoMontoPagado = this.montoPagado + diferenciaMonto;
-    
+
     if (nuevoMontoPagado > this.precioTotal) {
         throw new Error(`El monto total pagado ($${nuevoMontoPagado}) no puede exceder el precio total ($${this.precioTotal})`);
     }
-    
+
     // Actualizar el pago
     this.historialPagos[pagoIndex].monto = nuevoMonto;
     this.historialPagos[pagoIndex].metodoPago = nuevosDatos.metodoPago || pagoOriginal.metodoPago;
@@ -326,40 +352,40 @@ reservaSchema.methods.editarPago = function(pagoId, nuevosDatos, modificadoPor =
     this.historialPagos[pagoIndex].modificadoPor = modificadoPor;
     this.historialPagos[pagoIndex].fechaModificacion = new Date();
     this.historialPagos[pagoIndex].motivoModificacion = motivoModificacion || 'Edición de pago por usuario autorizado';
-    
+
     // Recalcular totales
     this.montoPagado = nuevoMontoPagado;
     this.pagado = this.estaCompletamentePagado();
-    
+
     return this.save();
 };
 
 // Método para eliminar un pago específico del historial
-reservaSchema.methods.eliminarPago = function(pagoId, eliminadoPor = 'Encargado') {
+reservaSchema.methods.eliminarPago = function (pagoId, eliminadoPor = 'Encargado') {
     // Validar que la reserva no esté en estado que impida eliminación
     if (this.estado === 'Finalizada' || this.estado === 'Cancelada') {
         throw new Error('No se pueden eliminar pagos de reservas finalizadas o canceladas');
     }
-    
+
     const pagoIndex = this.historialPagos.findIndex(pago => pago._id.toString() === pagoId);
     if (pagoIndex === -1) {
         throw new Error('Pago no encontrado');
     }
-    
+
     const pagoEliminado = this.historialPagos[pagoIndex];
-    
+
     // Recalcular totales
     this.montoPagado -= pagoEliminado.monto;
     this.pagado = this.estaCompletamentePagado();
-    
+
     // Eliminar el pago del historial
     this.historialPagos.splice(pagoIndex, 1);
-    
+
     return this.save();
 };
 
 // Método para recalcular totales de pagos (útil para correcciones)
-reservaSchema.methods.recalcularPagos = async function() {
+reservaSchema.methods.recalcularPagos = async function () {
     this.montoPagado = this.historialPagos.reduce((total, pago) => total + pago.monto, 0);
     this.pagado = this.estaCompletamentePagado();
     return this.save();

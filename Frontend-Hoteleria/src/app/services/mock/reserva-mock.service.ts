@@ -187,7 +187,7 @@ export class ReservaMockService {
         _id: id,
         cliente: reserva.cliente ? reserva.cliente : clienteActual,
         habitacion: reserva.habitacion ? reserva.habitacion : habitacionActual,
-        estado: reserva.estado as 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Completada' | 'No Show' || reservaActual.estado,
+        estado: reserva.estado as 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Finalizada' | 'No Show' || reservaActual.estado,
         updatedAt: new Date()
       };
       
@@ -219,7 +219,7 @@ export class ReservaMockService {
   }
 
   // Actualizar solo el estado de una reserva
-  updateEstado(id: string, estado: 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Completada' | 'No Show'): Observable<Reserva> {
+  updateEstado(id: string, estado: 'Confirmada' | 'Pendiente' | 'Cancelada' | 'Finalizada' | 'No Show'): Observable<Reserva> {
     const index = this.reservas.findIndex(r => r._id === id);
     if (index !== -1) {
       const reservaActual = this.reservas[index];

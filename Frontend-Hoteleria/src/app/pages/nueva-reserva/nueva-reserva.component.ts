@@ -115,7 +115,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   reservaOriginal?: Reserva;
   
   // Estados y tipos
-  estadosReserva = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'];
+  estadosReserva = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Finalizada', 'No Show'];
   metodosPago = ['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal'];
   
   // Precios
@@ -432,6 +432,33 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     this.habitacionSeleccionada = this.habitaciones.find(h => h._id === habitacionId);
     if (this.habitacionSeleccionada) {
       console.log('🏨 Habitación encontrada para edición:', this.habitacionSeleccionada);
+      // Actualizar el precio de la habitación seleccionada
+      this.actualizarPrecioHabitacion(habitacionId);
+    } else {
+      console.warn('⚠️ Habitación no encontrada en la lista cargada. ID:', habitacionId);
+      console.warn('⚠️ Habitaciones disponibles:', this.habitaciones.length);
+      // Si la habitación no se encuentra, intentar cargarla desde el objeto de la reserva
+      if (reserva.habitacion && typeof reserva.habitacion === 'object') {
+        const habitacionData = reserva.habitacion;
+        // Crear un objeto Habitacion temporal con los datos de la reserva
+        // Proporcionar todos los campos requeridos con valores por defecto
+        this.habitacionSeleccionada = {
+          _id: habitacionData._id || habitacionId,
+          numero: habitacionData.numero || '',
+          tipo: habitacionData.tipo || 'Individual',
+          capacidad: habitacionData.capacidad || 1,
+          precioBase: habitacionData.precioBase || reserva.precioPorNoche || 0,
+          precioActual: habitacionData.precioActual || reserva.precioPorNoche || 0,
+          estado: habitacionData.estado || 'Disponible',
+          piso: habitacionData.piso || 1,
+          descripcion: habitacionData.descripcion || '',
+          servicios: habitacionData.servicios || [],
+          activa: habitacionData.activa !== undefined ? habitacionData.activa : true,
+          createdAt: habitacionData.createdAt || new Date(),
+          updatedAt: habitacionData.updatedAt || new Date()
+        };
+        console.log('🏨 Habitación configurada desde datos de reserva:', this.habitacionSeleccionada);
+      }
     }
 
     // Actualizar precio total desde la reserva original
@@ -481,13 +508,15 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   }
 
   private calcularPrecio(): void {
-    const fechaEntrada = this.reservaForm.get('fechaEntrada')?.value;
-    const fechaSalida = this.reservaForm.get('fechaSalida')?.value;
+    const fechaEntradaRaw = this.reservaForm.get('fechaEntrada')?.value;
+    const fechaSalidaRaw = this.reservaForm.get('fechaSalida')?.value;
     const precioPorNoche = this.reservaForm.get('precioPorNoche')?.value;
 
-    if (fechaEntrada && fechaSalida && precioPorNoche) {
-      const entrada = new Date(fechaEntrada);
-      const salida = new Date(fechaSalida);
+    if (fechaEntradaRaw && fechaSalidaRaw && precioPorNoche) {
+      const entradaStr = fechaEntradaRaw instanceof Date ? this.dateTimeService.dateToString(fechaEntradaRaw) : fechaEntradaRaw;
+      const salidaStr = fechaSalidaRaw instanceof Date ? this.dateTimeService.dateToString(fechaSalidaRaw) : fechaSalidaRaw;
+      const entrada = this.dateTimeService.stringToDate(entradaStr);
+      const salida = this.dateTimeService.stringToDate(salidaStr);
       this.numeroNoches = this.dateTimeService.calculateDaysDifference(entrada, salida);
       
       if (this.numeroNoches > 0) {
@@ -660,12 +689,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   // Validación en tiempo real
   private validarFechasEnTiempoReal(): void {
-    const fechaEntrada = this.reservaForm.get('fechaEntrada')?.value;
-    const fechaSalida = this.reservaForm.get('fechaSalida')?.value;
+    const fechaEntradaRaw = this.reservaForm.get('fechaEntrada')?.value;
+    const fechaSalidaRaw = this.reservaForm.get('fechaSalida')?.value;
     
-    if (fechaEntrada && fechaSalida) {
-      const entrada = new Date(fechaEntrada);
-      const salida = new Date(fechaSalida);
+    if (fechaEntradaRaw && fechaSalidaRaw) {
+      const entradaStr = fechaEntradaRaw instanceof Date ? this.dateTimeService.dateToString(fechaEntradaRaw) : fechaEntradaRaw;
+      const salidaStr = fechaSalidaRaw instanceof Date ? this.dateTimeService.dateToString(fechaSalidaRaw) : fechaSalidaRaw;
+      const entrada = this.dateTimeService.stringToDate(entradaStr);
+      const salida = this.dateTimeService.stringToDate(salidaStr);
       const hoy = this.dateTimeService.getCurrentDate();
       hoy.setHours(0, 0, 0, 0);
       
@@ -692,7 +723,9 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     // En modo edición permitimos fecha de entrada anterior a hoy (reserva en curso)
     if (this.modoEdicion) return null;
 
-    const fecha = new Date(control.value);
+    const fecha = control.value instanceof Date 
+      ? control.value 
+      : this.dateTimeService.stringToDate(control.value);
     const hoy = this.dateTimeService.getCurrentDate();
     hoy.setHours(0, 0, 0, 0);
     
@@ -706,11 +739,13 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   validarFechaSalida(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
     
-    const fechaSalida = new Date(control.value);
+    const salidaStr = control.value instanceof Date ? this.dateTimeService.dateToString(control.value) : control.value;
+    const fechaSalida = this.dateTimeService.stringToDate(salidaStr);
     const fechaEntrada = this.reservaForm?.get('fechaEntrada')?.value;
     
     if (fechaEntrada) {
-      const fechaEntradaDate = new Date(fechaEntrada);
+      const entradaStr = fechaEntrada instanceof Date ? this.dateTimeService.dateToString(fechaEntrada) : fechaEntrada;
+      const fechaEntradaDate = this.dateTimeService.stringToDate(entradaStr);
       if (fechaSalida <= fechaEntradaDate) {
         return { fechaInvalida: true };
       }
@@ -732,12 +767,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   // Validaciones
   validarFechas(): boolean {
-    const fechaEntrada = this.reservaForm.get('fechaEntrada')?.value;
-    const fechaSalida = this.reservaForm.get('fechaSalida')?.value;
+    const fechaEntradaRaw = this.reservaForm.get('fechaEntrada')?.value;
+    const fechaSalidaRaw = this.reservaForm.get('fechaSalida')?.value;
     
-    if (fechaEntrada && fechaSalida) {
-      const entrada = new Date(fechaEntrada);
-      const salida = new Date(fechaSalida);
+    if (fechaEntradaRaw && fechaSalidaRaw) {
+      const entradaStr = fechaEntradaRaw instanceof Date ? this.dateTimeService.dateToString(fechaEntradaRaw) : fechaEntradaRaw;
+      const salidaStr = fechaSalidaRaw instanceof Date ? this.dateTimeService.dateToString(fechaSalidaRaw) : fechaSalidaRaw;
+      const entrada = this.dateTimeService.stringToDate(entradaStr);
+      const salida = this.dateTimeService.stringToDate(salidaStr);
       const hoy = this.dateTimeService.getCurrentDate();
       hoy.setHours(0, 0, 0, 0);
       

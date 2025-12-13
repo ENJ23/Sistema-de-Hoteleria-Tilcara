@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home.component';
+// Legacy HomeComponent eliminado del build activo
+import { HomeComponentClean } from './pages/home/home.component.clean';
 import { CalendarioComponent } from './pages/calendario/calendario.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
@@ -13,7 +14,7 @@ export const routes: Routes = [
   // Ruta principal
   { 
     path: '', 
-    component: HomeComponent,
+    component: HomeComponentClean,
     canActivate: [AuthGuard]
   },
   

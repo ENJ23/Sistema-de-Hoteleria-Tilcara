@@ -21,7 +21,8 @@
         <mat-icon>calendar_month</mat-icon>
         CALENDARIO
       </button>
-      <button mat-icon-button color="primary" class="btn-refresh" (click)="refrescarDatos()" matTooltip="Refrescar datos">
+      <button mat-icon-button color="primary" class="btn-refresh" (click)="refrescarDatos()"
+        matTooltip="Refrescar datos">
         <mat-icon>refresh</mat-icon>
       </button>
     </div>
@@ -73,220 +74,24 @@
           <app-todo-list></app-todo-list>
         </mat-card-content>
       </mat-card>
-      
+
       <!-- Calendario de Ocupación - Estilo Timeline -->
       <mat-card class="content-card calendario-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>calendar_today</mat-icon>
-          Calendario de Ocupación
-        </mat-card-title>
-        <mat-card-subtitle>Vista timeline de disponibilidad por habitación</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="calendario-timeline-container">
-          <!-- Navegación del mes -->
-          <div class="timeline-header">
-            <button mat-icon-button (click)="mesAnterior()" class="nav-btn">
-              <mat-icon>chevron_left</mat-icon>
-            </button>
-            <h3 class="mes-actual">{{ obtenerNombreMes() }}</h3>
-            <button mat-icon-button (click)="mesSiguiente()" class="nav-btn">
-              <mat-icon>chevron_right</mat-icon>
-            </button>
-          </div>
-          
-          <!-- Tabla de ocupación -->
-          <div class="timeline-table-container">
-            <table class="timeline-table">
-              <!-- Encabezado con días -->
-              <thead>
-                <tr>
-                  <th class="habitacion-header">Hab.</th>
-                  <th class="tipo-header">Tipo</th>
-                  <th class="capacidad-header">Cap.</th>
-                  <th 
-                    *ngFor="let dia of diasCalendario" 
-                    class="dia-header"
-                    [ngClass]="{
-                      'hoy': dia.esHoy,
-                      'fin-semana': dia.esFinDeSemana
-                    }">
-                    <div class="dia-numero">{{ dia.numero }}</div>
-                    <div class="dia-dia">{{ dia.fecha | date:'EEE' }}</div>
-                  </th>
-                </tr>
-                <!-- Fila adicional con indicador de mes -->
-                <tr class="mes-indicator-row">
-                  <td colspan="3" class="mes-indicator-cell">
-                    <div class="mes-indicator">
-                      <mat-icon>calendar_month</mat-icon>
-                      <span>{{ obtenerNombreMes() }}</span>
-                    </div>
-                  </td>
-                  <td *ngFor="let dia of diasCalendario" class="mes-indicator-day">
-                    <div class="mes-indicator-text">{{ dia.fecha | date:'MMM' }}</div>
-                  </td>
-                </tr>
-              </thead>
-              
-              <!-- Filas de habitaciones -->
-              <tbody>
-                <tr 
-                  *ngFor="let ocupacion of ocupacionHabitaciones" 
-                  class="habitacion-row">
-                  <!-- Información de la habitación -->
-                  <td class="habitacion-info">
-                    <div class="habitacion-numero">{{ ocupacion.habitacion.numero }}</div>
-                  </td>
-                  
-                  <td class="habitacion-tipo">{{ ocupacion.habitacion.tipo }}</td>
-                  
-                  <td class="habitacion-capacidad">{{ ocupacion.habitacion.capacidad }}</td>
-                  
-                  <!-- Celdas de ocupación por día -->
-                  <td 
-                    *ngFor="let dia of diasCalendario" 
-                    class="celda-ocupacion"
-                    [ngClass]="[
-                      obtenerClaseOcupacion(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)], dia.fecha, ocupacion.habitacion.numero),
-                      'clickeable'
-                    ]"
-                    [style.--color-reserva]="obtenerColorReserva(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.reservaPrincipal)"
-                    [attr.data-habitacion]="ocupacion.habitacion.numero"
-                    [attr.data-fecha]="formatearFecha(dia.fecha)"
-                    (click)="seleccionarCelda(ocupacion.habitacion, dia)"
-                    [title]="obtenerTooltipOcupacion(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)], ocupacion.habitacion, dia)">
-                    
-                    <!-- Indicador especial para días de transición -->
-                    <div class="indicador-transicion" *ngIf="ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.esDiaTransicion">
-                      <mat-icon class="icono-transicion-multiple">swap_horiz</mat-icon>
-                    </div>
-                    
-                    <!-- Indicador de estado de pago -->
-                    <div class="indicador-pago" 
-                         [ngClass]="{
-                           'pagado': ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
-                           'parcial': (ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.montoPagado || 0) > 0 && !ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
-                           'sin-pago': !ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.estaCompletamentePagado && (ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.montoPagado || 0) === 0
-                         }"
-                         *ngIf="ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.tipo === 'ocupada' || ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.tipo === 'reservada' || ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.tipo === 'finalizada'">
-                    </div>
-                    
-                    <!-- Indicador de urgencia (ejemplo: check-out hoy) -->
-                    <div class="indicador-urgencia" 
-                         *ngIf="esCheckOutHoy(dia.fecha, ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)])">
-                    </div>
-                    
-                    <!-- Estado completo para días intermedios -->
-                    <div class="estado-completo" *ngIf="!ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.esDiaEntrada && !ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]?.esDiaSalida && ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]">
-                      <mat-icon class="icono-ocupacion">
-                        {{ obtenerIconoOcupacion(ocupacion.ocupacionPorDia?.[formatearFecha(dia.fecha)]) }}
-                      </mat-icon>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <!-- Leyenda de estados -->
-          <div class="timeline-leyenda">
-            <h4>Estados de Disponibilidad</h4>
-            <div class="leyenda-section">
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-disponible"></div>
-                <span>Disponible</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-limpieza"></div>
-                <span>Limpieza</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-mantenimiento"></div>
-                <span>Mantenimiento</span>
-              </div>
-            </div>
-            
-            <h4>Reservas Pendientes</h4>
-            <div class="leyenda-section">
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-reservada"></div>
-                <span>Reservada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-reservada completamente-pagado"></div>
-                <span>Reservada - Completamente Pagada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-reservada parcialmente-pagado"></div>
-                <span>Reservada - Parcialmente Pagada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-reservada sin-pago"></div>
-                <span>Reservada - Sin Pago</span>
-              </div>
-            </div>
-            
-            <h4>Reservas Ocupadas</h4>
-            <div class="leyenda-section">
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-ocupada"></div>
-                <span>Ocupada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-ocupada completamente-pagado"></div>
-                <span>Ocupada - Completamente Pagada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-ocupada parcialmente-pagado"></div>
-                <span>Ocupada - Parcialmente Pagada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-ocupada sin-pago"></div>
-                <span>Ocupada - Sin Pago</span>
-              </div>
-            </div>
-            
-            <h4>Reservas Finalizadas</h4>
-            <div class="leyenda-section">
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-finalizada"></div>
-                <span>Finalizada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-finalizada completamente-pagado"></div>
-                <span>Finalizada - Completamente Pagada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-finalizada parcialmente-pagado"></div>
-                <span>Finalizada - Parcialmente Pagada</span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-finalizada sin-pago"></div>
-                <span>Finalizada - Sin Pago</span>
-              </div>
-            </div>
-            
-            <h4>Días de Transición</h4>
-            <div class="leyenda-section">
-              <div class="leyenda-item">
-                <div class="leyenda-color ocupacion-transicion"></div>
-                <span>Día de Transición<br><small>(Combinación de colores)</small></span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color transicion-misma-reserva"></div>
-                <span>Misma Reserva<br><small>(Entrada y Salida)</small></span>
-              </div>
-              <div class="leyenda-item">
-                <div class="leyenda-color transicion-diferentes-reservas"></div>
-                <span>Diferentes Reservas<br><small>(Entrada y Salida)</small></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>calendar_today</mat-icon>
+            Calendario de Ocupación
+          </mat-card-title>
+          <mat-card-subtitle>Vista timeline de disponibilidad por habitación</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <app-home-calendar [diasCalendario]="diasCalendario" [ocupacionHabitaciones]="ocupacionHabitaciones"
+            [cargando]="cargandoOcupacion" [fechaReferencia]="fechaReferencia" (mesAnterior)="onMesAnterior()"
+            (mesSiguiente)="onMesSiguiente()" (celdaClick)="onCeldaClick($event)"
+            (moverReserva)="onMoverReserva($event)">
+          </app-home-calendar>
+        </mat-card-content>
+      </mat-card>
     </div> <!-- Cierre del desktop-layout -->
 
     <!-- Acciones Rápidas -->
@@ -305,31 +110,31 @@
             <span>CHECK-IN</span>
             <small>Registrar llegada</small>
           </button>
-          
+
           <button mat-raised-button class="accion-btn checkout" (click)="realizarCheckOut()">
             <mat-icon>logout</mat-icon>
             <span>CHECK-OUT</span>
             <small>Registrar salida</small>
           </button>
-          
+
           <button mat-raised-button class="accion-btn limpieza" (click)="gestionarLimpieza()">
             <mat-icon>cleaning_services</mat-icon>
             <span>LIMPIEZA</span>
             <small>Estado habitaciones</small>
           </button>
-          
+
           <button mat-raised-button class="accion-btn pagos" (click)="gestionarPagos()">
             <mat-icon>payment</mat-icon>
             <span>PAGOS</span>
             <small>Control financiero</small>
           </button>
-          
+
           <button mat-raised-button class="accion-btn reportes" (click)="generarReportes()">
             <mat-icon>assessment</mat-icon>
             <span>REPORTES</span>
             <small>Estadísticas</small>
           </button>
-          
+
           <button mat-raised-button class="accion-btn mantenimiento" (click)="gestionarMantenimiento()">
             <mat-icon>handyman</mat-icon>
             <span>MANTENIMIENTO</span>
@@ -356,25 +161,27 @@
             <div class="hora-entrada">{{ reserva.horaEntrada }}</div>
             <div class="hora-salida">{{ reserva.horaSalida }}</div>
           </div>
-          
+
           <div class="reserva-info">
             <div class="cliente-nombre">{{ reserva.cliente?.nombre }} {{ reserva.cliente?.apellido }}</div>
-            <div class="habitacion-info">Habitación {{ reserva.habitacion?.numero }} ({{ reserva.habitacion?.tipo }})</div>
+            <div class="habitacion-info">Habitación {{ obtenerNumeroHabitacion(reserva.habitacion) }} ({{
+              obtenerTipoHabitacion(reserva.habitacion) }})
+            </div>
           </div>
-          
+
           <div class="reserva-estado">
-            <mat-chip [ngClass]="'estado-' + reserva.estado?.toLowerCase()" class="estado-chip">
+            <mat-chip [ngClass]="'estado-' + (reserva.estado || '').toLowerCase()" class="estado-chip">
               {{ reserva.estado }}
             </mat-chip>
           </div>
-          
+
           <div class="reserva-pago">
-            <mat-icon [ngClass]="reserva.pagado ? 'pagado' : 'pendiente'">
-              {{ reserva.pagado ? 'check_circle' : 'pending' }}
+            <mat-icon [ngClass]="(reserva.montoPagado || 0) >= (reserva.precioTotal || 0) ? 'pagado' : 'pendiente'">
+              {{ (reserva.montoPagado || 0) >= (reserva.precioTotal || 0) ? 'check_circle' : 'pending' }}
             </mat-icon>
-            <span>{{ reserva.pagado ? 'PAGADO' : 'PENDIENTE' }}</span>
+            <span>{{ (reserva.montoPagado || 0) >= (reserva.precioTotal || 0) ? 'PAGADO' : 'PENDIENTE' }}</span>
           </div>
-          
+
           <div class="reserva-acciones">
             <button mat-icon-button color="primary" (click)="editarReserva(reserva)">
               <mat-icon>edit</mat-icon>
@@ -385,7 +192,7 @@
           </div>
         </div>
       </div>
-      
+
       <ng-template #sinReservas>
         <div class="sin-reservas">
           <mat-icon>event_busy</mat-icon>

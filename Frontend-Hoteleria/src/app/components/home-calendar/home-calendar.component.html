@@ -1,0 +1,206 @@
+<div class="calendario-container">
+    <div class="calendario-header">
+        <div class="header-nav">
+            <button mat-icon-button (click)="emitMesAnterior()" class="nav-btn">
+                <mat-icon>chevron_left</mat-icon>
+            </button>
+
+            <h2 class="mes-actual">{{ fechaReferencia | date:'MMMM yyyy':'':'es-AR' | titlecase }}</h2>
+
+            <button mat-icon-button (click)="emitMesSiguiente()" class="nav-btn">
+                <mat-icon>chevron_right</mat-icon>
+            </button>
+        </div>
+
+        <div class="view-toggle">
+            <button mat-flat-button [color]="vista === 'grid' ? 'primary' : ''" (click)="cambiarVista('grid')"
+                class="toggle-btn start" matTooltip="Vista Cuadrícula">
+                <mat-icon>grid_view</mat-icon>
+            </button>
+            <button mat-flat-button [color]="vista === 'lista' ? 'primary' : ''" (click)="cambiarVista('lista')"
+                class="toggle-btn end" matTooltip="Vista Agenda">
+                <mat-icon>view_agenda</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- VISTA GRID -->
+    <div class="timeline-table-container" *ngIf="vista === 'grid'" cdkDropListGroup>
+        <table class="timeline-table">
+            <!-- Encabezados de día -->
+            <thead>
+                <tr class="mes-indicator-row">
+                    <th class="mes-indicator-cell">
+                        <div class="mes-indicator">
+                            <mat-icon>hotel</mat-icon>
+                            <span>HAB</span>
+                        </div>
+                    </th>
+                    <th *ngFor="let dia of diasCalendario" class="mes-indicator-day">
+                        <div class="mes-indicator-text">{{ dia.fecha | date:'EEE':'':'es-AR' }}</div>
+                    </th>
+                </tr>
+                <tr>
+                    <th class="habitacion-header">Habitación</th>
+                    <th *ngFor="let dia of diasCalendario" class="dia-header" [class.hoy]="dia.esHoy"
+                        [class.fin-semana]="dia.esFinDeSemana">
+                        <div class="dia-numero">{{ dia.numero }}</div>
+                    </th>
+                </tr>
+            </thead>
+
+            <!-- Cuerpo del calendario: Habitaciones -->
+            <tbody>
+                <tr *ngFor="let ocupacion of ocupacionHabitaciones" class="habitacion-row">
+                    <!-- Columna Fija de Habitación -->
+                    <td class="habitacion-info">
+                        <div class="habitacion-numero">Hab {{ ocupacion.habitacion.numero }}</div>
+                        <div class="habitacion-capacidad">cap: {{ ocupacion.habitacion.capacidad }}p</div>
+                    </td>
+
+                    <!-- Celdas de días -->
+                    <td *ngFor="let dia of diasCalendario" cdkDropList
+                        [cdkDropListData]="{ habitacion: ocupacion.habitacion, fecha: formatearFecha(dia.fecha) }"
+                        (cdkDropListDropped)="onDrop($event)"
+                        [class]="obtenerClaseOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)], dia.fecha, ocupacion.habitacion.numero) + ' clickeable celda-ocupacion'"
+                        [style.--color-reserva]="obtenerColorReserva(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.reservaPrincipal)"
+                        [style.--color-entrada]="ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.colorEntrada || 'transparent'"
+                        [style.--color-salida]="ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.colorSalida || 'transparent'"
+                        [attr.data-habitacion]="ocupacion.habitacion.numero"
+                        [attr.data-fecha]="formatearFecha(dia.fecha)"
+                        (click)="onCeldaClick(ocupacion.habitacion, dia, ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)])"
+                        [title]="obtenerTooltipOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)], ocupacion.habitacion, dia)">
+
+                        <!-- Draggable Container -->
+                        <div class="celda-content-wrapper" cdkDrag
+                            [cdkDragData]="{ reserva: ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.reservaPrincipal, fecha: formatearFecha(dia.fecha) }"
+                            [cdkDragDisabled]="!ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.reservaPrincipal || ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.tipo === 'transicion'"
+                            (cdkDragStarted)="onDragStarted()" (cdkDragEnded)="onDragEnded()">
+
+                            <!-- Custom Placeholder -->
+                            <div *cdkDragPlaceholder class="drag-placeholder"></div>
+
+                            <!-- Indicador especial para días de transición -->
+                            <div class="indicador-transicion"
+                                *ngIf="ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.esDiaTransicion">
+                                <mat-icon class="icono-transicion-multiple">swap_horiz</mat-icon>
+                            </div>
+
+                            <!-- Indicador de estado de pago -->
+                            <div class="indicador-pago" [ngClass]="{
+                            'pagado': ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
+                            'parcial': (ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.montoPagado || 0) > 0 && !ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.estaCompletamentePagado,
+                            'sin-pago': !ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.estaCompletamentePagado && (ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.montoPagado || 0) === 0
+                            }"
+                                *ngIf="ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.tipo === 'ocupada' || ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.tipo === 'reservada' || ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.tipo === 'finalizada'">
+                            </div>
+
+                            <!-- Indicador de urgencia (ejemplo: check-out hoy) -->
+                            <div class="indicador-urgencia"
+                                *ngIf="esCheckOutHoy(dia.fecha, ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)])">
+                            </div>
+
+                            <!-- Estado completo para días intermedios -->
+                            <div class="estado-completo"
+                                *ngIf="!ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.esDiaEntrada && !ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]?.esDiaSalida && ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]">
+                                <mat-icon class="icono-ocupacion">
+                                    {{ obtenerIconoOcupacion(ocupacion.ocupacionPorDia[formatearFecha(dia.fecha)]) }}
+                                </mat-icon>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- VISTA LISTA (AGENDA) -->
+    <div class="agenda-view-container" *ngIf="vista === 'lista'">
+        <div class="agenda-day" *ngFor="let dia of diasCalendario" [class.is-today]="dia.esHoy">
+            <div class="agenda-day-header">
+                <span class="day-number">{{ dia.numero }}</span>
+                <span class="day-name">{{ dia.fecha | date:'EEEE':'':'es-AR' | titlecase }}</span>
+                <span class="today-badge" *ngIf="dia.esHoy">HOY</span>
+            </div>
+
+            <div class="agenda-day-content">
+                <ng-container *ngFor="let item of obtenerReservasDelDia(dia)">
+                    <div class="agenda-card"
+                        [style.border-left-color]="obtenerColorReserva(item.estado.reservaPrincipal)"
+                        (click)="onCeldaClick(item.habitacion, dia, item.estado)">
+                        <div class="agenda-card-time">
+                            Hab {{ item.habitacion.numero }}
+                        </div>
+                        <div class="agenda-card-info">
+                            <div class="client-name">
+                                {{ item.estado.reservaPrincipal?.cliente?.nombre }} {{
+                                item.estado.reservaPrincipal?.cliente?.apellido }}
+                            </div>
+                            <div class="reserva-status">
+                                <span class="status-badge"
+                                    [class]="item.estado.reservaPrincipal?.estado?.toLowerCase()">
+                                    {{ item.estado.reservaPrincipal?.estado }}
+                                </span>
+                                <span class="payment-badge" *ngIf="item.estado.estaCompletamentePagado">Pagado</span>
+                            </div>
+                            <div class="transicion-info" *ngIf="item.estado.esDiaTransicion">
+                                <small>🔄 Check-Out / Check-In</small>
+                            </div>
+                        </div>
+                        <div class="agenda-card-action">
+                            <mat-icon>chevron_right</mat-icon>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <div class="no-events" *ngIf="obtenerReservasDelDia(dia).length === 0">
+                    <small>Disponible</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="timeline-leyenda" *ngIf="vista === 'grid'">
+        <h4>Referencias</h4>
+        <div class="leyenda-section">
+            <div class="leyenda-item">
+                <div class="leyenda-color" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);"></div>
+                <span>Ocupada (Pagada)</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-color" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);"></div>
+                <span>Ocupada (Parcial)</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-color" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);"></div>
+                <span>Ocupada (Sin Pago)</span>
+            </div>
+        </div>
+
+        <div class="leyenda-section">
+            <div class="leyenda-item">
+                <div class="leyenda-color" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);"></div>
+                <span>Reservada (Pagada)</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-color" style="background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);"></div>
+                <span>Reservada (Parcial)</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-color" style="background: linear-gradient(135deg, #e83e8c 0%, #d63384 100%);"></div>
+                <span>Reservada (Sin Pago)</span>
+            </div>
+        </div>
+
+        <div class="leyenda-section">
+            <div class="leyenda-item">
+                <!-- Updated Transition Legend -->
+                <div class="leyenda-color"
+                    style="background: linear-gradient(135deg, #dc3545 0%, #dc3545 calc(50% - 1px), #ffffff calc(50% - 1px), #ffffff calc(50% + 1px), #28a745 calc(50% + 1px), #28a745 100%); width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ccc;">
+                </div>
+                <span>Transición (Salida/Entrada)</span>
+            </div>
+        </div>
+    </div>
+</div>

@@ -84,13 +84,8 @@
               matTooltipPosition="above">
               
               <!-- Estado dividido para transiciones -->
-              <div class="estado-dividido" *ngIf="ocupacion.esTransicion">
-                <div class="estado-mitad entrada">
-                  <div class="mitad-diagonal entrada"></div>
-                </div>
-                <div class="estado-mitad salida">
-                  <div class="mitad-diagonal salida"></div>
-                </div>
+              <div class="estado-dividido" *ngIf="ocupacion.esTransicion"
+                   [style.background]="'linear-gradient(135deg, ' + obtenerColorEstado(ocupacion.estadoSalidaTransicion || '') + ' 0%, ' + obtenerColorEstado(ocupacion.estadoSalidaTransicion || '') + ' 50%, ' + obtenerColorEstado(ocupacion.estadoEntradaTransicion || '') + ' 50%, ' + obtenerColorEstado(ocupacion.estadoEntradaTransicion || '') + ' 100%)'">
               </div>
               
               <!-- Estado con división diagonal para entrada -->

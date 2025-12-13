@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil, forkJoin, map, of, catchError } from 'rxjs';
 
 // Material
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -20,13 +20,15 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 // Models y servicios
-import { 
-  Habitacion, 
-  EstadoHabitacion, 
+import {
+  Habitacion,
+  EstadoHabitacion,
   TipoHabitacion,
-  HabitacionFilters 
+  HabitacionFilters
 } from '../../../models/habitacion.model';
 import { HabitacionService, HabitacionResponse } from '../../../services/habitacion.service';
+import { ReservaService } from '../../../services/reserva.service'; // Importar ReservaService
+import { Reserva } from '../../../models/reserva.model'; // Importar Reserva model
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { AuthService } from '../../../services/auth.service';
 
@@ -60,10 +62,10 @@ import { AuthService } from '../../../services/auth.service';
 export class ListaHabitacionesComponent implements OnInit {
   // Columnas a mostrar en la tabla
   displayedColumns: string[] = ['numero', 'tipo', 'piso', 'capacidad', 'precioActual', 'estado', 'acciones'];
-  
+
   // Fuente de datos para la tabla
   dataSource: MatTableDataSource<Habitacion>;
-  
+
   // Estados de carga y filtros
   loading = false;
   totalHabitaciones = 0;
@@ -71,7 +73,7 @@ export class ListaHabitacionesComponent implements OnInit {
   pageIndex = 0;
   sortActive = 'numero';
   sortDirection: 'asc' | 'desc' = 'asc';
-  
+
   // Filtros
   filtros: HabitacionFilters = {
     estado: '',
@@ -82,15 +84,15 @@ export class ListaHabitacionesComponent implements OnInit {
     capacidad: undefined,
     busqueda: ''
   };
-  
+
   // Opciones para los selects de filtrado
   estados: EstadoHabitacion[] = [];
   tipos: TipoHabitacion[] = [];
-  
+
   // Para manejar la suscripción
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
-  
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -126,6 +128,8 @@ export class ListaHabitacionesComponent implements OnInit {
           this.dataSource.data = data;
         }
         this.snackBar.open('Estado actualizado correctamente', 'Cerrar', { duration: 3000 });
+        // Recargar para verificar estado real con reservas
+        this.cargarHabitaciones();
       },
       error: (error: any) => {
         console.error('Error al actualizar el estado', error);
@@ -173,16 +177,16 @@ export class ListaHabitacionesComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error al eliminar la habitación', error);
-        
+
         // CORREGIDO: Manejar error específico de reservas activas
         if (error.status === 400 && error.error?.reservasActivas > 0) {
           const detalles = error.error.detalles || [];
           const mensaje = `No se puede eliminar la habitación porque tiene ${error.error.reservasActivas} reserva(s) activa(s). ` +
-                         `Reservas: ${detalles.map((r: any) => `${r.estado} (${r.fechaEntrada} - ${r.fechaSalida})`).join(', ')}`;
-          
-          this.snackBar.open(mensaje, 'Cerrar', { 
-            duration: 8000, 
-            panelClass: ['error-snackbar'] 
+            `Reservas: ${detalles.map((r: any) => `${r.estado} (${r.fechaEntrada} - ${r.fechaSalida})`).join(', ')}`;
+
+          this.snackBar.open(mensaje, 'Cerrar', {
+            duration: 8000,
+            panelClass: ['error-snackbar']
           });
         } else {
           this.snackBar.open(
@@ -197,6 +201,7 @@ export class ListaHabitacionesComponent implements OnInit {
 
   constructor(
     private habitacionService: HabitacionService,
+    private reservaService: ReservaService, // Inyectar ReservaService
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
@@ -205,7 +210,7 @@ export class ListaHabitacionesComponent implements OnInit {
   ) {
     // Inicializar el dataSource
     this.dataSource = new MatTableDataSource<Habitacion>([]);
-    
+
     // Configurar el debounce para la búsqueda
     this.searchSubject.pipe(
       debounceTime(500),
@@ -220,10 +225,10 @@ export class ListaHabitacionesComponent implements OnInit {
   ngOnInit(): void {
     this.estados = this.habitacionService.getEstadosHabitacion();
     this.tipos = this.habitacionService.getTiposHabitacion();
-    
+
     // Cargar habitaciones iniciales
     this.cargarHabitaciones();
-    
+
     // Suscribirse a cambios en los parámetros de consulta para detectar actualizaciones
     this.route.queryParams
       .pipe(
@@ -259,7 +264,7 @@ export class ListaHabitacionesComponent implements OnInit {
       });
     }
   }
-  
+
   ngOnDestroy() {
     // Limpiar suscripciones
     this.destroy$.next();
@@ -363,53 +368,88 @@ export class ListaHabitacionesComponent implements OnInit {
 
   /**
    * Cargar las habitaciones desde el servidor con los filtros actuales
+   * Y cruzar con información de reservas activas para el día de hoy
    */
   cargarHabitaciones(): void {
     console.log('Iniciando carga de habitaciones...');
-    console.log('Filtros actuales:', this.filtros);
-    console.log('Paginación:', { pageIndex: this.pageIndex, pageSize: this.pageSize });
-    
     this.loading = true;
-    
-    this.habitacionService.getHabitaciones(
-      this.pageIndex + 1, // Ajustar para la paginación basada en 1 del backend
-      this.pageSize,
-      this.filtros.estado as EstadoHabitacion,
-      this.filtros.tipo as TipoHabitacion,
-      this.filtros.busqueda
-    ).pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (response: HabitacionResponse) => {
-        console.log('Respuesta recibida en el componente:', response);
-        console.log('Número de habitaciones recibidas:', response.habitaciones?.length || 0);
-        
-        // Actualizar los datos del dataSource existente
-        this.dataSource.data = response.habitaciones || [];
-        this.totalHabitaciones = response.total || 0;
-        this.loading = false;
-        
-        console.log('DataSource después de actualizar:', this.dataSource);
-        console.log('Datos en dataSource:', this.dataSource.data);
-        console.log('Total de habitaciones:', this.totalHabitaciones);
-        
-        // Forzar la detección de cambios
-        this.dataSource._updateChangeSubscription();
-      },
-      error: (error) => {
-        console.error('Error al cargar las habitaciones', error);
-        console.error('Error completo:', JSON.stringify(error, null, 2));
-        
-        this.snackBar.open(
-          'Error al cargar las habitaciones. Por favor, intente nuevamente.',
-          'Cerrar',
-          { duration: 5000, panelClass: ['error-snackbar'] }
-        );
-        this.loading = false;
-      },
-      complete: () => {
-        console.log('Suscripción a getHabitaciones completada');
-      }
-    });
+
+    // Calcular fechas para hoy (para buscar reservas activas)
+    const hoy = new Date();
+    const hoyStr = hoy.toISOString().split('T')[0];
+    // Para asegurar que cubrimos todo el día, pedimos reservas que solapen hoy/mañana
+    // (Ajustar lógica según backend, generalmente fechaInicio=HOY fechaFin=HOY+1 funciona para ver actividad)
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
+    const mananaStr = manana.toISOString().split('T')[0];
+
+    const filtrosReservas = {
+      fechaInicio: hoyStr,
+      fechaFin: mananaStr,
+      limit: 100 // Traer suficientes para cubrir todas las habitaciones
+    };
+
+    forkJoin({
+      habitacionesResp: this.habitacionService.getHabitaciones(
+        this.pageIndex + 1,
+        this.pageSize,
+        this.filtros.estado as EstadoHabitacion,
+        this.filtros.tipo as TipoHabitacion,
+        this.filtros.busqueda
+      ),
+      reservasResp: this.reservaService.getReservasAll(filtrosReservas, 100, true).pipe(
+        map(r => r.reservas || []),
+        catchError(() => of([] as Reserva[]))
+      )
+    }).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ habitacionesResp, reservasResp }) => {
+          let habitaciones = habitacionesResp.habitaciones || [];
+          this.totalHabitaciones = habitacionesResp.total || 0;
+
+          // --- LÓGICA DE ACTUALIZACIÓN DE ESTADO BASADA EN RESERVAS ---
+          const habitacionesOcupadasSet = new Set<string>();
+
+          reservasResp.forEach(r => {
+            if (r.estado === 'Cancelada' || r.estado === 'No Show') return;
+
+            const entrada = r.fechaEntrada.split('T')[0];
+            const salida = r.fechaSalida.split('T')[0];
+
+            // Si hoy está dentro del rango inclusivo [entrada, salida]
+            if (entrada <= hoyStr && salida >= hoyStr) {
+              const hid = typeof r.habitacion === 'string' ? r.habitacion : (r.habitacion as any)?._id || (r.habitacion as any)?.id;
+              if (hid) habitacionesOcupadasSet.add(hid);
+            }
+          });
+
+          // Actualizar el estado de la habitación localmente para la vista
+          habitaciones = habitaciones.map(h => {
+            if (habitacionesOcupadasSet.has(h._id)) {
+              // Si tiene reserva activa hoy, forzar estado a 'Ocupada' para la visualización
+              // (A menos que esté en Mantenimiento, que quizás tenga prioridad? 
+              //  Asumimos Ocupada gana porque hay gente o reservado activamente)
+              return { ...h, estado: 'Ocupada' };
+            }
+            // Si estaba 'Ocupada' en DB pero no tiene reserva hoy, quizás debería ser 'Disponible'?
+            // Depende de la lógica de negocio. Por seguridad, si el usuario explícitamente la puso ocupada manual,
+            // la dejamos, pero la solicitud pide "Ocupada (realmente ocupada)".
+            // Ajuste: Si en DB dice Ocupada pero no está en el Set, ¿la liberamos visualmente? 
+            // Conservadoramente: Solo forzamos a Ocupada si hay reserva. Si no hay reserva, dejamos el estado original.
+            return h;
+          });
+          // ------------------------------------------------------------
+
+          this.dataSource.data = habitaciones;
+          this.loading = false;
+          this.dataSource._updateChangeSubscription();
+        },
+        error: (error) => {
+          console.error('Error al cargar datos', error);
+          this.snackBar.open('Error al cargar datos.', 'Cerrar', { duration: 5000, panelClass: ['error-snackbar'] });
+          this.loading = false;
+        }
+      });
   }
 
   /**
@@ -420,7 +460,7 @@ export class ListaHabitacionesComponent implements OnInit {
     this.filtros.busqueda = filterValue.trim().toLowerCase();
     this.pageIndex = 0;
     this.cargarHabitaciones();
-    
+
     // Resetear el paginador si existe
     if (this.paginator) {
       this.paginator.firstPage();

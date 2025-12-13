@@ -1,11 +1,12 @@
 /* ===== HEADER PRINCIPAL DEL SISTEMA DE HOSTAL ===== */
 
 .header-hostal {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: var(--primary-dark);
   color: white;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
   position: relative;
   z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ===== BARRA SUPERIOR ===== */
@@ -38,7 +39,7 @@
 }
 
 .logo-icon {
-  color: #4fc3f7;
+  color: var(--secondary-color);
   font-size: 20px;
   width: 20px;
   height: 20px;
@@ -61,7 +62,7 @@
   font-size: 16px;
   width: 16px;
   height: 16px;
-  color: #4fc3f7;
+  color: var(--secondary-light);
 }
 
 .header-actions {
@@ -70,7 +71,8 @@
   font-size: 12px;
 }
 
-.current-time, .current-date {
+.current-time,
+.current-date {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -80,11 +82,12 @@
   backdrop-filter: blur(10px);
 }
 
-.current-time mat-icon, .current-date mat-icon {
+.current-time mat-icon,
+.current-date mat-icon {
   font-size: 16px;
   width: 16px;
   height: 16px;
-  color: #4fc3f7;
+  color: var(--secondary-light);
 }
 
 /* ===== BARRA DE NAVEGACIÓN PRINCIPAL ===== */
@@ -111,14 +114,14 @@
 }
 
 .brand-icon {
-  font-size: 48px;
-  width: 48px;
-  height: 48px;
-  color: #4fc3f7;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 8px;
-  backdrop-filter: blur(10px);
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: var(--secondary-color);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .brand-text {
@@ -127,21 +130,21 @@
 }
 
 .brand-title {
-  font-size: 28px;
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(45deg, #ffffff, #4fc3f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1.2;
+  color: white;
+  /* Solid white for professional look */
+  line-height: 1.1;
+  letter-spacing: -0.025em;
 }
 
 .brand-subtitle {
-  font-size: 14px;
+  font-size: 0.875rem;
   margin: 0;
-  opacity: 0.8;
+  opacity: 0.7;
   font-weight: 400;
+  color: var(--text-muted);
 }
 
 /* Menú de navegación */
@@ -167,54 +170,36 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  color: rgba(255, 255, 255, 0.9);
+  padding: 10px 16px;
+  color: var(--text-muted);
   text-decoration: none;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 500;
-  font-size: 14px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
   position: relative;
-  overflow: hidden;
-}
-
-.nav-link::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.5s;
-}
-
-.nav-link:hover::before {
-  left: 100%;
 }
 
 .nav-link:hover {
   color: white;
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .nav-link.active {
   color: white;
-  background: rgba(79, 195, 247, 0.2);
-  box-shadow: 0 4px 15px rgba(79, 195, 247, 0.3);
+  background: var(--primary-light);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .nav-link mat-icon {
   font-size: 20px;
   width: 20px;
   height: 20px;
-  transition: transform 0.3s ease;
+  color: var(--secondary-color);
 }
 
 .nav-link:hover mat-icon {
-  transform: scale(1.1);
+  color: var(--secondary-light);
 }
 
 /* Usuario y autenticación */
@@ -235,33 +220,36 @@
 }
 
 .user-avatar {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+  background: var(--secondary-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(79, 195, 247, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .role-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
   color: white;
 }
 
 .role-icon.encargado {
-  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  background: transparent;
+  color: var(--success-color);
 }
 
 .role-icon.limpieza {
-  background: linear-gradient(135deg, #2196f3, #42a5f5);
+  background: transparent;
+  color: var(--info-color);
 }
 
 .role-icon.mantenimiento {
-  background: linear-gradient(135deg, #ff9800, #ffb74d);
+  background: transparent;
+  color: var(--warning-color);
 }
 
 .user-info {
@@ -398,7 +386,8 @@
   gap: 12px;
 }
 
-.btn-login, .btn-register {
+.btn-login,
+.btn-register {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -426,18 +415,18 @@
 }
 
 .btn-register {
-  background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+  background: var(--secondary-color);
   color: white;
-  box-shadow: 0 4px 15px rgba(79, 195, 247, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-register:hover {
-  background: linear-gradient(135deg, #29b6f6, #0288d1);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(79, 195, 247, 0.4);
+  background: var(--secondary-dark);
+  transform: translateY(-1px);
 }
 
-.btn-login mat-icon, .btn-register mat-icon {
+.btn-login mat-icon,
+.btn-register mat-icon {
   font-size: 18px;
   width: 18px;
   height: 18px;
@@ -502,9 +491,17 @@
 }
 
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
@@ -512,15 +509,15 @@
   .nav-content {
     gap: 20px;
   }
-  
+
   .brand-title {
     font-size: 24px;
   }
-  
+
   .nav-list {
     gap: 4px;
   }
-  
+
   .nav-link {
     padding: 10px 16px;
     font-size: 13px;
@@ -533,55 +530,55 @@
     gap: 12px;
     text-align: center;
   }
-  
+
   .hostal-info {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .header-actions {
     justify-content: center;
   }
-  
+
   .nav-content {
     flex-wrap: wrap;
     gap: 16px;
   }
-  
+
   .nav-brand {
     order: 1;
     flex: 1;
     min-width: 200px;
   }
-  
+
   .nav-menu {
     order: 3;
     flex-basis: 100%;
     justify-content: flex-start;
   }
-  
+
   .nav-user {
     order: 2;
   }
-  
+
   .menu-toggle {
     display: block;
     order: 4;
   }
-  
+
   .nav-menu {
     display: none;
   }
-  
+
   .nav-menu.menu-open {
     display: block;
   }
-  
+
   .nav-list {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .nav-link {
     justify-content: flex-start;
     padding: 12px 16px;
@@ -592,32 +589,33 @@
   .header-top {
     padding: 6px 0;
   }
-  
+
   .navbar-main {
     padding: 12px 0;
   }
-  
+
   .brand-title {
     font-size: 20px;
   }
-  
+
   .brand-subtitle {
     font-size: 12px;
   }
-  
+
   .user-profile {
     flex-direction: column;
     text-align: center;
     gap: 12px;
     padding: 16px;
   }
-  
+
   .auth-buttons {
     flex-direction: column;
     gap: 8px;
   }
-  
-  .btn-login, .btn-register {
+
+  .btn-login,
+  .btn-register {
     justify-content: center;
     padding: 12px 20px;
   }
@@ -628,18 +626,18 @@
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .header-actions {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .brand-container {
     flex-direction: column;
     gap: 8px;
     text-align: center;
   }
-  
+
   .brand-icon {
     font-size: 36px;
     width: 36px;
@@ -657,6 +655,7 @@
     transform: translateY(-100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;

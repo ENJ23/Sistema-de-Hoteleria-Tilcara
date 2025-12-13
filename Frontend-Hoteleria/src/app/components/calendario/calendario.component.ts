@@ -11,6 +11,7 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { Subject, takeUntil } from 'rxjs';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { DateTimeService } from '../../services/date-time.service';
 
 import { ReservaService } from '../../services/reserva.service';
 import { HabitacionService } from '../../services/habitacion.service';
@@ -86,7 +87,8 @@ export class CalendarioComponent implements OnInit, OnDestroy {
     private habitacionService: HabitacionService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private dateTimeService: DateTimeService
   ) {
     this.mesActual = this.fechaActual.getMonth();
     this.anioActual = this.fechaActual.getFullYear();
@@ -102,6 +104,12 @@ export class CalendarioComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarHabitaciones();
+    // Refrescar automáticamente ante cambios de reservas
+    this.reservaService.reservaEvents$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.cargarReservas();
+      });
   }
 
   private cargarHabitaciones(): void {
@@ -240,7 +248,7 @@ export class CalendarioComponent implements OnInit, OnDestroy {
         return '#FFC107'; // Amarillo
       case 'Cancelada':
         return '#F44336'; // Rojo
-      case 'Completada':
+      case 'Finalizada':
         return '#2196F3'; // Azul
       case 'No Show':
         return '#9C27B0'; // Púrpura
@@ -348,13 +356,15 @@ export class CalendarioComponent implements OnInit, OnDestroy {
       const fechaInicio = new Date(reserva.fechaEntrada);
       const fechaFin = new Date(reserva.fechaSalida);
       
-      // Ajustar fechas para comparar solo día, mes y año
+      // Ajustar fechas para comparar solo día (tratar fechaSalida como exclusiva)
       fechaInicio.setHours(0, 0, 0, 0);
-      fechaFin.setHours(23, 59, 59, 999);
+      // Fecha fin se considera exclusiva: la habitación queda libre el día fechaSalida
+      fechaFin.setHours(0, 0, 0, 0);
       const fechaComparar = new Date(fecha);
-      fechaComparar.setHours(12, 0, 0, 0);
-      
-      return fechaComparar >= fechaInicio && fechaComparar <= fechaFin;
+      fechaComparar.setHours(0, 0, 0, 0);
+
+      // Rango inclusivo en fechaInicio y exclusivo en fechaFin: [fechaInicio, fechaFin)
+      return fechaComparar >= fechaInicio && fechaComparar < fechaFin;
     }) || null;
   }
   
@@ -365,17 +375,15 @@ export class CalendarioComponent implements OnInit, OnDestroy {
     const primerDia = new Date(this.anioActual, this.mesActual, 1);
     const ultimoDia = new Date(this.anioActual, this.mesActual + 1, 0);
     
-    // Formatear fechas como YYYY-MM-DD
-    const formatoFecha = (fecha: Date) => {
-      return fecha.toISOString().split('T')[0];
-    };
+    // Formatear fechas como YYYY-MM-DD usando DateTimeService para evitar problemas de zona horaria
+    const formatoFecha = (fecha: Date) => this.dateTimeService.dateToString(fecha);
     
     const filtros = {
       fechaInicio: formatoFecha(primerDia),
       fechaFin: formatoFecha(ultimoDia)
     };
     
-    this.reservaService.getReservas(filtros)
+    this.reservaService.getReservasAll(filtros)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
@@ -396,8 +404,14 @@ export class CalendarioComponent implements OnInit, OnDestroy {
     return this.reservas.filter(reserva => {
       const fechaEntrada = new Date(reserva.fechaEntrada);
       const fechaSalida = new Date(reserva.fechaSalida);
-      
-      return fecha >= fechaEntrada && fecha <= fechaSalida;
+
+      // Normalizar horas y tratar fechaSalida como exclusiva
+      fechaEntrada.setHours(0,0,0,0);
+      fechaSalida.setHours(0,0,0,0);
+      const fechaComparar = new Date(fecha);
+      fechaComparar.setHours(0,0,0,0);
+
+      return fechaComparar >= fechaEntrada && fechaComparar < fechaSalida;
     }).sort((a: Reserva, b: Reserva) => {
       // Ordenar por estado (Confirmadas al principio)
       if (a.estado === 'Confirmada' && b.estado !== 'Confirmada') return -1;

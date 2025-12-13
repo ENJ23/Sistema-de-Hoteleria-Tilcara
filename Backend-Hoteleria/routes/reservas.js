@@ -7,12 +7,12 @@ const Tarea = require('../models/Tarea');
 const CancelacionReserva = require('../models/CancelacionReserva');
 const { body, validationResult, query } = require('express-validator');
 const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/authJwt');
-const { 
-    validateEditPayment, 
-    validateAddPayment, 
-    checkPaymentPermissions, 
-    validatePaymentLimits, 
-    logPaymentOperation 
+const {
+    validateEditPayment,
+    validateAddPayment,
+    checkPaymentPermissions,
+    validatePaymentLimits,
+    logPaymentOperation
 } = require('../middlewares/paymentValidation.middleware');
 const { requireLock, autoReleaseLock } = require('../middlewares/concurrency.middleware');
 const mongoose = require('mongoose'); // Importar mongoose para transacciones
@@ -20,28 +20,28 @@ const pdfService = require('../services/pdf.service'); // Importar servicio de P
 
 // ESTÁNDAR: Función helper para parsear fechas de forma consistente
 function parseLocalDate(dateString) {
-  if (!dateString || typeof dateString !== 'string') {
-    throw new Error('Fecha inválida');
-  }
-  
-  const parts = dateString.split('-');
-  if (parts.length !== 3) {
-    throw new Error('Formato de fecha inválido');
-  }
-  
-  const year = parseInt(parts[0], 10);
-  const month = parseInt(parts[1], 10) - 1;
-  const day = parseInt(parts[2], 10);
-  
-  if (isNaN(year) || isNaN(month) || isNaN(day)) {
-    throw new Error('Fecha inválida');
-  }
-  
-  // CORREGIDO: Crear fecha en zona horaria local (Argentina UTC-3)
-  // Esto asegura consistencia entre localhost y Vercel
-  const fecha = new Date(year, month, day, 0, 0, 0, 0);
-  
-  return fecha;
+    if (!dateString || typeof dateString !== 'string') {
+        throw new Error('Fecha inválida');
+    }
+
+    const parts = dateString.split('-');
+    if (parts.length !== 3) {
+        throw new Error('Formato de fecha inválido');
+    }
+
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+
+    if (isNaN(year) || isNaN(month) || isNaN(day)) {
+        throw new Error('Fecha inválida');
+    }
+
+    // CORREGIDO: Crear fecha en zona horaria local (Argentina UTC-3)
+    // Esto asegura consistencia entre localhost y Vercel
+    const fecha = new Date(year, month, day, 0, 0, 0, 0);
+
+    return fecha;
 }
 
 // Validaciones mejoradas para crear/actualizar reservas
@@ -52,43 +52,43 @@ const validarReserva = [
         .withMessage('La habitación es obligatoria')
         .isMongoId()
         .withMessage('ID de habitación inválido'),
-    
+
     body('fechaEntrada')
         .notEmpty()
         .withMessage('La fecha de entrada es obligatoria')
         .matches(/^\d{4}-\d{2}-\d{2}$/)
         .withMessage('Formato de fecha inválido. Use el formato YYYY-MM-DD (ejemplo: 2024-12-25)'),
-    
+
     body('fechaSalida')
         .notEmpty()
         .withMessage('La fecha de salida es obligatoria')
         .matches(/^\d{4}-\d{2}-\d{2}$/)
         .withMessage('Formato de fecha inválido. Use el formato YYYY-MM-DD (ejemplo: 2024-12-25)'),
-    
+
     body('horaEntrada')
         .notEmpty()
         .withMessage('La hora de entrada es obligatoria')
         .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
         .withMessage('Formato de hora inválido. Use el formato HH:MM (24 horas)'),
-    
+
     body('horaSalida')
         .notEmpty()
         .withMessage('La hora de salida es obligatoria')
         .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
         .withMessage('Formato de hora inválido. Use el formato HH:MM (24 horas)'),
-    
+
     body('precioPorNoche')
         .notEmpty()
         .withMessage('El precio por noche es obligatorio')
         .isFloat({ min: 0.01 })
         .withMessage('El precio por noche debe ser mayor a 0'),
-    
+
     body('estado')
         .notEmpty()
         .withMessage('El estado de la reserva es obligatorio')
         .isIn(['Pendiente', 'Confirmada', 'Cancelada', 'Completada'])
         .withMessage('Estado de reserva inválido'),
-    
+
     // Validación de campos obligatorios del cliente
     body('cliente.nombre')
         .notEmpty()
@@ -97,7 +97,7 @@ const validarReserva = [
         .withMessage('El nombre debe tener entre 2 y 50 caracteres')
         .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
         .withMessage('El nombre solo puede contener letras y espacios (sin números ni símbolos)'),
-    
+
     body('cliente.apellido')
         .notEmpty()
         .withMessage('El apellido del cliente es obligatorio')
@@ -105,7 +105,7 @@ const validarReserva = [
         .withMessage('El apellido debe tener entre 2 y 50 caracteres')
         .matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)
         .withMessage('El apellido solo puede contener letras y espacios (sin números ni símbolos)'),
-    
+
     body('cliente.email')
         .optional()
         .custom((value) => {
@@ -123,7 +123,7 @@ const validarReserva = [
             }
             return true;
         }),
-    
+
     body('cliente.telefono')
         .notEmpty()
         .withMessage('El teléfono del cliente es obligatorio')
@@ -131,7 +131,7 @@ const validarReserva = [
         .withMessage('El teléfono debe tener entre 7 y 20 caracteres')
         .matches(/^[\d\s\-\+\(\)]*$/)
         .withMessage('El teléfono solo puede contener números, espacios, guiones y paréntesis'),
-    
+
     body('cliente.documento')
         .optional()
         .custom((value) => {
@@ -144,12 +144,12 @@ const validarReserva = [
             }
             return true;
         }),
-    
+
     body('habitacion', 'La habitación es obligatoria')
         .notEmpty()
         .isMongoId()
         .withMessage('ID de habitación inválido'),
-    
+
     body('fechaEntrada', 'La fecha de entrada es obligatoria')
         .notEmpty()
         .matches(/^\d{4}-\d{2}-\d{2}$/)
@@ -167,7 +167,7 @@ const validarReserva = [
                 throw new Error('Fecha de entrada inválida: ' + error.message);
             }
         }),
-    
+
     body('fechaSalida', 'La fecha de salida es obligatoria')
         .notEmpty()
         .matches(/^\d{4}-\d{2}-\d{2}$/)
@@ -184,31 +184,31 @@ const validarReserva = [
                 throw new Error('Fecha de salida inválida: ' + error.message);
             }
         }),
-    
+
     body('horaEntrada', 'Formato de hora inválido')
         .optional()
         .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
         .withMessage('Formato de hora inválido. Use formato HH:MM (24 horas). Ejemplo: 14:30'),
-    
+
     body('horaSalida', 'Formato de hora inválido')
         .optional()
         .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
         .withMessage('Formato de hora inválido. Use formato HH:MM (24 horas). Ejemplo: 11:00'),
-    
+
     body('precioPorNoche', 'El precio por noche es obligatorio')
         .isFloat({ min: 0 })
         .withMessage('El precio debe ser un número positivo mayor a 0'),
-    
+
     body('estado', 'Estado inválido')
         .optional()
         .isIn(['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'])
         .withMessage('Estado de reserva inválido'),
-    
+
     body('metodoPago', 'Método de pago inválido')
         .optional()
         .isIn(['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'Otro'])
         .withMessage('Método de pago inválido'),
-    
+
     body('observaciones', 'Las observaciones son muy largas')
         .optional()
         .isLength({ max: 500 })
@@ -221,17 +221,17 @@ const validarConsultaReservas = [
         .optional()
         .isInt({ min: 1 })
         .withMessage('Página debe ser un número positivo'),
-    
+
     query('limit', 'Límite debe ser un número entre 1 y 100')
         .optional()
         .isInt({ min: 1, max: 100 })
         .withMessage('Límite debe ser un número entre 1 y 100'),
-    
+
     query('estado', 'Estado inválido')
         .optional()
         .custom((value) => {
             if (!value) return true;
-            
+
             // Si es un string con múltiples estados separados por comas
             if (typeof value === 'string' && value.includes(',')) {
                 const estados = value.split(',').map(e => e.trim());
@@ -242,7 +242,7 @@ const validarConsultaReservas = [
                 }
                 return true;
             }
-            
+
             // Si es un solo estado
             const estadosValidos = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'];
             if (!estadosValidos.includes(value)) {
@@ -250,12 +250,12 @@ const validarConsultaReservas = [
             }
             return true;
         }),
-    
+
     query('fechaInicio', 'Formato de fecha inválido')
         .optional()
         .isISO8601()
         .withMessage('Formato de fecha inválido'),
-    
+
     query('fechaFin', 'Formato de fecha inválido')
         .optional()
         .isISO8601()
@@ -270,10 +270,10 @@ const manejarErroresValidacion = (req, res, next) => {
         const erroresRequeridos = errors.array().filter(err => err.msg.includes('obligatorio') || err.msg.includes('requerido'));
         const erroresFormato = errors.array().filter(err => err.msg.includes('formato') || err.msg.includes('inválido'));
         const erroresLongitud = errors.array().filter(err => err.msg.includes('caracteres') || err.msg.includes('longitud'));
-        
+
         let mensajePrincipal = 'Los datos enviados contienen errores.';
         let sugerencia = 'Verifique que todos los campos requeridos estén completos y con el formato correcto.';
-        
+
         if (erroresRequeridos.length > 0) {
             mensajePrincipal = 'Faltan campos obligatorios.';
             sugerencia = 'Complete todos los campos marcados como obligatorios.';
@@ -284,7 +284,7 @@ const manejarErroresValidacion = (req, res, next) => {
             mensajePrincipal = 'Longitud de datos incorrecta.';
             sugerencia = 'Ajuste la longitud de los campos según los requisitos.';
         }
-        
+
         return res.status(400).json({
             success: false,
             message: mensajePrincipal,
@@ -310,18 +310,18 @@ router.get('/', [
 ], async (req, res) => {
     try {
         console.log('🔍 Backend recibió petición GET /reservas con query:', req.query);
-        
-        const { 
-            page = 1, 
-            limit = 10, 
-            estado = '', 
-            fechaInicio = '', 
+
+        const {
+            page = 1,
+            limit = 10,
+            estado = '',
+            fechaInicio = '',
             fechaFin = '',
             cliente = ''
         } = req.query;
-        
+
         let query = {};
-        
+
         if (estado) {
             // Si el estado contiene comas, es una lista de estados
             if (typeof estado === 'string' && estado.includes(',')) {
@@ -329,25 +329,51 @@ router.get('/', [
                 query.estado = { $in: estados };
                 console.log('🔍 Backend - Estados filtrados:', estados);
             } else {
-            query.estado = estado;
-            console.log('🔍 Backend - Estado único:', estado);
+                query.estado = estado;
+                console.log('🔍 Backend - Estado único:', estado);
             }
         }
-        
+
         if (fechaInicio && fechaFin) {
-            query.fechaEntrada = {
-                $gte: parseLocalDate(fechaInicio),
-                $lte: parseLocalDate(fechaFin)
-            };
-            console.log('🔍 Backend - Filtro de fechas aplicado:', { fechaInicio, fechaFin });
+            // CORREGIDO: Buscar reservas que se solapan con el rango de fechas
+            // Esto incluye reservas que:
+            // 1. Comienzan dentro del rango
+            // 2. Terminan dentro del rango
+            // 3. Abarcan todo el rango
+            // 4. Comienzan antes y terminan después del rango
+            const fechaInicioParsed = parseLocalDate(fechaInicio);
+            const fechaFinParsed = parseLocalDate(fechaFin);
+
+            query.$or = [
+                // Reservas que comienzan dentro del rango
+                {
+                    fechaEntrada: {
+                        $gte: fechaInicioParsed,
+                        $lte: fechaFinParsed
+                    }
+                },
+                // Reservas que terminan dentro del rango
+                {
+                    fechaSalida: {
+                        $gte: fechaInicioParsed,
+                        $lte: fechaFinParsed
+                    }
+                },
+                // Reservas que abarcan todo el rango (comienzan antes y terminan después)
+                {
+                    fechaEntrada: { $lte: fechaInicioParsed },
+                    fechaSalida: { $gte: fechaFinParsed }
+                }
+            ];
+            console.log('🔍 Backend - Filtro de fechas aplicado (solapamiento):', { fechaInicio, fechaFin });
         }
-        
+
         console.log('🔍 Backend - Query final:', JSON.stringify(query, null, 2));
-        
+
         const populateOptions = [
             { path: 'habitacion', select: 'numero tipo precioActual' }
         ];
-        
+
         // OPTIMIZADO: Usar lean() para mejor rendimiento y campos selectivos
         const reservas = await Reserva.find(query)
             .populate(populateOptions)
@@ -356,20 +382,20 @@ router.get('/', [
             .skip((page - 1) * limit)
             .sort({ fechaCreacion: -1 })
             .lean(); // Usar lean() para mejor rendimiento
-            
+
         // OPTIMIZADO: Usar countDocuments con el mismo query para consistencia
         const total = await Reserva.countDocuments(query);
-        
+
         console.log('🔍 Backend - Reservas encontradas:', reservas.length);
         console.log('🔍 Backend - Total en BD:', total);
         console.log('🔍 Backend - Estados de reservas encontradas:', reservas.map(r => r.estado));
-        
+
         // OPTIMIZADO: Calcular campos en una sola pasada
         const reservasConCalculos = reservas.map(reserva => {
-            const totalPagos = reserva.historialPagos ? 
-                reserva.historialPagos.reduce((sum, pago) => sum + pago.monto, 0) : 
+            const totalPagos = reserva.historialPagos ?
+                reserva.historialPagos.reduce((sum, pago) => sum + pago.monto, 0) :
                 reserva.montoPagado || 0;
-            
+
             return {
                 ...reserva,
                 estaCompletamentePagado: totalPagos >= reserva.precioTotal,
@@ -377,14 +403,14 @@ router.get('/', [
                 totalPagos
             };
         });
-        
+
         console.log('📊 Backend devolviendo:', {
             reservas: reservasConCalculos.length,
             totalPages: Math.ceil(total / limit),
             currentPage: page,
             total
         });
-        
+
         res.json({
             reservas: reservasConCalculos,
             totalPages: Math.ceil(total / limit),
@@ -417,7 +443,7 @@ router.get('/cliente/:clienteId', [
         const reservas = await Reserva.find({ cliente: req.params.clienteId })
             .populate('habitacion', 'numero tipo precioActual')
             .sort({ fechaCreacion: -1 });
-        
+
         res.json(reservas);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener reservas del cliente', error: error.message });
@@ -433,7 +459,7 @@ router.get('/habitacion/:habitacionId', [
         const reservas = await Reserva.find({ habitacion: req.params.habitacionId })
             .populate('habitacion', 'numero tipo precioActual')
             .sort({ fechaEntrada: 1 });
-        
+
         res.json(reservas);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener reservas de la habitación', error: error.message });
@@ -497,9 +523,9 @@ router.get('/check-disponibilidad', [
         res.json(disponible);
     } catch (error) {
         console.error('Error al verificar disponibilidad:', error);
-        res.status(500).json({ 
-            message: 'Error al verificar disponibilidad', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al verificar disponibilidad',
+            error: error.message
         });
     }
 });
@@ -512,16 +538,16 @@ router.get('/check-disponibilidad', [
 router.get('/cancelaciones/test', async (req, res) => {
     try {
         console.log('🔍 Endpoint de prueba /cancelaciones/test llamado');
-        res.json({ 
+        res.json({
             message: 'Endpoint de cancelaciones funcionando',
             timestamp: new Date().toISOString(),
             modelAvailable: !!CancelacionReserva
         });
     } catch (error) {
         console.error('❌ Error en endpoint de prueba:', error);
-        res.status(500).json({ 
-            message: 'Error en endpoint de prueba', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error en endpoint de prueba',
+            error: error.message
         });
     }
 });
@@ -534,35 +560,35 @@ router.get('/cancelaciones', [
     try {
         console.log('🔍 Endpoint /cancelaciones llamado');
         console.log('📋 Query params:', req.query);
-        
+
         const { estadoReembolso = '', fechaInicio = '', fechaFin = '' } = req.query;
-        
+
         let query = {};
-        
+
         if (estadoReembolso) {
             query.estadoReembolso = estadoReembolso;
         }
-        
+
         if (fechaInicio && fechaFin) {
             query.fechaCancelacion = {
                 $gte: new Date(fechaInicio),
                 $lte: new Date(fechaFin)
             };
         }
-        
+
         const cancelaciones = await CancelacionReserva.find(query)
             .sort({ fechaCancelacion: -1 })
             .limit(100);
-        
+
         res.json({
             cancelaciones,
             total: cancelaciones.length
         });
     } catch (error) {
         console.error('Error al obtener cancelaciones:', error);
-        res.status(500).json({ 
-            message: 'Error al obtener cancelaciones', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al obtener cancelaciones',
+            error: error.message
         });
     }
 });
@@ -572,36 +598,36 @@ router.get('/:id', verifyToken, async (req, res) => {
     try {
         const reserva = await Reserva.findById(req.params.id)
             .populate('habitacion');
-            
+
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         // Agregar campos calculados
         const reservaObj = reserva.toObject();
         reservaObj.estaCompletamentePagado = reserva.estaCompletamentePagado();
         reservaObj.montoRestante = reserva.calcularMontoRestante();
-        reservaObj.totalPagos = reserva.historialPagos ? 
-            reserva.historialPagos.reduce((sum, pago) => sum + pago.monto, 0) : 
+        reservaObj.totalPagos = reserva.historialPagos ?
+            reserva.historialPagos.reduce((sum, pago) => sum + pago.monto, 0) :
             reserva.montoPagado || 0;
-        
+
         // DEBUGGING: Ver qué campos está devolviendo el backend
         console.log('🔍 DEBUGGING BACKEND GET - Configuración de camas:', reservaObj.configuracionCamas);
         console.log('🔍 DEBUGGING BACKEND GET - Información de transporte:', reservaObj.informacionTransporte);
         console.log('🔍 DEBUGGING BACKEND GET - Necesidades especiales:', reservaObj.necesidadesEspeciales);
-        
+
         // Si el usuario es encargado, limpieza o mantenimiento, permitir acceso completo
         if (req.userId.rol === 'encargado' || req.userId.rol === 'limpieza' || req.userId.rol === 'mantenimiento') {
             console.log('✅ Usuario autorizado (rol:', req.userId.rol, ') - permitiendo acceso a reserva');
             return res.json(reservaObj);
         }
-        
+
         // Si el usuario es el dueño de la reserva, permitir
         if (reserva.cliente.email === req.userId.email) {
             console.log('✅ Usuario es dueño de la reserva - permitiendo acceso');
             return res.json(reservaObj);
         }
-        
+
         // Si no, denegar acceso
         console.log('❌ Usuario no autorizado - rol:', req.userId.rol, 'email:', req.userId.email);
         console.log('❌ Reserva cliente email:', reserva.cliente.email);
@@ -648,32 +674,32 @@ router.post('/', [
 ], async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
-    
+
     try {
         console.log('🔍 DEBUGGING POST - Datos recibidos:', req.body);
         console.log('🔍 DEBUGGING POST - Configuración de camas:', req.body.configuracionCamas);
         console.log('🔍 DEBUGGING POST - Información de transporte:', req.body.informacionTransporte);
         console.log('🔍 DEBUGGING POST - Necesidades especiales:', req.body.necesidadesEspeciales);
-        
+
         const { cliente, habitacion, fechaEntrada, fechaSalida, ...otrosDatos } = req.body;
-        
-        
+
+
         // Verificar que la habitación existe y está disponible
         const habitacionDoc = await Habitacion.findById(habitacion);
         if (!habitacionDoc) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 message: 'La habitación seleccionada no existe. Por favor, seleccione una habitación válida.',
                 sugerencia: 'Verifique que la habitación esté disponible en el sistema.'
             });
         }
-        
+
         // NO verificar el estado de la habitación aquí, solo verificar conflictos de fechas
         // El estado de la habitación se maneja dinámicamente basado en las reservas activas
-        
+
         // Verificar conflictos de fechas usando parseLocalDate
         const fechaEntradaParsed = parseLocalDate(fechaEntrada);
         const fechaSalidaParsed = parseLocalDate(fechaSalida);
-        
+
         // OPTIMIZADO: Verificar conflictos dentro de la transacción
         const reservasExistentes = await Reserva.find({
             habitacion: habitacion,
@@ -685,9 +711,9 @@ router.post('/', [
                 }
             ]
         }).session(session);
-        
+
         if (reservasExistentes.length > 0) {
-            return res.status(409).json({ 
+            return res.status(409).json({
                 message: 'La habitación ya está reservada para esas fechas. Por favor, seleccione otras fechas o una habitación diferente.',
                 conflictos: reservasExistentes.map(r => ({
                     fechaEntrada: r.fechaEntrada,
@@ -697,7 +723,7 @@ router.post('/', [
                 sugerencia: 'Intente con fechas diferentes o seleccione otra habitación disponible.'
             });
         }
-        
+
         // Crear la reserva usando parseLocalDate para evitar problemas de zona horaria
         const reserva = new Reserva({
             cliente,
@@ -706,40 +732,47 @@ router.post('/', [
             fechaSalida: parseLocalDate(fechaSalida),
             ...otrosDatos,
             creadoPor: req.userId ? req.userId.nombre : 'Cliente',
+            historialCambios: [{
+                usuario: req.userId ? req.userId.nombre : 'Cliente',
+                rol: req.userId ? req.userId.rol : 'Cliente',
+                accion: 'Creación',
+                detalles: 'Reserva creada inicialmente.',
+                estadoNuevo: 'Pendiente'
+            }],
             // Nuevos campos opcionales
             configuracionCamas: req.body.configuracionCamas || undefined,
             informacionTransporte: req.body.informacionTransporte || undefined,
             necesidadesEspeciales: req.body.necesidadesEspeciales || undefined
         });
-        
+
         console.log('💾 Guardando reserva en transacción...');
         await reserva.save({ session });
-        
+
         // Confirmar transacción
         await session.commitTransaction();
-        
+
         // NO actualizar el estado de la habitación aquí
         // El estado se maneja dinámicamente basado en las reservas activas
-        
+
         // Populate y retornar respuesta
         await reserva.populate('habitacion', 'numero tipo precioActual');
-        
+
         console.log('✅ Reserva creada exitosamente:', reserva._id);
-        
+
         res.status(201).json({
             message: 'Reserva creada exitosamente',
             reserva
         });
-        
+
     } catch (error) {
         // OPTIMIZADO: Abortar transacción en caso de error
         await session.abortTransaction();
         console.error('❌ Error al crear reserva:', error);
-        
+
         // Categorizar el tipo de error para enviar mensaje más específico
         let errorType = 'unknown';
         let errorMessage = 'Error al crear la reserva';
-        
+
         if (error.name === 'ValidationError') {
             errorType = 'validation';
             errorMessage = 'Error de validación de datos';
@@ -771,8 +804,8 @@ router.post('/', [
             errorType = 'estado';
             errorMessage = 'Error con el estado de la reserva';
         }
-        
-        res.status(500).json({ 
+
+        res.status(500).json({
             message: errorMessage,
             error: error.message,
             errorType: errorType,
@@ -804,14 +837,14 @@ router.put('/:id', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const reserva = await Reserva.findById(req.params.id);
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         const { fechaEntrada, fechaSalida, habitacion } = req.body;
-        
+
         // Verificar conflictos de fechas (excluyendo la reserva actual)
         const reservasExistentes = await Reserva.find({
             habitacion: habitacion || reserva.habitacion,
@@ -824,27 +857,27 @@ router.put('/:id', [
                 }
             ]
         });
-        
+
         if (reservasExistentes.length > 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'La habitación ya tiene una reserva para esas fechas',
                 reservasConflictivas: reservasExistentes
             });
         }
-        
+
         // Preparar datos de actualización con fechas parseadas correctamente
         const datosActualizacion = { ...req.body };
-        
+
         // DEBUGGING: Ver qué datos están llegando
         console.log('🔍 DEBUGGING PUT - Datos recibidos:', req.body);
         console.log('🔍 DEBUGGING PUT - Configuración de camas:', req.body.configuracionCamas);
         console.log('🔍 DEBUGGING PUT - Información de transporte:', req.body.informacionTransporte);
         console.log('🔍 DEBUGGING PUT - Necesidades especiales:', req.body.necesidadesEspeciales);
-        
+
         // ESTÁNDAR: Parsear fechas usando parseLocalDate
         datosActualizacion.fechaEntrada = parseLocalDate(fechaEntrada);
         datosActualizacion.fechaSalida = parseLocalDate(fechaSalida);
-        
+
         // ✅ INCLUIR EXPLÍCITAMENTE LOS NUEVOS CAMPOS
         if (req.body.configuracionCamas !== undefined) {
             datosActualizacion.configuracionCamas = req.body.configuracionCamas;
@@ -855,29 +888,53 @@ router.put('/:id', [
         if (req.body.necesidadesEspeciales !== undefined) {
             datosActualizacion.necesidadesEspeciales = req.body.necesidadesEspeciales;
         }
-        
+
+        // Detectar cambios para auditoría
+        let cambios = [];
+        if (fechaEntrada && new Date(fechaEntrada).getTime() !== new Date(reserva.fechaEntrada).getTime()) cambios.push(`Fecha Entrada`);
+        if (fechaSalida && new Date(fechaSalida).getTime() !== new Date(reserva.fechaSalida).getTime()) cambios.push(`Fecha Salida`);
+        if (habitacion && habitacion !== reserva.habitacion.toString()) cambios.push('Habitación');
+        if (req.body.precioPorNoche && parseFloat(req.body.precioPorNoche) !== reserva.precioPorNoche) cambios.push('Precio');
+
+        // Si hay cambios, agregar al historial usando $push
+        if (cambios.length > 0) {
+            // Importante: Si usamos $push, no podemos mezclar con campos de nivel superior en algunas versiones/configuraciones,
+            // pero Mongoose suele manejarlo. Para seguridad, usamos la sintaxis de update operator completa si fuera necesario,
+            // pero aquí datosActualizacion es un objeto plano.
+            // Estrategia: Agregar el push al objeto de actualización
+            datosActualizacion.$push = {
+                historialCambios: {
+                    usuario: req.userId ? req.userId.nombre : 'Sistema',
+                    rol: req.userId ? req.userId.rol : 'Sistema',
+                    accion: 'Modificación',
+                    detalles: `Actualización de campos: ${cambios.join(', ')}`,
+                    fecha: new Date()
+                }
+            };
+        }
+
         // Recalcular precio total si cambian las fechas o el precio por noche
         const fechaEntradaActual = datosActualizacion.fechaEntrada;
         const fechaSalidaActual = datosActualizacion.fechaSalida;
         const precioPorNocheActual = parseFloat(req.body.precioPorNoche);
-        
+
         // Calcular número de noches
         const diferenciaTiempo = fechaSalidaActual.getTime() - fechaEntradaActual.getTime();
         const numeroNoches = Math.ceil(diferenciaTiempo / (1000 * 3600 * 24));
-        
+
         // Recalcular precio total
         const precioTotal = precioPorNocheActual * numeroNoches;
         datosActualizacion.precioTotal = precioTotal;
-        
-        
+
+
         // Actualizar la reserva
         const reservaActualizada = await Reserva.findByIdAndUpdate(
             req.params.id,
             datosActualizacion,
             { new: true, runValidators: true }
         ).populate('habitacion');
-        
-        
+
+
         res.json(reservaActualizada);
     } catch (error) {
         res.status(500).json({ message: 'Error al actualizar reserva', error: error.message });
@@ -895,108 +952,46 @@ router.patch('/:id/estado', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const reserva = await Reserva.findById(req.params.id);
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         const nuevoEstado = req.body.estado;
+        const estadoAnterior = reserva.estado;
         reserva.estado = nuevoEstado;
-        
+
+        // Agregar al historial
+        reserva.historialCambios.push({
+            usuario: req.userId ? req.userId.nombre : 'Sistema',
+            rol: req.userId ? req.userId.rol : 'Sistema',
+            accion: 'Cambio de Estado',
+            detalles: `Estado cambiado de ${estadoAnterior} a ${nuevoEstado}`,
+            estadoAnterior: estadoAnterior,
+            estadoNuevo: nuevoEstado
+        });
+
         // Si se cancela la reserva, liberar la habitación
         if (nuevoEstado === 'Cancelada') {
             await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Disponible' });
         }
-        
+
         await reserva.save();
-        
+
         await reserva.populate('cliente');
         await reserva.populate('habitacion');
-        
+
         res.json(reserva);
     } catch (error) {
         res.status(500).json({ message: 'Error al cambiar estado', error: error.message });
     }
 });
 
-// PATCH - Actualizar estado de pago de una reserva (solo empleados y administradores)
-router.patch('/:id/pago', [
+// POST - Cancelar una reserva con motivo (crea registro de cancelación)
+router.post('/:id/cancelar', [
     verifyToken,
     isEncargado,
-    body('pagado').optional().isBoolean().withMessage('El valor de pago debe ser true o false'),
-    body('metodoPago').optional().isIn(['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal']).withMessage('Método de pago inválido'),
-    body('monto').optional().isFloat({ min: 0 }).withMessage('El monto debe ser mayor a 0'),
-    body('observaciones').optional().isString().withMessage('Las observaciones deben ser texto')
-], async (req, res) => {
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-        
-        const reserva = await Reserva.findById(req.params.id);
-        if (!reserva) {
-            return res.status(404).json({ message: 'Reserva no encontrada' });
-        }
-        
-        // Si se proporciona método de pago y monto, registrar pago en el historial
-        if (req.body.metodoPago && req.body.monto) {
-            const monto = parseFloat(req.body.monto);
-            const metodoPago = req.body.metodoPago;
-            const observaciones = req.body.observaciones || '';
-            const registradoPor = req.userId ? req.userId.nombre : 'Encargado';
-            
-            // Verificar que el monto no exceda el total restante
-            const montoRestante = reserva.calcularMontoRestante();
-            if (monto > montoRestante) {
-                return res.status(400).json({ 
-                    message: `El monto excede el total restante. Restante: $${montoRestante}`,
-                    montoRestante: montoRestante
-                });
-            }
-            
-            // Agregar pago al historial
-            await reserva.agregarPago(monto, metodoPago, observaciones, registradoPor);
-            
-            console.log('💰 Pago registrado:', {
-                reservaId: reserva._id,
-                monto: monto,
-                metodoPago: metodoPago,
-                montoPagado: reserva.montoPagado,
-                montoRestante: reserva.calcularMontoRestante(),
-                pagado: reserva.pagado
-            });
-            
-        } else if (req.body.pagado !== undefined) {
-            // Solo actualizar estado de pago (para compatibilidad)
-            reserva.pagado = req.body.pagado;
-        await reserva.save();
-        }
-        
-        await reserva.populate('cliente');
-        await reserva.populate('habitacion');
-        
-        // Incluir información adicional de pagos
-        const respuesta = {
-            ...reserva.toObject(),
-            montoRestante: reserva.calcularMontoRestante(),
-            estaCompletamentePagado: reserva.estaCompletamentePagado(),
-            totalPagos: reserva.historialPagos.length
-        };
-        
-        res.json(respuesta);
-    } catch (error) {
-        console.error('Error al actualizar estado de pago:', error);
-        res.status(500).json({ message: 'Error al actualizar estado de pago', error: error.message });
-    }
-});
-
-// DELETE - Eliminar una reserva (usuarios autenticados)
-// DELETE - Cancelar una reserva (cambiar estado a Cancelada en lugar de eliminar)
-router.delete('/:id', [
-    verifyToken,
-    isUsuarioValido,
     body('motivoCancelacion').notEmpty().withMessage('El motivo de cancelación es obligatorio'),
     body('motivoCancelacion').isLength({ min: 5, max: 500 }).withMessage('El motivo debe tener entre 5 y 500 caracteres')
 ], async (req, res) => {
@@ -1005,27 +1000,27 @@ router.delete('/:id', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const reserva = await Reserva.findById(req.params.id).populate('habitacion');
-            if (!reserva) {
-                return res.status(404).json({ message: 'Reserva no encontrada' });
-            }
-            
+        if (!reserva) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+
         // Verificar que la reserva no esté ya cancelada
         if (reserva.estado === 'Cancelada') {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'La reserva ya está cancelada',
                 estado: reserva.estado
             });
         }
-        
+
         console.log('🚫 Cancelando reserva:', {
             reservaId: reserva._id,
             cliente: reserva.cliente,
             montoPagado: reserva.montoPagado,
             motivo: req.body.motivoCancelacion
         });
-        
+
         // ✅ CREAR REGISTRO DE CANCELACIÓN ANTES DE CAMBIAR ESTADO
         const cancelacionData = {
             reservaId: reserva._id,
@@ -1055,31 +1050,45 @@ router.delete('/:id', [
             motivoCancelacion: req.body.motivoCancelacion,
             canceladoPor: req.userId ? req.userId.nombre : 'Sistema'
         };
-        
+
         // ✅ GUARDAR INFORMACIÓN DE CANCELACIÓN
         const cancelacion = new CancelacionReserva(cancelacionData);
         await cancelacion.save();
-        
-        // ✅ CAMBIAR ESTADO A CANCELADA EN LUGAR DE ELIMINAR
+
+        // ✅ CAMBIAR ESTADO A CANCELADA
+        const estadoAnterior = reserva.estado;
         reserva.estado = 'Cancelada';
         reserva.fechaCancelacion = new Date();
+
+        // Agregar al historial
+        reserva.historialCambios.push({
+            usuario: req.userId ? req.userId.nombre : 'Sistema',
+            rol: req.userId ? req.userId.rol : 'Sistema',
+            accion: 'Cancelación',
+            detalles: `Reserva cancelada. Motivo: ${req.body.motivoCancelacion}`,
+            estadoAnterior: estadoAnterior,
+            estadoNuevo: 'Cancelada'
+        });
+
         await reserva.save();
-        
+
+        // Liberar la habitación
+        await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Disponible' });
+
         console.log('✅ Reserva cancelada exitosamente:', {
             reservaId: reserva._id,
             cancelacionId: cancelacion._id,
             montoPagado: reserva.montoPagado,
             puedeReembolso: cancelacion.puedeProcesarReembolso()
         });
-        
+
+        await reserva.populate('cliente');
+        await reserva.populate('habitacion');
+
         // ✅ RESPUESTA CON INFORMACIÓN DE REEMBOLSO
         const respuesta = {
             message: 'Reserva cancelada correctamente',
-            reserva: {
-                _id: reserva._id,
-                estado: reserva.estado,
-                fechaCancelacion: reserva.fechaCancelacion
-            },
+            reserva: reserva.toObject(),
             cancelacion: {
                 _id: cancelacion._id,
                 montoPagado: cancelacion.montoPagado,
@@ -1088,13 +1097,128 @@ router.delete('/:id', [
                 estadoReembolso: cancelacion.estadoReembolso
             }
         };
-        
+
         res.json(respuesta);
-        } catch (error) {
+    } catch (error) {
         console.error('❌ Error al cancelar reserva:', error);
-        res.status(500).json({ 
-            message: 'Error al cancelar reserva', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al cancelar reserva',
+            error: error.message
+        });
+    }
+});
+
+// PATCH - Actualizar estado de pago de una reserva (solo empleados y administradores)
+router.patch('/:id/pago', [
+    verifyToken,
+    isEncargado,
+    body('pagado').optional().isBoolean().withMessage('El valor de pago debe ser true o false'),
+    body('metodoPago').optional().isIn(['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal']).withMessage('Método de pago inválido'),
+    body('monto').optional().isFloat({ min: 0 }).withMessage('El monto debe ser mayor a 0'),
+    body('observaciones').optional().isString().withMessage('Las observaciones deben ser texto')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const reserva = await Reserva.findById(req.params.id);
+        if (!reserva) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+
+        // Si se proporciona método de pago y monto, registrar pago en el historial
+        if (req.body.metodoPago && req.body.monto) {
+            const monto = parseFloat(req.body.monto);
+            const metodoPago = req.body.metodoPago;
+            const observaciones = req.body.observaciones || '';
+            const registradoPor = req.userId ? req.userId.nombre : 'Encargado';
+
+            // Verificar que el monto no exceda el total restante
+            const montoRestante = reserva.calcularMontoRestante();
+            if (monto > montoRestante) {
+                return res.status(400).json({
+                    message: `El monto excede el total restante. Restante: $${montoRestante}`,
+                    montoRestante: montoRestante
+                });
+            }
+
+            // Agregar pago al historial
+            await reserva.agregarPago(monto, metodoPago, observaciones, registradoPor);
+
+            console.log('💰 Pago registrado:', {
+                reservaId: reserva._id,
+                monto: monto,
+                metodoPago: metodoPago,
+                montoPagado: reserva.montoPagado,
+                montoRestante: reserva.calcularMontoRestante(),
+                pagado: reserva.pagado
+            });
+
+        } else if (req.body.pagado !== undefined) {
+            // Solo actualizar estado de pago (para compatibilidad)
+            reserva.pagado = req.body.pagado;
+            await reserva.save();
+        }
+
+        await reserva.populate('cliente');
+        await reserva.populate('habitacion');
+
+        // Incluir información adicional de pagos
+        const respuesta = {
+            ...reserva.toObject(),
+            montoRestante: reserva.calcularMontoRestante(),
+            estaCompletamentePagado: reserva.estaCompletamentePagado(),
+            totalPagos: reserva.historialPagos.length
+        };
+
+        res.json(respuesta);
+    } catch (error) {
+        console.error('Error al actualizar estado de pago:', error);
+        res.status(500).json({ message: 'Error al actualizar estado de pago', error: error.message });
+    }
+});
+
+// DELETE - Eliminar físicamente una reserva de la base de datos (solo para errores)
+// NOTA: Para cancelar correctamente una reserva, usar el endpoint PATCH /:id/estado con estado 'Cancelada'
+router.delete('/:id', [
+    verifyToken,
+    isEncargado // Solo encargados pueden eliminar físicamente
+], async (req, res) => {
+    try {
+        const reserva = await Reserva.findById(req.params.id).populate('habitacion');
+
+        if (!reserva) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+
+        console.log('🗑️ Eliminando físicamente reserva:', {
+            reservaId: reserva._id,
+            cliente: `${reserva.cliente.nombre} ${reserva.cliente.apellido}`,
+            habitacion: reserva.habitacion?.numero,
+            estado: reserva.estado,
+            eliminadoPor: req.userId ? req.userId.nombre : 'Sistema'
+        });
+
+        // Eliminar físicamente la reserva de la base de datos
+        await Reserva.findByIdAndDelete(req.params.id);
+
+        console.log('✅ Reserva eliminada físicamente de la base de datos:', reserva._id);
+
+        res.json({
+            message: 'Reserva eliminada correctamente de la base de datos',
+            reservaEliminada: {
+                _id: reserva._id,
+                cliente: `${reserva.cliente.nombre} ${reserva.cliente.apellido}`,
+                habitacion: reserva.habitacion?.numero
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error al eliminar reserva:', error);
+        res.status(500).json({
+            message: 'Error al eliminar reserva',
+            error: error.message
         });
     }
 });
@@ -1112,28 +1236,39 @@ router.patch('/:id/checkin', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const reserva = await Reserva.findById(req.params.id);
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         if (reserva.estado !== 'Confirmada' && reserva.estado !== 'Pendiente') {
             return res.status(400).json({ message: 'Solo se puede hacer check-in a reservas confirmadas o pendientes' });
         }
-        
+
         // Actualizar estado y agregar hora de check-in
+        const estadoAnterior = reserva.estado;
         reserva.estado = 'En curso';
         reserva.horaCheckIn = req.body.horaCheckIn || new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         reserva.fechaCheckIn = new Date();
-        
+
+        // Agregar al historial
+        reserva.historialCambios.push({
+            usuario: req.userId ? req.userId.nombre : 'Sistema',
+            rol: req.userId ? req.userId.rol : 'Sistema',
+            accion: 'Check-in',
+            detalles: `Check-in realizado a las ${reserva.horaCheckIn}`,
+            estadoAnterior: estadoAnterior,
+            estadoNuevo: 'En curso'
+        });
+
         await reserva.save();
-        
+
         // Actualizar estado de la habitación
         await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Ocupada' });
-        
+
         await reserva.populate('habitacion');
-        
+
         res.json(reserva);
     } catch (error) {
         res.status(500).json({ message: 'Error al realizar check-in', error: error.message });
@@ -1153,26 +1288,37 @@ router.patch('/:id/checkout', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const reserva = await Reserva.findById(req.params.id);
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         if (reserva.estado !== 'En curso') {
             return res.status(400).json({ message: 'Solo se puede hacer check-out a reservas en curso' });
         }
-        
+
         // Actualizar estado y agregar hora de check-out
+        const estadoAnteriorCo = reserva.estado;
         reserva.estado = 'Finalizada';
         reserva.horaCheckOut = req.body.horaCheckOut || new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         reserva.fechaCheckOut = new Date();
-        
+
+        // Agregar al historial
+        reserva.historialCambios.push({
+            usuario: req.userId ? req.userId.nombre : 'Sistema',
+            rol: req.userId ? req.userId.rol : 'Sistema',
+            accion: 'Check-out',
+            detalles: `Check-out realizado a las ${reserva.horaCheckOut}`,
+            estadoAnterior: estadoAnteriorCo,
+            estadoNuevo: 'Finalizada'
+        });
+
         await reserva.save();
-        
+
         // Actualizar estado de la habitación
-            await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Disponible' });
-        
+        await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Disponible' });
+
         // Crear tarea de limpieza automáticamente
         try {
             const creadoPor = req.userId.nombre || 'Sistema';
@@ -1182,9 +1328,9 @@ router.patch('/:id/checkout', [
             console.error('⚠️ Error al crear tarea de limpieza:', tareaError);
             // No fallar el checkout si hay error en la tarea
         }
-        
+
         await reserva.populate('habitacion');
-        
+
         res.json(reserva);
     } catch (error) {
         res.status(500).json({ message: 'Error al realizar check-out', error: error.message });
@@ -1201,36 +1347,36 @@ router.patch('/:id/revertir-checkout', [
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         if (reserva.estado !== 'Finalizada') {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Solo se puede revertir check-out a reservas finalizadas',
                 estadoActual: reserva.estado
             });
         }
-        
+
         // Verificar que la reserva tenga fecha de check-out (para confirmar que realmente se hizo checkout)
         if (!reserva.fechaCheckOut) {
-            return res.status(400).json({ 
-                message: 'Esta reserva no tiene fecha de check-out registrada' 
+            return res.status(400).json({
+                message: 'Esta reserva no tiene fecha de check-out registrada'
             });
         }
-        
+
         // Revertir el check-out
         reserva.estado = 'En curso';
         reserva.horaCheckOut = undefined;
         reserva.fechaCheckOut = undefined;
-        
+
         await reserva.save();
-        
+
         // Actualizar estado de la habitación a ocupada
         await Habitacion.findByIdAndUpdate(reserva.habitacion, { estado: 'Ocupada' });
-        
+
         // Eliminar tarea de limpieza si existe (opcional)
         try {
             const Tarea = require('../models/Tarea');
-            await Tarea.deleteMany({ 
-                habitacion: reserva.habitacion, 
+            await Tarea.deleteMany({
+                habitacion: reserva.habitacion,
                 tipo: 'Limpieza',
                 estado: 'Pendiente'
             });
@@ -1239,15 +1385,15 @@ router.patch('/:id/revertir-checkout', [
             console.error('⚠️ Error al eliminar tarea de limpieza:', tareaError);
             // No fallar la reversión si hay error en la tarea
         }
-        
+
         await reserva.populate('habitacion');
-        
+
         console.log('🔄 Check-out revertido:', {
             reservaId: reserva._id,
             habitacion: reserva.habitacion.numero,
             nuevoEstado: reserva.estado
         });
-        
+
         res.json({
             message: 'Check-out revertido exitosamente',
             reserva: reserva
@@ -1255,6 +1401,137 @@ router.patch('/:id/revertir-checkout', [
     } catch (error) {
         console.error('❌ Error al revertir check-out:', error);
         res.status(500).json({ message: 'Error al revertir check-out', error: error.message });
+    }
+});
+
+// POST - Dividir una reserva (Cambio de habitación a mitad de estadía)
+router.post('/:id/dividir', [
+    verifyToken,
+    isEncargado,
+    body('fechaCambio').isISO8601().toDate().withMessage('Fecha de cambio inválida'),
+    body('nuevaHabitacionId').notEmpty().withMessage('ID de nueva habitación es obligatorio')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { fechaCambio, nuevaHabitacionId } = req.body;
+        const reservaOriginal = await Reserva.findById(req.params.id);
+
+        if (!reservaOriginal) {
+            return res.status(404).json({ message: 'Reserva no encontrada' });
+        }
+
+        // 1. Validar fechas
+        const fechaEntrada = new Date(reservaOriginal.fechaEntrada);
+        const fechaSalida = new Date(reservaOriginal.fechaSalida);
+        const cambio = new Date(fechaCambio);
+
+        // Resetear horas para comparación
+        fechaEntrada.setHours(0, 0, 0, 0);
+        fechaSalida.setHours(0, 0, 0, 0);
+        cambio.setHours(0, 0, 0, 0);
+
+        if (cambio <= fechaEntrada || cambio >= fechaSalida) {
+            return res.status(400).json({
+                message: 'La fecha de cambio debe estar entre la fecha de entrada y salida de la reserva original.'
+            });
+        }
+
+        // 2. Verificar disponibilidad de la nueva habitación
+        const conflicto = await Reserva.findOne({
+            habitacion: nuevaHabitacionId,
+            estado: { $nin: ['Cancelada', 'Finalizada'] },
+            $or: [
+                {
+                    fechaEntrada: { $lt: fechaSalida }, // Nueva fecha salida (que es la vieja fecha salida)
+                    fechaSalida: { $gt: cambio } // Nueva fecha entrada
+                }
+            ]
+        });
+
+        if (conflicto) {
+            return res.status(400).json({ message: 'La nueva habitación no está disponible para las fechas solicitadas.' });
+        }
+
+        // 3. Crear la NUEVA reserva
+        const nuevaReservaData = {
+            cliente: reservaOriginal.cliente,
+            habitacion: nuevaHabitacionId,
+            fechaEntrada: cambio,
+            fechaSalida: reservaOriginal.fechaSalida,
+            horaEntrada: '14:00',
+            horaSalida: reservaOriginal.horaSalida,
+            precioPorNoche: reservaOriginal.precioPorNoche,
+            estado: reservaOriginal.estado === 'En curso' ? 'Confirmada' : reservaOriginal.estado,
+            metodoPago: reservaOriginal.metodoPago,
+            observaciones: `Dividida de reserva ${reservaOriginal._id}. ${reservaOriginal.observaciones || ''}`,
+            creadoPor: req.userId ? req.userId.nombre : 'Sistema',
+            historialCambios: [{
+                usuario: req.userId ? req.userId.nombre : 'Sistema',
+                rol: req.userId ? req.userId.rol : 'Sistema',
+                accion: 'Creación (División)',
+                detalles: 'Creada por división de reserva (Cambio de habitación)'
+            }]
+        };
+
+        const nuevaReserva = new Reserva(nuevaReservaData);
+        await nuevaReserva.save();
+
+        // 4. Modificar la reserva ORIGINAL
+        reservaOriginal.fechaSalida = cambio;
+
+        reservaOriginal.historialCambios.push({
+            usuario: req.userId ? req.userId.nombre : 'Sistema',
+            rol: req.userId ? req.userId.rol : 'Sistema',
+            accion: 'División',
+            detalles: `Reserva dividida hasta ${cambio.toLocaleDateString()}. Continuación en ${nuevaReserva._id}`,
+            estadoAnterior: reservaOriginal.estado,
+            estadoNuevo: reservaOriginal.estado
+        });
+
+        await reservaOriginal.save(); // Esto recalcula el precioTotal de la original
+
+        // 5. Transferir pagos excedentes (Logica de Negocio)
+        // Si lo pagado supera el nuevo precio total, mover el excedente a la nueva reserva
+        const montoPagadoOriginal = reservaOriginal.montoPagado;
+        const nuevoPrecioTotalOriginal = reservaOriginal.precioTotal;
+        const excedente = montoPagadoOriginal - nuevoPrecioTotalOriginal;
+
+        if (excedente > 0) {
+            console.log(`💰 Transfiriendo excedente de pago: ${excedente} de ${reservaOriginal._id} a ${nuevaReserva._id}`);
+
+            // Restar de original (Pago negativo)
+            await reservaOriginal.agregarPago(
+                -excedente,
+                'Transferencia',
+                `Transferencia por excedente a nueva reserva ${nuevaReserva._id.toString().substring(0, 8)}...`,
+                req.userId ? req.userId.nombre : 'Sistema'
+            );
+
+            // Sumar a nueva
+            await nuevaReserva.agregarPago(
+                excedente,
+                'Transferencia',
+                `Transferencia recibida de reserva ${reservaOriginal._id.toString().substring(0, 8)}...`,
+                req.userId ? req.userId.nombre : 'Sistema'
+            );
+        }
+
+        res.json({
+            message: 'Reserva dividida exitosamente',
+            reservaOriginal,
+            nuevaReserva
+        });
+
+    } catch (error) {
+        console.error('❌ Error al dividir reserva:', error);
+        res.status(500).json({
+            message: 'Error al dividir la reserva',
+            error: error.message
+        });
     }
 });
 
@@ -1268,7 +1545,7 @@ router.get('/checkin/hoy', [
         hoy.setHours(0, 0, 0, 0);
         const manana = new Date(hoy);
         manana.setDate(manana.getDate() + 1);
-        
+
         const reservas = await Reserva.find({
             fechaEntrada: {
                 $gte: hoy,
@@ -1276,7 +1553,7 @@ router.get('/checkin/hoy', [
             },
             estado: { $in: ['Confirmada', 'Pendiente'] }
         }).populate('habitacion', 'numero tipo');
-        
+
         res.json(reservas);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener reservas para check-in', error: error.message });
@@ -1293,7 +1570,7 @@ router.get('/checkout/hoy', [
         hoy.setHours(0, 0, 0, 0);
         const manana = new Date(hoy);
         manana.setDate(manana.getDate() + 1);
-        
+
         const reservas = await Reserva.find({
             fechaSalida: {
                 $gte: hoy,
@@ -1301,7 +1578,7 @@ router.get('/checkout/hoy', [
             },
             estado: 'En curso'
         }).populate('habitacion', 'numero tipo');
-        
+
         res.json(reservas);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener reservas para check-out', error: error.message });
@@ -1317,7 +1594,7 @@ router.get('/en-curso', [
         const reservas = await Reserva.find({
             estado: 'En curso'
         }).populate('habitacion', 'numero tipo');
-        
+
         res.json(reservas);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener reservas en curso', error: error.message });
@@ -1328,7 +1605,7 @@ router.get('/en-curso', [
 router.get('/test/pdf', async (req, res) => {
     try {
         console.log('=== PRUEBA DE GENERACIÓN DE PDF ===');
-        
+
         // Crear una reserva de prueba
         const reservaPrueba = {
             _id: 'test-123',
@@ -1367,27 +1644,27 @@ router.get('/test/pdf', async (req, res) => {
             }],
             observaciones: 'Reserva de prueba para verificar PDF'
         };
-        
+
         console.log('🔄 Generando PDF de prueba...');
-        
+
         // Generar PDF usando el servicio
         const pdfBuffer = await pdfService.generarPDFReserva(reservaPrueba);
-        
+
         console.log('✅ PDF de prueba generado exitosamente, tamaño:', pdfBuffer.length, 'bytes');
-        
+
         // Configurar headers para descarga de PDF
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="test-reserva.pdf"');
         res.setHeader('Content-Length', pdfBuffer.length);
-        
+
         // Enviar el PDF
         res.send(pdfBuffer);
-        
+
         console.log('📤 PDF de prueba enviado');
     } catch (error) {
         console.error('❌ Error al generar PDF de prueba:', error);
-        res.status(500).json({ 
-            message: 'Error al generar PDF de prueba', 
+        res.status(500).json({
+            message: 'Error al generar PDF de prueba',
             error: error.message,
             stack: error.stack
         });
@@ -1402,39 +1679,39 @@ router.get('/:id/pdf', [
     try {
         console.log('=== INICIANDO GENERACIÓN DE PDF ===');
         console.log('ID de reserva:', req.params.id);
-        
+
         const reserva = await Reserva.findById(req.params.id).populate('habitacion');
         if (!reserva) {
             console.log('❌ Reserva no encontrada');
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         console.log('✅ Reserva encontrada:', {
             id: reserva._id,
             cliente: `${reserva.cliente.nombre} ${reserva.cliente.apellido}`,
             habitacion: reserva.habitacion?.numero || 'N/A'
         });
-        
+
         console.log('🔄 Generando PDF...');
-        
+
         // Generar PDF usando el servicio
         const pdfBuffer = await pdfService.generarPDFReserva(reserva);
-        
+
         console.log('✅ PDF generado exitosamente, tamaño:', pdfBuffer.length, 'bytes');
-        
+
         // Configurar headers para descarga de PDF
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="reserva-${reserva._id}.pdf"`);
         res.setHeader('Content-Length', pdfBuffer.length);
-        
+
         // Enviar el PDF
         res.send(pdfBuffer);
-        
+
         console.log('📤 PDF enviado al cliente');
     } catch (error) {
         console.error('❌ Error al generar PDF:', error);
-        res.status(500).json({ 
-            message: 'Error al generar PDF', 
+        res.status(500).json({
+            message: 'Error al generar PDF',
             error: error.message,
             stack: error.stack
         });
@@ -1451,30 +1728,30 @@ router.get('/:id/comprobante', [
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         if (!reserva.pagado && (!reserva.montoPagado || reserva.montoPagado === 0)) {
             return res.status(400).json({ message: 'La reserva no ha sido pagada' });
         }
-        
+
         console.log('Generando comprobante de pago para reserva:', reserva._id);
-        
+
         // Generar comprobante usando el servicio
         const pdfBuffer = await pdfService.generarComprobantePago(reserva);
-        
+
         // Configurar headers para descarga de PDF
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="comprobante-${reserva._id}.pdf"`);
         res.setHeader('Content-Length', pdfBuffer.length);
-        
+
         // Enviar el PDF
         res.send(pdfBuffer);
-        
+
         console.log('Comprobante generado exitosamente para reserva:', reserva._id);
     } catch (error) {
         console.error('Error al generar comprobante:', error);
-        res.status(500).json({ 
-            message: 'Error al generar comprobante', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al generar comprobante',
+            error: error.message
         });
     }
 });
@@ -1492,23 +1769,23 @@ router.put('/:id/pagos/:pagoId', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const reserva = await Reserva.findById(req.params.id);
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         const pagoId = req.params.pagoId;
         const nuevosDatos = req.body;
         const modificadoPor = req.userId ? req.userId.nombre : 'Encargado';
         const motivoModificacion = req.body.motivo || 'Edición de pago por usuario autorizado';
-        
+
         // Editar el pago usando el método del modelo
         await reserva.editarPago(pagoId, nuevosDatos, modificadoPor, motivoModificacion);
-        
+
         await reserva.populate('cliente');
         await reserva.populate('habitacion');
-        
+
         console.log('💰 Pago editado:', {
             reservaId: reserva._id,
             pagoId: pagoId,
@@ -1517,7 +1794,7 @@ router.put('/:id/pagos/:pagoId', [
             montoRestante: reserva.calcularMontoRestante(),
             pagado: reserva.pagado
         });
-        
+
         // Incluir información adicional de pagos
         const respuesta = {
             ...reserva.toObject(),
@@ -1525,13 +1802,13 @@ router.put('/:id/pagos/:pagoId', [
             estaCompletamentePagado: reserva.estaCompletamentePagado(),
             totalPagos: reserva.historialPagos.length
         };
-        
+
         res.json(respuesta);
     } catch (error) {
         console.error('Error al editar pago:', error);
-        res.status(400).json({ 
-            message: error.message || 'Error al editar pago', 
-            error: error.message 
+        res.status(400).json({
+            message: error.message || 'Error al editar pago',
+            error: error.message
         });
     }
 });
@@ -1547,22 +1824,22 @@ router.delete('/:id/pagos/:pagoId', [
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         const pagoId = req.params.pagoId;
         const eliminadoPor = req.userId ? req.userId.nombre : 'Encargado';
-        
+
         // Obtener información del pago antes de eliminarlo para logging
         const pagoAEliminar = reserva.historialPagos.find(pago => pago._id.toString() === pagoId);
         if (!pagoAEliminar) {
             return res.status(404).json({ message: 'Pago no encontrado' });
         }
-        
+
         // Eliminar el pago usando el método del modelo
         await reserva.eliminarPago(pagoId, eliminadoPor);
-        
+
         await reserva.populate('cliente');
         await reserva.populate('habitacion');
-        
+
         console.log('💰 Pago eliminado:', {
             reservaId: reserva._id,
             pagoId: pagoId,
@@ -1575,7 +1852,7 @@ router.delete('/:id/pagos/:pagoId', [
             montoRestante: reserva.calcularMontoRestante(),
             pagado: reserva.pagado
         });
-        
+
         // Incluir información adicional de pagos
         const respuesta = {
             ...reserva.toObject(),
@@ -1583,13 +1860,13 @@ router.delete('/:id/pagos/:pagoId', [
             estaCompletamentePagado: reserva.estaCompletamentePagado(),
             totalPagos: reserva.historialPagos.length
         };
-        
+
         res.json(respuesta);
     } catch (error) {
         console.error('Error al eliminar pago:', error);
-        res.status(400).json({ 
-            message: error.message || 'Error al eliminar pago', 
-            error: error.message 
+        res.status(400).json({
+            message: error.message || 'Error al eliminar pago',
+            error: error.message
         });
     }
 });
@@ -1605,15 +1882,15 @@ router.post('/:id/recalcular-pagos', [
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
-        
+
         const montoAnterior = reserva.montoPagado;
-        
+
         // Recalcular totales usando el método del modelo
         await reserva.recalcularPagos();
-        
+
         await reserva.populate('cliente');
         await reserva.populate('habitacion');
-        
+
         console.log('💰 Pagos recalculados:', {
             reservaId: reserva._id,
             montoAnterior: montoAnterior,
@@ -1621,7 +1898,7 @@ router.post('/:id/recalcular-pagos', [
             diferencia: reserva.montoPagado - montoAnterior,
             pagado: reserva.pagado
         });
-        
+
         // Incluir información adicional de pagos
         const respuesta = {
             ...reserva.toObject(),
@@ -1629,13 +1906,13 @@ router.post('/:id/recalcular-pagos', [
             estaCompletamentePagado: reserva.estaCompletamentePagado(),
             totalPagos: reserva.historialPagos.length
         };
-        
+
         res.json(respuesta);
     } catch (error) {
         console.error('Error al recalcular pagos:', error);
-        res.status(500).json({ 
-            message: 'Error al recalcular pagos', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al recalcular pagos',
+            error: error.message
         });
     }
 });
@@ -1648,17 +1925,17 @@ router.get('/cancelaciones/:id', [
 ], async (req, res) => {
     try {
         const cancelacion = await CancelacionReserva.findById(req.params.id);
-        
+
         if (!cancelacion) {
             return res.status(404).json({ message: 'Cancelación no encontrada' });
         }
-        
+
         res.json(cancelacion);
     } catch (error) {
         console.error('Error al obtener cancelación:', error);
-        res.status(500).json({ 
-            message: 'Error al obtener cancelación', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al obtener cancelación',
+            error: error.message
         });
     }
 });
@@ -1676,27 +1953,27 @@ router.post('/cancelaciones/:id/reembolso', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const cancelacion = await CancelacionReserva.findById(req.params.id);
-        
+
         if (!cancelacion) {
             return res.status(404).json({ message: 'Cancelación no encontrada' });
         }
-        
+
         if (!cancelacion.puedeProcesarReembolso()) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'No se puede procesar el reembolso',
                 estadoActual: cancelacion.estadoReembolso,
                 montoPagado: cancelacion.montoPagado
             });
         }
-        
+
         const { metodoReembolso, observaciones = '' } = req.body;
         const procesadoPor = req.userId ? req.userId.nombre : 'Sistema';
-        
+
         // Procesar el reembolso
         await cancelacion.procesarReembolso(metodoReembolso, procesadoPor, observaciones);
-        
+
         console.log('💰 Reembolso procesado:', {
             cancelacionId: cancelacion._id,
             reservaId: cancelacion.reservaId,
@@ -1704,7 +1981,7 @@ router.post('/cancelaciones/:id/reembolso', [
             metodo: cancelacion.reembolso.metodoReembolso,
             procesadoPor: procesadoPor
         });
-        
+
         res.json({
             message: 'Reembolso procesado correctamente',
             cancelacion: {
@@ -1715,9 +1992,9 @@ router.post('/cancelaciones/:id/reembolso', [
         });
     } catch (error) {
         console.error('Error al procesar reembolso:', error);
-        res.status(500).json({ 
-            message: 'Error al procesar reembolso', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al procesar reembolso',
+            error: error.message
         });
     }
 });
@@ -1729,26 +2006,26 @@ router.patch('/cancelaciones/:id/reembolso/completar', [
 ], async (req, res) => {
     try {
         const cancelacion = await CancelacionReserva.findById(req.params.id);
-        
+
         if (!cancelacion) {
             return res.status(404).json({ message: 'Cancelación no encontrada' });
         }
-        
+
         if (cancelacion.estadoReembolso !== 'Procesado') {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'El reembolso debe estar en estado Procesado para completarlo',
                 estadoActual: cancelacion.estadoReembolso
             });
         }
-        
+
         await cancelacion.completarReembolso();
-        
+
         console.log('✅ Reembolso completado:', {
             cancelacionId: cancelacion._id,
             monto: cancelacion.reembolso.monto,
             fechaCompletado: new Date()
         });
-        
+
         res.json({
             message: 'Reembolso completado correctamente',
             cancelacion: {
@@ -1759,9 +2036,9 @@ router.patch('/cancelaciones/:id/reembolso/completar', [
         });
     } catch (error) {
         console.error('Error al completar reembolso:', error);
-        res.status(500).json({ 
-            message: 'Error al completar reembolso', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al completar reembolso',
+            error: error.message
         });
     }
 });
@@ -1773,16 +2050,16 @@ router.get('/cancelaciones/estadisticas', [
 ], async (req, res) => {
     try {
         console.log('🔍 Endpoint /cancelaciones/estadisticas llamado');
-        
+
         // Verificar si el modelo existe
         if (!CancelacionReserva) {
             console.error('❌ Modelo CancelacionReserva no encontrado');
-            return res.status(500).json({ 
+            return res.status(500).json({
                 message: 'Modelo CancelacionReserva no disponible',
                 error: 'Model not found'
             });
         }
-        
+
         const estadisticas = await CancelacionReserva.aggregate([
             {
                 $group: {
@@ -1792,18 +2069,18 @@ router.get('/cancelaciones/estadisticas', [
                 }
             }
         ]);
-        
+
         const totalCancelaciones = await CancelacionReserva.countDocuments();
         const totalMontoReembolsos = await CancelacionReserva.aggregate([
             { $match: { estadoReembolso: { $in: ['Procesado', 'Completado'] } } },
             { $group: { _id: null, total: { $sum: '$montoPagado' } } }
         ]);
-        
+
         console.log('✅ Estadísticas obtenidas:', {
             totalCancelaciones,
             estadisticas: estadisticas.length
         });
-        
+
         res.json({
             estadisticas,
             totalCancelaciones,
@@ -1811,9 +2088,9 @@ router.get('/cancelaciones/estadisticas', [
         });
     } catch (error) {
         console.error('❌ Error al obtener estadísticas:', error);
-        res.status(500).json({ 
-            message: 'Error al obtener estadísticas', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Error al obtener estadísticas',
+            error: error.message
         });
     }
 });

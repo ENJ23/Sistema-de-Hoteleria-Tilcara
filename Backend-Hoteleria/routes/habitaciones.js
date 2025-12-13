@@ -8,22 +8,22 @@ const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/au
 router.get('/', async (req, res) => {
     try {
         const { page = 1, limit = 10, estado = '', tipo = '', activa } = req.query;
-        
+
         let query = {};
-        
+
         // CORREGIDO: Solo filtrar por activa si se especifica explícitamente
         if (activa !== undefined) {
             query.activa = activa === 'true';
         }
-        
+
         if (estado) {
             query.estado = estado;
         }
-        
+
         if (tipo) {
             query.tipo = tipo;
         }
-        
+
         // OPTIMIZADO: Usar lean() y campos selectivos para mejor rendimiento
         const habitaciones = await Habitacion.find(query)
             .select('numero tipo capacidad precioActual estado activa')
@@ -31,9 +31,9 @@ router.get('/', async (req, res) => {
             .skip((page - 1) * limit)
             .sort({ numero: 1 })
             .lean(); // Usar lean() para mejor rendimiento
-            
+
         const total = await Habitacion.countDocuments(query);
-        
+
         res.json({
             habitaciones,
             totalPages: Math.ceil(total / limit),
@@ -49,15 +49,55 @@ router.get('/', async (req, res) => {
 router.get('/disponibles', async (req, res) => {
     try {
         const { fechaEntrada, fechaSalida } = req.query;
-        
-        let query = { 
-            activa: true, 
-            estado: { $in: ['Disponible', 'Reservada'] } 
+
+        if (!fechaEntrada || !fechaSalida) {
+            return res.status(400).json({ message: 'Las fechas de entrada y salida son obligatorias para buscar disponibilidad.' });
+        }
+
+        // Parsear fechas (asegurar que sean objetos Date válidos)
+        // Nota: Asumimos string YYYY-MM-DD
+        const start = new Date(fechaEntrada);
+        const end = new Date(fechaSalida);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return res.status(400).json({ message: 'Fechas inválidas.' });
+        }
+
+        // 1. Buscar reservas que SOLAPEN con el rango solicitado
+        // Una reserva se solapa si: 
+        // (ReservaEntrada < SolicitudSalida) AND (ReservaSalida > SolicitudEntrada)
+        // Excluimos canceladas y finalizadas (aunque finalizadas ya liberaron, pero por seguridad chequeamos fecha)
+        // "Finalizada" significa check-out realizado. "Completada" también.
+        // Pero si la reserva terminó AYER, no solapa con HOY.
+        // La lógica de fechas es suficiente, el estado solo para ignorar canceladas.
+
+        const Reserva = require('../models/Reserva');
+
+        const reservasOcupando = await Reserva.find({
+            estado: { $nin: ['Cancelada'] },
+            $or: [
+                {
+                    fechaEntrada: { $lt: end },
+                    fechaSalida: { $gt: start }
+                }
+            ]
+        }).select('habitacion');
+
+        const habitacionesOcupadasIds = reservasOcupando.map(r => r.habitacion.toString());
+
+        // 2. Buscar habitaciones activas que NO estén en la lista de ocupadas
+        const query = {
+            activa: true,
+            _id: { $nin: habitacionesOcupadasIds }
         };
-        
+
         const habitaciones = await Habitacion.find(query).sort({ numero: 1 });
+
         res.json(habitaciones);
     } catch (error) {
+        console.error('Error buscando disponibilidad:', error);
         res.status(500).json({ message: 'Error al obtener habitaciones disponibles', error: error.message });
     }
 });
@@ -67,9 +107,9 @@ router.get('/estado-dinamico', async (req, res) => {
     try {
         const { fecha } = req.query;
         const fechaConsulta = fecha ? new Date(fecha) : new Date();
-        
+
         const habitaciones = await Habitacion.find({ activa: true }).sort({ numero: 1 });
-        
+
         // Calcular estado dinámico para cada habitación
         const habitacionesConEstado = await Promise.all(
             habitaciones.map(async (habitacion) => {
@@ -80,7 +120,7 @@ router.get('/estado-dinamico', async (req, res) => {
                 };
             })
         );
-        
+
         res.json(habitacionesConEstado);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener habitaciones con estado dinámico', error: error.message });
@@ -116,7 +156,7 @@ router.post('/', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const habitacion = new Habitacion(req.body);
         await habitacion.save();
         res.status(201).json(habitacion);
@@ -144,17 +184,17 @@ router.put('/:id', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const habitacion = await Habitacion.findByIdAndUpdate(
             req.params.id,
             req.body,
             { new: true, runValidators: true }
         );
-        
+
         if (!habitacion) {
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }
-        
+
         res.json(habitacion);
     } catch (error) {
         if (error.code === 11000) {
@@ -175,15 +215,15 @@ router.patch('/:id/precio', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const habitacion = await Habitacion.findById(req.params.id);
         if (!habitacion) {
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }
-        
+
         habitacion.precioActual = req.body.precioActual;
         await habitacion.save();
-        
+
         res.json(habitacion);
     } catch (error) {
         res.status(500).json({ message: 'Error al actualizar precio', error: error.message });
@@ -201,15 +241,15 @@ router.patch('/:id/estado', [
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        
+
         const habitacion = await Habitacion.findById(req.params.id);
         if (!habitacion) {
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }
-        
+
         habitacion.estado = req.body.estado;
         await habitacion.save();
-        
+
         res.json(habitacion);
     } catch (error) {
         res.status(500).json({ message: 'Error al cambiar estado', error: error.message });
@@ -223,20 +263,20 @@ router.get('/check-numero', [
 ], async (req, res) => {
     try {
         const { numero, excludeId } = req.query;
-        
+
         if (!numero) {
             return res.status(400).json({ message: 'El número de habitación es requerido' });
         }
-        
+
         let query = { numero: numero, activa: true };
-        
+
         // Excluir la habitación actual si se está editando
         if (excludeId) {
             query._id = { $ne: excludeId };
         }
-        
+
         const habitacionExistente = await Habitacion.findOne(query);
-        
+
         res.json({ exists: !!habitacionExistente });
     } catch (error) {
         res.status(500).json({ message: 'Error al verificar número de habitación', error: error.message });
@@ -250,17 +290,17 @@ router.get('/:id/reservas-activas', [
 ], async (req, res) => {
     try {
         const habitacion = await Habitacion.findById(req.params.id);
-        
+
         if (!habitacion) {
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }
-        
+
         const Reserva = require('../models/Reserva');
         const reservasActivas = await Reserva.find({
             habitacion: req.params.id,
             estado: { $nin: ['Cancelada', 'Completada', 'Finalizada'] }
         }).populate('cliente', 'nombre apellido email');
-        
+
         res.json({
             habitacion: {
                 id: habitacion._id,
@@ -289,20 +329,20 @@ router.delete('/:id', [
 ], async (req, res) => {
     try {
         const habitacion = await Habitacion.findById(req.params.id);
-        
+
         if (!habitacion) {
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }
-        
+
         // CORREGIDO: Validar que no tenga reservas activas
         const Reserva = require('../models/Reserva');
         const reservasActivas = await Reserva.find({
             habitacion: req.params.id,
             estado: { $nin: ['Cancelada', 'Completada', 'Finalizada'] }
         });
-        
+
         if (reservasActivas.length > 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'No se puede eliminar la habitación porque tiene reservas activas',
                 reservasActivas: reservasActivas.length,
                 detalles: reservasActivas.map(r => ({
@@ -314,15 +354,15 @@ router.delete('/:id', [
                 }))
             });
         }
-        
+
         // Si no hay reservas activas, marcar como inactiva
         const habitacionActualizada = await Habitacion.findByIdAndUpdate(
             req.params.id,
             { activa: false },
             { new: true }
         );
-        
-        res.json({ 
+
+        res.json({
             message: 'Habitación eliminada correctamente',
             habitacion: habitacionActualizada
         });

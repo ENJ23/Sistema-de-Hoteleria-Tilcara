@@ -4,13 +4,13 @@ import { Observable, throwError, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 
-import { 
-  Habitacion, 
-  HabitacionCreate, 
-  HabitacionUpdate, 
+import {
+  Habitacion,
+  HabitacionCreate,
+  HabitacionUpdate,
   HabitacionFilters,
   TipoHabitacion,
-  EstadoHabitacion 
+  EstadoHabitacion
 } from '../models/habitacion.model';
 import { environment } from '../../environments/environment';
 
@@ -38,14 +38,14 @@ export interface HabitacionResponse {
 })
 export class HabitacionService {
   private apiUrl = `${environment.apiUrl}/habitaciones`;
-  
+
   // Token para cache HTTP
   private static readonly CACHE_TOKEN = new HttpContextToken<string>(() => 'cache');
 
   constructor(
     private http: HttpClient,
     private authService: AuthService
-  ) {}
+  ) { }
 
   // Obtener todas las habitaciones con filtros opcionales y paginación
   getHabitaciones(
@@ -60,7 +60,7 @@ export class HabitacionService {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
-      // CORREGIDO: No filtrar por activa para mostrar todas las habitaciones
+    // CORREGIDO: No filtrar por activa para mostrar todas las habitaciones
 
     if (estado) params = params.set('estado', estado);
     if (tipo) params = params.set('tipo', tipo);
@@ -115,7 +115,7 @@ export class HabitacionService {
   // Obtener solo habitaciones activas (para calendario de ocupación)
   getHabitacionesActivas(): Observable<HabitacionResponse> {
     console.log('Solicitando habitaciones activas para calendario');
-    
+
     let params = new HttpParams()
       .set('page', '1')
       .set('limit', '100') // Límite alto para obtener todas
@@ -124,8 +124,8 @@ export class HabitacionService {
     const headers = this.authService.getAuthHeaders();
 
     return this.http.get<any>(
-      this.apiUrl, 
-      { 
+      this.apiUrl,
+      {
         params,
         headers: headers
       }
@@ -154,7 +154,7 @@ export class HabitacionService {
   // Crear una nueva habitación
   createHabitacion(habitacion: HabitacionCreate): Observable<Habitacion> {
     return this.http.post<Habitacion>(
-      this.apiUrl, 
+      this.apiUrl,
       habitacion,
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
@@ -165,7 +165,7 @@ export class HabitacionService {
   // Actualizar una habitación
   updateHabitacion(id: string, habitacion: HabitacionUpdate): Observable<Habitacion> {
     return this.http.put<Habitacion>(
-      `${this.apiUrl}/${id}`, 
+      `${this.apiUrl}/${id}`,
       habitacion,
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
@@ -187,7 +187,7 @@ export class HabitacionService {
   private handleError(error: HttpErrorResponse) {
     console.error('Error en la petición HTTP:', error);
     let errorMessage = 'Ocurrió un error en la petición';
-    
+
     if (error.status === 0) {
       errorMessage = 'No se pudo conectar con el servidor';
     } else if (error.error && error.error.message) {
@@ -201,21 +201,21 @@ export class HabitacionService {
     } else if (error.status >= 500) {
       errorMessage = 'Error del servidor';
     }
-    
+
     return throwError(() => new Error(errorMessage));
   }
 
   // Obtener habitaciones disponibles para un rango de fechas
   getHabitacionesDisponibles(fechaInicio: string, fechaFin: string): Observable<Habitacion[]> {
     const params = new HttpParams()
-      .set('fechaInicio', fechaInicio)
-      .set('fechaFin', fechaFin);
-    
+      .set('fechaEntrada', fechaInicio)
+      .set('fechaSalida', fechaFin);
+
     return this.http.get<Habitacion[]>(
-      `${this.apiUrl}/disponibles`, 
-      { 
+      `${this.apiUrl}/disponibles`,
+      {
         params,
-        headers: this.authService.getAuthHeaders() 
+        headers: this.authService.getAuthHeaders()
       }
     ).pipe(
       catchError(this.handleError)
@@ -225,7 +225,7 @@ export class HabitacionService {
   // Actualizar el estado de una habitación
   updateEstado(id: string, estado: string): Observable<Habitacion> {
     return this.http.patch<Habitacion>(
-      `${this.apiUrl}/${id}/estado`, 
+      `${this.apiUrl}/${id}/estado`,
       { estado },
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
@@ -236,7 +236,7 @@ export class HabitacionService {
   // Actualizar el precio de una habitación
   updatePrecio(id: string, precio: number): Observable<Habitacion> {
     return this.http.patch<Habitacion>(
-      `${this.apiUrl}/${id}/precio`, 
+      `${this.apiUrl}/${id}/precio`,
       { precio },
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
@@ -250,12 +250,12 @@ export class HabitacionService {
     if (excludeId) {
       params = params.set('excludeId', excludeId);
     }
-    
+
     return this.http.get<{ exists: boolean }>(
       `${this.apiUrl}/check-numero`,
-      { 
+      {
         params,
-        headers: this.authService.getAuthHeaders() 
+        headers: this.authService.getAuthHeaders()
       }
     ).pipe(
       map(response => response.exists || false),

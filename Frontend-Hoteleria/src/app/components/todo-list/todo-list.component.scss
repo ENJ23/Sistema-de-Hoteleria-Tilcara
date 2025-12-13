@@ -1,10 +1,16 @@
 .todo-list-container {
-  margin-bottom: 24px;
+  margin-bottom: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 
   .todo-card {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 
     .todo-header {
       background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
@@ -12,6 +18,7 @@
       border-radius: 12px 12px 0 0;
       padding: 16px 20px;
       margin: 0;
+      flex-shrink: 0;
 
       .todo-title {
         display: flex;
@@ -31,6 +38,9 @@
 
     .todo-content {
       padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
 
       .loading-container {
         display: flex;

@@ -13,11 +13,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-dark);
   color: white;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03));
+  pointer-events: none;
 }
 
 .header-content h1 {
@@ -111,24 +124,58 @@
 }
 
 .ingresos-card.total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.ingresos-card.total .card-value {
+  color: var(--primary-color);
 }
 
 .ingresos-card.completos {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.ingresos-card.completos .card-value {
+  color: var(--success-color);
 }
 
 .ingresos-card.parciales {
-  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-  color: white;
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.ingresos-card.parciales .card-value {
+  color: var(--warning-color);
 }
 
 .ingresos-card.promedio {
-  background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
-  color: white;
+  background: var(--bg-primary);
+  border: 1px solid var(--bg-tertiary);
+  color: var(--text-primary);
 }
+
+.ingresos-card.promedio .card-value {
+  color: var(--info-color);
+}
+
+/* Estilos para el campo de dólar */
+.input-dolar-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.input-dolar-field input {
+  text-align: right;
+  padding-right: 10px;
+}
+
+/* Note: Color overrides are often better inline or via component encapsulation ::ng-deep if needed, 
+   but try to avoid ::ng-deep. We mainly relied on inline styles in HTML. */
+
 
 .card-header {
   display: flex;
@@ -200,15 +247,18 @@
 }
 
 .stat-icon.completos {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
 }
 
 .stat-icon.parciales {
-  background: linear-gradient(135deg, #ffc107, #fd7e14);
+  background: rgba(255, 152, 0, 0.1);
+  color: var(--warning-color);
 }
 
 .stat-icon.sin-pago {
-  background: linear-gradient(135deg, #dc3545, #e83e8c);
+  background: rgba(244, 67, 54, 0.1);
+  color: var(--error-color);
 }
 
 .stat-icon mat-icon {
@@ -332,7 +382,10 @@
 }
 
 .reserva-item:hover {
-  background: #e9ecef;
+  background: var(--bg-primary);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--secondary-light);
 }
 
 .reserva-cliente {
@@ -497,4 +550,3 @@
     font-size: 1.8rem;
   }
 }
-

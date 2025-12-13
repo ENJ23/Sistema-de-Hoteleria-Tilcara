@@ -69,7 +69,7 @@ export class ReservasComponent implements OnInit, OnDestroy {
   formFiltros: FormGroup;
   
   estadosReserva = [
-    'Confirmada', 'Pendiente', 'Cancelada', 'Completada', 'No Show'
+    'Confirmada', 'Pendiente', 'Cancelada', 'Finalizada', 'No Show'
   ];
 
   constructor(
@@ -90,6 +90,12 @@ export class ReservasComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.cargarReservas();
     this.configurarFiltros();
+    // Refresco automático al cambiar reservas
+    this.reservaService.reservaEvents$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.cargarReservas();
+      });
   }
 
   ngOnDestroy(): void {
@@ -110,8 +116,8 @@ export class ReservasComponent implements OnInit, OnDestroy {
     
     console.log('🔍 Cargando todas las reservas...');
     
-    // ✅ CARGAR TODAS LAS RESERVAS CON PAGINACIÓN ALTA
-    this.reservaService.getReservas({}, 1, 1000).pipe(
+    // ✅ CARGAR TODAS LAS RESERVAS CON PAGINACIÓN AUTOMÁTICA
+    this.reservaService.getReservasAll({}, 100).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response) => {
@@ -195,7 +201,7 @@ export class ReservasComponent implements OnInit, OnDestroy {
         return '#ff9800';
       case 'Cancelada':
         return '#f44336';
-      case 'Completada':
+      case 'Finalizada':
         return '#2196f3';
       case 'No Show':
         return '#9e9e9e';

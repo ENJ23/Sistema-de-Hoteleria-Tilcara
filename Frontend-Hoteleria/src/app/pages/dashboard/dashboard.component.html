@@ -8,13 +8,13 @@
       </h1>
       <p class="dashboard-subtitle">Análisis de ingresos y reservas del mes</p>
     </div>
-    
+
     <!-- Navegación del mes -->
     <div class="mes-navegacion">
       <button mat-icon-button (click)="cambiarMes('anterior')" class="nav-btn">
         <mat-icon>chevron_left</mat-icon>
       </button>
-      
+
       <div class="mes-actual">
         <h2>{{ obtenerNombreMes(mesActual.getMonth()) }} {{ mesActual.getFullYear() }}</h2>
         <button mat-raised-button color="primary" (click)="irAHoy()" class="btn-hoy">
@@ -22,9 +22,22 @@
           Hoy
         </button>
       </div>
-      
+
       <button mat-icon-button (click)="cambiarMes('siguiente')" class="nav-btn">
         <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <!-- Acciones de Exportación -->
+    <div class="header-actions" style="display: flex; gap: 10px;">
+      <button mat-raised-button color="primary" (click)="exportarExcel()"
+        style="background-color: #217346; color: white;">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+      <button mat-raised-button color="warn" (click)="exportarPDF()" style="background-color: #D32F2F; color: white;">
+        <mat-icon>picture_as_pdf</mat-icon>
+        PDF
       </button>
     </div>
   </div>
@@ -37,9 +50,30 @@
 
   <!-- Contenido del Dashboard -->
   <div *ngIf="!loading" class="dashboard-content">
-    
-    <!-- Tarjetas de Resumen Principal -->
+
+    <!-- Cotización Dólar y Resumen Principal -->
     <div class="resumen-principal">
+
+      <!-- Card Cotización -->
+      <mat-card class="ingresos-card cotizacion"
+        style="background: linear-gradient(135deg, #2e7d32, #43a047); color: white;">
+        <mat-card-content>
+          <div class="card-header">
+            <mat-icon style="color: rgba(255,255,255,0.9);">currency_exchange</mat-icon>
+            <h3 style="color: rgba(255,255,255,0.9);">Cotización USD</h3>
+          </div>
+          <div class="card-value">
+            <mat-form-field appearance="outline" style="width: 100%; font-size: 1rem;" class="input-dolar-field">
+              <mat-label style="color: rgba(255,255,255,0.8);">Valor Dólar</mat-label>
+              <input matInput type="number" [(ngModel)]="valorDolar" (ngModelChange)="actualizarValorDolar($event)"
+                style="color: white; font-weight: bold; font-size: 1.5rem;">
+              <span matPrefix style="color: rgba(255,255,255,0.8); margin-right: 5px;">$</span>
+            </mat-form-field>
+          </div>
+          <div class="card-subtitle" style="color: rgba(255,255,255,0.8);">Ingrese valor actual</div>
+        </mat-card-content>
+      </mat-card>
+
       <mat-card class="ingresos-card total">
         <mat-card-content>
           <div class="card-header">
@@ -47,6 +81,10 @@
             <h3>Ingresos Totales</h3>
           </div>
           <div class="card-value">{{ formatearPrecio(resumen.totalIngresos) }}</div>
+          <div class="card-subtitle-usd" *ngIf="valorDolar > 0"
+            style="color: #2e7d32; font-weight: 500; margin-top: 5px;">
+            ≈ {{ formatearDolar(resumen.totalIngresos) }}
+          </div>
           <div class="card-subtitle">{{ resumen.totalReservas }} reservas</div>
         </mat-card-content>
       </mat-card>
@@ -58,6 +96,10 @@
             <h3>Completamente Pagadas</h3>
           </div>
           <div class="card-value">{{ formatearPrecio(resumen.ingresosCompletos) }}</div>
+          <div class="card-subtitle-usd" *ngIf="valorDolar > 0"
+            style="color: #2e7d32; font-weight: 500; margin-top: 5px;">
+            ≈ {{ formatearDolar(resumen.ingresosCompletos) }}
+          </div>
           <div class="card-subtitle">{{ resumen.reservasCompletas }} reservas</div>
         </mat-card-content>
       </mat-card>
@@ -69,10 +111,15 @@
             <h3>Parcialmente Pagadas</h3>
           </div>
           <div class="card-value">{{ formatearPrecio(resumen.ingresosParciales) }}</div>
+          <div class="card-subtitle-usd" *ngIf="valorDolar > 0"
+            style="color: #2e7d32; font-weight: 500; margin-top: 5px;">
+            ≈ {{ formatearDolar(resumen.ingresosParciales) }}
+          </div>
           <div class="card-subtitle">{{ resumen.reservasParciales }} reservas</div>
         </mat-card-content>
       </mat-card>
 
+      <!-- Promedio por Reserva (Opcional: Si cabe, sino mover o dejar sin USD) -->
       <mat-card class="ingresos-card promedio">
         <mat-card-content>
           <div class="card-header">
@@ -80,9 +127,91 @@
             <h3>Promedio por Reserva</h3>
           </div>
           <div class="card-value">{{ formatearPrecio(resumen.promedioPorReserva) }}</div>
+          <div class="card-subtitle-usd" *ngIf="valorDolar > 0"
+            style="color: #2e7d32; font-weight: 500; margin-top: 5px;">
+            ≈ {{ formatearDolar(resumen.promedioPorReserva) }}
+          </div>
           <div class="card-subtitle">Ingreso promedio</div>
         </mat-card-content>
       </mat-card>
+
+    </div>
+
+    <!-- Resumen Anual -->
+    <div class="resumen-anual-container" style="margin-top: 2rem; margin-bottom: 2rem;">
+      <h2
+        style="margin-bottom: 1rem; color: var(--primary-dark); font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+        <mat-icon>calendar_today</mat-icon>
+        Resumen Anual {{ resumenAnual.year }}
+      </h2>
+
+      <div *ngIf="loadingAnual" class="loading-container" style="padding: 20px;">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Calculando ingresos anuales...</p>
+      </div>
+
+      <div *ngIf="!loadingAnual" class="resumen-principal">
+        <mat-card class="ingresos-card total"
+          style="background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%); color: white; border: none;">
+          <mat-card-content>
+            <div class="card-header">
+              <mat-icon style="color: rgba(255,255,255,0.9);">monetization_on</mat-icon>
+              <h3 style="color: rgba(255,255,255,0.9);">Ingresos Anuales</h3>
+            </div>
+            <div class="card-value" style="color: white;">{{ formatearPrecio(resumenAnual.totalIngresos) }}</div>
+            <div class="card-subtitle-usd" *ngIf="valorDolar > 0"
+              style="color: rgba(255,255,255,0.9); font-weight: 500; margin-bottom: 4px;">
+              ≈ {{ formatearDolar(resumenAnual.totalIngresos) }}
+            </div>
+            <div class="card-subtitle" style="color: rgba(255,255,255,0.8);">{{ resumenAnual.totalReservas }} reservas
+              en {{ resumenAnual.year }}</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="ingresos-card promedio">
+          <mat-card-content>
+            <div class="card-header">
+              <mat-icon>timeline</mat-icon>
+              <h3>Promedio Mensual</h3>
+            </div>
+            <div class="card-value">{{ formatearPrecio(resumenAnual.promedioMensual) }}</div>
+            <div class="card-subtitle-usd" *ngIf="valorDolar > 0"
+              style="color: #2e7d32; font-weight: 500; margin-top: 5px;">
+              ≈ {{ formatearDolar(resumenAnual.promedioMensual) }}
+            </div>
+            <div class="card-subtitle">Ingreso promedio / mes</div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Card extra (opcional) para rellenar grid si es necesario, o dejar 2 -->
+      </div>
+
+      <!-- Desglose por Habitación Anual -->
+      <mat-expansion-panel style="margin-top: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+        <mat-expansion-panel-header>
+          <mat-panel-title style="font-weight: 500; font-size: 1rem; color: #333;">
+            <mat-icon style="margin-right: 8px; color: #555;">list</mat-icon>
+            Ver Desglose Anual por Habitación
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="tipo-habitacion-list" style="margin-top: 1rem;">
+          <div class="tipo-item" *ngFor="let hab of ingresosPorHabitacionAnual">
+            <div class="tipo-info">
+              <div class="tipo-nombre">Habitación {{ hab.numero }}</div>
+              <div class="tipo-cantidad">{{ hab.cantidad }} reservas</div>
+            </div>
+            <div class="tipo-ingresos">
+              <div class="tipo-monto">{{ formatearPrecio(hab.ingresos) }}</div>
+              <div class="tipo-porcentaje">{{ hab.porcentaje.toFixed(1) }}% del anual</div>
+            </div>
+            <div class="tipo-bar">
+              <div class="tipo-bar-fill" [style.width.%]="hab.porcentaje"
+                style="background: linear-gradient(90deg, #1976d2, #64b5f6);"></div>
+            </div>
+          </div>
+        </div>
+      </mat-expansion-panel>
     </div>
 
     <!-- Estadísticas Detalladas -->
@@ -104,7 +233,8 @@
                 <div class="stat-number">{{ resumen.reservasCompletas }}</div>
                 <div class="stat-label">Completamente Pagadas</div>
                 <div class="stat-percentage">
-                  {{ resumen.totalReservas > 0 ? ((resumen.reservasCompletas / resumen.totalReservas) * 100).toFixed(1) : 0 }}%
+                  {{ resumen.totalReservas > 0 ? ((resumen.reservasCompletas / resumen.totalReservas) * 100).toFixed(1)
+                  : 0 }}%
                 </div>
               </div>
             </div>
@@ -117,7 +247,8 @@
                 <div class="stat-number">{{ resumen.reservasParciales }}</div>
                 <div class="stat-label">Parcialmente Pagadas</div>
                 <div class="stat-percentage">
-                  {{ resumen.totalReservas > 0 ? ((resumen.reservasParciales / resumen.totalReservas) * 100).toFixed(1) : 0 }}%
+                  {{ resumen.totalReservas > 0 ? ((resumen.reservasParciales / resumen.totalReservas) * 100).toFixed(1)
+                  : 0 }}%
                 </div>
               </div>
             </div>
@@ -130,7 +261,8 @@
                 <div class="stat-number">{{ resumen.reservasSinPago }}</div>
                 <div class="stat-label">Sin Pago</div>
                 <div class="stat-percentage">
-                  {{ resumen.totalReservas > 0 ? ((resumen.reservasSinPago / resumen.totalReservas) * 100).toFixed(1) : 0 }}%
+                  {{ resumen.totalReservas > 0 ? ((resumen.reservasSinPago / resumen.totalReservas) * 100).toFixed(1) :
+                  0 }}%
                 </div>
               </div>
             </div>
@@ -170,6 +302,40 @@
           </ng-template>
         </mat-card-content>
       </mat-card>
+
+      <!-- Ingresos por Habitación (Nueva Card) -->
+      <mat-card class="tipo-habitacion-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>meeting_room</mat-icon>
+            Ingresos por Habitación
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="tipo-habitacion-list" *ngIf="ingresosPorHabitacion.length > 0; else noDataHab">
+            <div class="tipo-item" *ngFor="let hab of ingresosPorHabitacion">
+              <div class="tipo-info">
+                <div class="tipo-nombre">Habitación {{ hab.numero }}</div>
+                <div class="tipo-cantidad">{{ hab.cantidad }} reservas</div>
+              </div>
+              <div class="tipo-ingresos">
+                <div class="tipo-monto">{{ formatearPrecio(hab.ingresos) }}</div>
+                <div class="tipo-porcentaje">{{ hab.porcentaje.toFixed(1) }}%</div>
+              </div>
+              <div class="tipo-bar">
+                <div class="tipo-bar-fill" [style.width.%]="hab.porcentaje"
+                  style="background: linear-gradient(90deg, #9c27b0, #ba68c8);"></div>
+              </div>
+            </div>
+          </div>
+          <ng-template #noDataHab>
+            <div class="no-data">
+              <mat-icon>info</mat-icon>
+              <p>No hay datos disponibles para este período</p>
+            </div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
     </div>
 
     <!-- Reservas Recientes -->
@@ -188,7 +354,7 @@
               <div class="cliente-nombre">{{ reserva.cliente.nombre }} {{ reserva.cliente.apellido }}</div>
               <div class="cliente-documento">{{ reserva.cliente.documento }}</div>
             </div>
-            
+
             <div class="reserva-habitacion">
               <div class="habitacion-numero" *ngIf="typeof reserva.habitacion === 'object'">
                 {{ getHabitacionNumero(reserva) }}
@@ -197,19 +363,19 @@
                 {{ getHabitacionTipo(reserva) }}
               </div>
             </div>
-            
+
             <div class="reserva-fechas">
               <div class="fecha-entrada">{{ formatearFecha(reserva.fechaEntrada) }}</div>
               <div class="fecha-salida">{{ formatearFecha(reserva.fechaSalida) }}</div>
             </div>
-            
+
             <div class="reserva-estado">
               <mat-chip [style.background-color]="obtenerEstadoPago(reserva).color" [style.color]="'white'">
                 <mat-icon>{{ obtenerEstadoPago(reserva).icon }}</mat-icon>
                 {{ obtenerEstadoPago(reserva).texto }}
               </mat-chip>
             </div>
-            
+
             <div class="reserva-ingresos">
               <div class="ingresos-monto">{{ formatearPrecio(reserva.montoPagado || 0) }}</div>
               <div class="ingresos-total">de {{ formatearPrecio(reserva.precioTotal || 0) }}</div>

@@ -8,6 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 
 import { Reserva } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
+import { DateTimeService } from '../../services/date-time.service';
 
 export interface SeleccionReservaSimpleData {
   reservas: Reserva[];
@@ -88,9 +89,10 @@ export class SeleccionReservaSimpleComponent implements OnInit {
   }
 
   obtenerTipoDia(reserva: Reserva): string {
-    const fechaStr = this.dia.toISOString().split('T')[0];
-    const fechaEntrada = new Date(reserva.fechaEntrada).toISOString().split('T')[0];
-    const fechaSalida = new Date(reserva.fechaSalida).toISOString().split('T')[0];
+    const dateTimeService = new DateTimeService();
+    const fechaStr = dateTimeService.dateToString(this.dia);
+    const fechaEntrada = reserva.fechaEntrada.split('T')[0];
+    const fechaSalida = reserva.fechaSalida.split('T')[0];
     
     if (fechaStr === fechaEntrada && fechaStr === fechaSalida) {
       return 'Entrada y Salida';

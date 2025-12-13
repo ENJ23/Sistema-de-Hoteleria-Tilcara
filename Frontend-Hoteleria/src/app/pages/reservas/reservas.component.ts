@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -26,6 +26,7 @@ import { map, catchError, finalize } from 'rxjs/operators';
 import { ReservaService } from '../../services/reserva.service';
 import { HabitacionService } from '../../services/habitacion.service';
 import { CancelacionService } from '../../services/cancelacion.service';
+import { DateTimeService } from '../../services/date-time.service';
 import { Reserva, ReservaResponse } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
 import { DetalleReservaModalComponent } from '../../components/detalle-reserva-modal/detalle-reserva-modal.component';
@@ -84,7 +85,7 @@ interface ReservaConDetalles extends Reserva {
     { provide: MAT_DATE_LOCALE, useValue: 'es-ES' }
   ]
 })
-export class ReservasComponent implements OnInit, AfterViewInit {
+export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -129,7 +130,8 @@ export class ReservasComponent implements OnInit, AfterViewInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private dateTimeService: DateTimeService
   ) {
     this.filtrosForm = this.fb.group({
       estado: [''],
@@ -152,8 +154,18 @@ export class ReservasComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = this.sort;
   }
 
+  ngOnDestroy(): void {
+    // No hay suscripciones locales que limpiar por ahora
+  }
+
   private configurarFiltros(): void {
     this.filtrosForm.valueChanges.subscribe(() => {
+      this.aplicarFiltros();
+    });
+
+    // Refresco automático: suscribirse a eventos de cambios en reservas
+    this.reservaService.reservaEvents$.subscribe(() => {
+      // Reaplicar filtros actuales y recargar
       this.aplicarFiltros();
     });
   }
@@ -169,7 +181,7 @@ export class ReservasComponent implements OnInit, AfterViewInit {
     
     console.log('🔍 Cargando reservas con filtros:', filtrosReserva);
     
-    this.reservaService.getReservas(filtrosReserva, 1, 1000).pipe(
+    this.reservaService.getReservasAll(filtrosReserva, 100).pipe(
       map((response: ReservaResponse) => {
         console.log('📊 Total reservas en BD:', response.total);
         console.log('📊 Reservas cargadas:', response.reservas.length);
@@ -280,8 +292,8 @@ export class ReservasComponent implements OnInit, AfterViewInit {
   }
 
   private calcularDiasEstancia(fechaEntrada: string, fechaSalida: string): number {
-    const entrada = new Date(fechaEntrada);
-    const salida = new Date(fechaSalida);
+    const entrada = this.dateTimeService.stringToDate(fechaEntrada);
+    const salida = this.dateTimeService.stringToDate(fechaSalida);
     const diffTime = Math.abs(salida.getTime() - entrada.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
@@ -301,7 +313,7 @@ export class ReservasComponent implements OnInit, AfterViewInit {
 
   private calcularEstadisticas(reservas: ReservaConDetalles[]): void {
     const hoy = new Date();
-    const hoyStr = hoy.toISOString().split('T')[0];
+    const hoyStr = this.dateTimeService.dateToString(hoy);
     
     this.totalReservas = reservas.length;
     this.reservasFuturas = reservas.filter(r => r.fechaEntrada > hoyStr).length;

@@ -121,6 +121,20 @@ export class TodoListComponent implements OnInit, OnDestroy {
     return tarea._id;
   }
 
+  // Descripción amigable usando datos de la habitación poblada
+  obtenerDescripcionTarea(tarea: Tarea): string {
+    const numero = (tarea as any)?.habitacion?.numero;
+    const tipo = (tarea as any)?.habitacion?.tipo;
+    switch (tarea.tipo) {
+      case 'limpieza':
+        return numero && tipo ? `Limpieza habitación ${numero} - ${tipo}` : 'Limpieza requerida';
+      case 'mantenimiento':
+        return numero && tipo ? `Mantenimiento habitación ${numero} - ${tipo}` : 'Mantenimiento requerido';
+      default:
+        return tarea.descripcion || 'Tarea pendiente';
+    }
+  }
+
   private mostrarMensaje(mensaje: string, tipo: 'success' | 'error' = 'success'): void {
     this.snackBar.open(mensaje, 'Cerrar', {
       duration: 3000,

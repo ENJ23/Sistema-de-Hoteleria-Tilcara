@@ -10,10 +10,23 @@
 
 /* Tarjeta de estadísticas */
 .stats-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary-dark);
   color: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .stats-header {
@@ -38,9 +51,9 @@
 .stat-item {
   text-align: center;
   padding: 15px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-number {
@@ -108,8 +121,10 @@
 
 .table-header h3 {
   margin: 0;
-  color: #333;
-  font-size: 1.3rem;
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 .table-info {
@@ -139,9 +154,10 @@
 }
 
 .reservas-table td {
-  padding: 15px 10px;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: top;
+  padding: 16px 10px;
+  border-bottom: 1px solid var(--bg-tertiary);
+  vertical-align: middle;
+  /* Better vertical alignment */
 }
 
 .reserva-row {
@@ -153,8 +169,9 @@
 }
 
 .reserva-hoy {
-  background-color: #fff3cd !important;
-  border-left: 4px solid #ffc107;
+  background-color: #fff9db !important;
+  /* Softer yellow */
+  border-left: 4px solid var(--warning-color);
 }
 
 /* Celdas específicas */
@@ -301,32 +318,32 @@ mat-paginator {
   .reservas-container {
     padding: 10px;
   }
-  
+
   .stats-header {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .filters-row {
     grid-template-columns: 1fr;
   }
-  
+
   .table-header {
     flex-direction: column;
     gap: 10px;
     align-items: stretch;
   }
-  
+
   .acciones-cell {
     flex-direction: column;
     gap: 2px;
   }
-  
+
   .acciones-cell button {
     width: 32px;
     height: 32px;
@@ -338,11 +355,11 @@ mat-paginator {
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .reservas-table {
     min-width: 600px;
   }
-  
+
   .displayedColumns {
     font-size: 0.8rem;
   }
@@ -354,13 +371,14 @@ mat-paginator {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.reservas-container > * {
+.reservas-container>* {
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -404,6 +422,3 @@ mat-chip:focus {
   transform: scale(1.1);
   transition: transform 0.2s ease;
 }
-
-
-

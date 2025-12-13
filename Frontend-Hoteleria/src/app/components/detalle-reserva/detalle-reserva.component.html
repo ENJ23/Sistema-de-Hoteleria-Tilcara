@@ -10,287 +10,374 @@
   </div>
 
   <mat-dialog-content class="dialog-content">
-    <!-- Información del Cliente - Simplificada -->
-    <mat-card class="info-card cliente-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon class="card-icon">person</mat-icon>
-          Cliente
-        </mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="info-grid" *ngIf="cliente">
-          <div class="info-item">
-            <strong>Nombre:</strong> 
-            <span class="cliente-nombre">{{ cliente.nombre }} {{ cliente.apellido }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Teléfono:</strong> 
-            <span class="cliente-telefono">{{ cliente.telefono }}</span>
-          </div>
-          <div class="info-item">
-            <strong>Documento:</strong> 
-            <span class="cliente-documento">{{ cliente.documento }}</span>
-          </div>
-        </div>
-        <div *ngIf="!cliente" class="loading-info">
-          <mat-spinner diameter="20"></mat-spinner>
-          Cargando cliente...
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Información de la Habitación - Con estado visual -->
-    <mat-card class="info-card habitacion-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon class="card-icon">bed</mat-icon>
-          Habitación {{ habitacion?.numero }}
-        </mat-card-title>
-        <mat-card-subtitle>
-          <mat-chip 
-            [ngClass]="'estado-' + (habitacion?.estado?.toLowerCase() || 'disponible')"
-            class="estado-habitacion">
-            {{ habitacion?.estado || 'Disponible' }}
-          </mat-chip>
-        </mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="info-grid" *ngIf="habitacion">
-          <div class="info-item">
-            <strong>Tipo:</strong> {{ habitacion.tipo }}
-          </div>
-          <div class="info-item">
-            <strong>Capacidad:</strong> {{ habitacion.capacidad }} personas
-          </div>
-          <div class="info-item precio-item">
-            <strong>Precio por noche:</strong> 
-            <span class="precio">{{ habitacion.precioActual ? (habitacion.precioActual | currency) : 'Consultar' }}</span>
-          </div>
-        </div>
-        <div *ngIf="!habitacion" class="loading-info">
-          <mat-spinner diameter="20"></mat-spinner>
-          Cargando habitación...
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Fechas y Horarios - Más visuales -->
-    <mat-card class="info-card fechas-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon class="card-icon">schedule</mat-icon>
-          Fechas de Estancia
-        </mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="fechas-grid">
-          <div class="fecha-item entrada">
-            <div class="fecha-label">Entrada</div>
-            <div class="fecha-valor">
-              <mat-icon>login</mat-icon>
-              {{ form.get('fechaEntrada')?.value ? (form.get('fechaEntrada')?.value | date:'dd/MM/yyyy') : 'Seleccionar' }}
-            </div>
-            <div class="hora-valor">{{ form.get('horaEntrada')?.value || '14:00' }}</div>
-          </div>
-          <div class="fecha-item salida">
-            <div class="fecha-label">Salida</div>
-            <div class="fecha-valor">
-              <mat-icon>logout</mat-icon>
-              {{ form.get('fechaSalida')?.value ? (form.get('fechaSalida')?.value | date:'dd/MM/yyyy') : 'Seleccionar' }}
-            </div>
-            <div class="hora-valor">{{ form.get('horaSalida')?.value || '11:00' }}</div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Información Financiera - Destacada -->
-    <mat-card class="info-card financiera-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon class="card-icon">attach_money</mat-icon>
-          Información de Pago
-        </mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="financiera-grid">
-          <div class="financiera-item">
-            <strong>Precio por noche:</strong>
-            <span class="precio-destacado">{{ getPrecioPorNoche() }}</span>
-          </div>
-          <div class="financiera-item total">
-            <strong>Total a pagar:</strong>
-            <span class="precio-total">{{ getPrecioTotal() }}</span>
-          </div>
-          <div class="financiera-item estado-pago">
-            <strong>Estado del pago:</strong>
-            <mat-chip 
-              [ngClass]="reserva?.pagado ? 'pagado' : 'pendiente'"
-              class="estado-pago-chip">
-              <mat-icon>{{ reserva?.pagado ? 'check_circle' : 'pending' }}</mat-icon>
-              {{ reserva?.pagado ? 'PAGADO' : 'PENDIENTE' }}
-            </mat-chip>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Acciones Rápidas para Hostal -->
-    <mat-card class="info-card acciones-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon class="card-icon">build</mat-icon>
-          Acciones Rápidas
-        </mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="acciones-grid">
-          <button 
-            mat-raised-button 
-            color="primary" 
-            class="accion-btn checkin-btn"
-            (click)="realizarCheckIn()"
-            [disabled]="cargando || reserva?.estado === 'En curso'">
-            <mat-icon>login</mat-icon>
-            CHECK-IN
-          </button>
-          <button 
-            mat-raised-button 
-            color="accent" 
-            class="accion-btn checkout-btn"
-            (click)="realizarCheckOut()"
-            [disabled]="cargando || reserva?.estado !== 'En curso'">
-            <mat-icon>logout</mat-icon>
-            CHECK-OUT
-          </button>
-          <button 
-            mat-raised-button 
-            color="warn" 
-            class="accion-btn cancelar-btn"
-            (click)="cancelarReserva()"
-            [disabled]="cargando || reserva?.estado === 'Cancelada'">
-            <mat-icon>cancel</mat-icon>
-            CANCELAR
-          </button>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Formulario de Edición - Simplificado -->
-    <mat-card class="edit-card" *ngIf="enEdicion">
-      <mat-card-header>
-        <mat-card-title>Editar Reserva</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form [formGroup]="form" class="edit-form">
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Estado</mat-label>
-              <mat-select formControlName="estado">
-                <mat-option *ngFor="let estado of estadosReserva" [value]="estado">
-                  {{ estado }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Método de Pago</mat-label>
-              <mat-select formControlName="metodoPago">
-                <mat-option value="">Sin especificar</mat-option>
-                <mat-option *ngFor="let metodo of metodosPago" [value]="metodo">
-                  {{ metodo }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <!-- Configuración de Camas -->
-          <div class="form-section" *ngIf="reserva?.configuracionCamas?.length">
-            <h4 class="section-title">
-              <mat-icon>bed</mat-icon>
-              Configuración de Camas
-            </h4>
-            <div class="camas-display">
-              <mat-chip *ngFor="let cama of reserva?.configuracionCamas" class="cama-chip">
-                <mat-icon>bed</mat-icon>
-                {{ cama?.cantidad }}x {{ getTipoCamaLabel(cama?.tipo || '') }}
-              </mat-chip>
-            </div>
-          </div>
-
-          <!-- Información de Transporte -->
-          <div class="form-section" *ngIf="reserva?.informacionTransporte">
-            <h4 class="section-title">
-              <mat-icon>directions_car</mat-icon>
-              Información de Transporte
-            </h4>
-            <div class="transporte-info">
-              <div class="info-item">
-                <strong>Tipo:</strong> {{ getTransporteLabel(reserva?.informacionTransporte?.tipo || '') }}
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" animationDuration="0ms">
+      <mat-tab label="Detalles">
+        <div class="tab-content" style="padding-top: 20px;">
+          <!-- Información del Cliente - Simplificada -->
+          <mat-card class="info-card cliente-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">person</mat-icon>
+                Cliente
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid" *ngIf="cliente">
+                <div class="info-item">
+                  <strong>Nombre:</strong>
+                  <span class="cliente-nombre">{{ cliente.nombre }} {{ cliente.apellido }}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Teléfono:</strong>
+                  <span class="cliente-telefono">{{ cliente.telefono }}</span>
+                </div>
+                <div class="info-item">
+                  <strong>Documento:</strong>
+                  <span class="cliente-documento">{{ cliente.documento }}</span>
+                </div>
               </div>
-              <div class="info-item" *ngIf="reserva?.informacionTransporte?.numeroPlaca">
-                <strong>Placa:</strong> {{ reserva?.informacionTransporte?.numeroPlaca }}
+              <div *ngIf="!cliente" class="loading-info">
+                <mat-spinner diameter="20"></mat-spinner>
+                Cargando cliente...
               </div>
-              <div class="info-item" *ngIf="reserva?.informacionTransporte?.empresa">
-                <strong>Empresa:</strong> {{ reserva?.informacionTransporte?.empresa }}
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Información de la Habitación - Con estado visual -->
+          <mat-card class="info-card habitacion-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">bed</mat-icon>
+                Habitación {{ habitacion?.numero }}
+              </mat-card-title>
+              <mat-card-subtitle>
+                <mat-chip [ngClass]="'estado-' + (habitacion?.estado?.toLowerCase() || 'disponible')"
+                  class="estado-habitacion">
+                  {{ habitacion?.estado || 'Disponible' }}
+                </mat-chip>
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid" *ngIf="habitacion">
+                <div class="info-item">
+                  <strong>Tipo:</strong> {{ habitacion.tipo }}
+                </div>
+                <div class="info-item">
+                  <strong>Capacidad:</strong> {{ habitacion.capacidad }} personas
+                </div>
+                <div class="info-item precio-item">
+                  <strong>Precio por noche:</strong>
+                  <span class="precio">{{ habitacion.precioActual ? (habitacion.precioActual | currency) : 'Consultar'
+                    }}</span>
+                </div>
               </div>
-              <div class="info-item" *ngIf="reserva?.informacionTransporte?.detalles">
-                <strong>Detalles:</strong> {{ reserva?.informacionTransporte?.detalles }}
+              <div *ngIf="!habitacion" class="loading-info">
+                <mat-spinner diameter="20"></mat-spinner>
+                Cargando habitación...
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Fechas y Horarios - Más visuales -->
+          <mat-card class="info-card fechas-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">schedule</mat-icon>
+                Fechas de Estancia
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="fechas-grid">
+                <div class="fecha-item entrada">
+                  <div class="fecha-label">Entrada</div>
+                  <div class="fecha-valor">
+                    <mat-icon>login</mat-icon>
+                    {{ form.get('fechaEntrada')?.value ? (form.get('fechaEntrada')?.value | date:'dd/MM/yyyy') :
+                    'Seleccionar' }}
+                  </div>
+                  <div class="hora-valor">{{ form.get('horaEntrada')?.value || '14:00' }}</div>
+                </div>
+                <div class="fecha-item salida">
+                  <div class="fecha-label">Salida</div>
+                  <div class="fecha-valor">
+                    <mat-icon>logout</mat-icon>
+                    {{ form.get('fechaSalida')?.value ? (form.get('fechaSalida')?.value | date:'dd/MM/yyyy') :
+                    'Seleccionar' }}
+                  </div>
+                  <div class="hora-valor">{{ form.get('horaSalida')?.value || '11:00' }}</div>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Información Financiera - Destacada -->
+          <mat-card class="info-card financiera-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">attach_money</mat-icon>
+                Información de Pago
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="financiera-grid">
+                <div class="financiera-item">
+                  <strong>Precio por noche:</strong>
+                  <span class="precio-destacado">{{ getPrecioPorNoche() }}</span>
+                </div>
+                <div class="financiera-item total">
+                  <strong>Total a pagar:</strong>
+                  <span class="precio-total">{{ getPrecioTotal() }}</span>
+                </div>
+                <div class="financiera-item estado-pago">
+                  <strong>Estado del pago:</strong>
+                  <mat-chip [ngClass]="reserva?.pagado ? 'pagado' : 'pendiente'" class="estado-pago-chip">
+                    <mat-icon>{{ reserva?.pagado ? 'check_circle' : 'pending' }}</mat-icon>
+                    {{ reserva?.pagado ? 'PAGADO' : 'PENDIENTE' }}
+                  </mat-chip>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Acciones Rápidas para Hostal -->
+          <mat-card class="info-card acciones-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">build</mat-icon>
+                Acciones Rápidas
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="acciones-grid">
+                <button mat-raised-button color="primary" class="accion-btn checkin-btn" (click)="realizarCheckIn()"
+                  [disabled]="cargando || reserva?.estado === 'En curso'">
+                  <mat-icon>login</mat-icon>
+                  CHECK-IN
+                </button>
+                <button mat-raised-button color="accent" class="accion-btn checkout-btn" (click)="realizarCheckOut()"
+                  [disabled]="cargando || reserva?.estado !== 'En curso'">
+                  <mat-icon>logout</mat-icon>
+                  CHECK-OUT
+                </button>
+                <button mat-raised-button color="warn" class="accion-btn cancelar-btn" (click)="cancelarReserva()"
+                  [disabled]="cargando || reserva?.estado === 'Cancelada'">
+                  <mat-icon>cancel</mat-icon>
+                  CANCELAR
+                </button>
+
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Sección de División de Reserva -->
+          <mat-card class="info-card division-card" *ngIf="modoDivision"
+            style="border: 2px solid #673AB7; background-color: #F3E5F5;">
+            <mat-card-header>
+              <mat-card-title style="color: #673AB7;">
+                <mat-icon class="card-icon">call_split</mat-icon>
+                Dividir Reserva / Cambio de Habitación
+              </mat-card-title>
+              <mat-card-subtitle>
+                Seleccione la fecha del cambio y la nueva habitación para el resto de la estadía.
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="division-form"
+                style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-top: 15px;">
+                <mat-form-field appearance="outline" style="flex: 1; min-width: 200px;">
+                  <mat-label>Fecha de Cambio (Primer noche en nueva hab)</mat-label>
+                  <input matInput [matDatepicker]="pickerDivision" [(ngModel)]="fechaDivision"
+                    (dateChange)="onFechaDivisionChange($event)">
+                  <mat-datepicker-toggle matSuffix [for]="pickerDivision"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerDivision></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="flex: 1; min-width: 200px;">
+                  <mat-label>Nueva Habitación</mat-label>
+                  <mat-select [(ngModel)]="habitacionDestinoId" [disabled]="cargandoHabitaciones || !fechaDivision">
+                    <mat-option *ngIf="cargandoHabitaciones" disabled>
+                      <mat-spinner diameter="20"
+                        style="display: inline-block; vertical-align: middle; margin-right: 8px;"></mat-spinner>
+                      Buscando disponibilidad...
+                    </mat-option>
+                    <mat-option
+                      *ngIf="!cargandoHabitaciones && habitacionesDisponiblesDivision.length === 0 && fechaDivision"
+                      disabled>
+                      No hay habitaciones disponibles
+                    </mat-option>
+                    <mat-option *ngFor="let hab of habitacionesDisponiblesDivision" [value]="hab._id">
+                      Hab {{ hab.numero }} ({{ hab.tipo }}) - Cap: {{ hab.capacidad }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="division-actions"
+                style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button mat-button (click)="cancelarDivision()">CANCELAR</button>
+                <button mat-raised-button color="primary" style="background-color: #673AB7;"
+                  (click)="confirmarDivision()" [disabled]="!habitacionDestinoId || cargando">
+                  CONFIRMAR CAMBIO
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Formulario de Edición - Simplificado -->
+          <mat-card class="edit-card" *ngIf="enEdicion">
+            <mat-card-header>
+              <mat-card-title>Editar Reserva</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <form [formGroup]="form" class="edit-form">
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Estado</mat-label>
+                    <mat-select formControlName="estado">
+                      <mat-option *ngFor="let estado of estadosReserva" [value]="estado">
+                        {{ estado }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Método de Pago</mat-label>
+                    <mat-select formControlName="metodoPago">
+                      <mat-option value="">Sin especificar</mat-option>
+                      <mat-option *ngFor="let metodo of metodosPago" [value]="metodo">
+                        {{ metodo }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <!-- Configuración de Camas -->
+                <div class="form-section" *ngIf="reserva?.configuracionCamas?.length">
+                  <h4 class="section-title">
+                    <mat-icon>bed</mat-icon>
+                    Configuración de Camas
+                  </h4>
+                  <div class="camas-display">
+                    <mat-chip *ngFor="let cama of reserva?.configuracionCamas" class="cama-chip">
+                      <mat-icon>bed</mat-icon>
+                      {{ cama?.cantidad }}x {{ getTipoCamaLabel(cama?.tipo || '') }}
+                    </mat-chip>
+                  </div>
+                </div>
+
+                <!-- Información de Transporte -->
+                <div class="form-section" *ngIf="reserva?.informacionTransporte">
+                  <h4 class="section-title">
+                    <mat-icon>directions_car</mat-icon>
+                    Información de Transporte
+                  </h4>
+                  <div class="transporte-info">
+                    <div class="info-item">
+                      <strong>Tipo:</strong> {{ getTransporteLabel(reserva?.informacionTransporte?.tipo || '') }}
+                    </div>
+                    <div class="info-item" *ngIf="reserva?.informacionTransporte?.numeroPlaca">
+                      <strong>Placa:</strong> {{ reserva?.informacionTransporte?.numeroPlaca }}
+                    </div>
+                    <div class="info-item" *ngIf="reserva?.informacionTransporte?.empresa">
+                      <strong>Empresa:</strong> {{ reserva?.informacionTransporte?.empresa }}
+                    </div>
+                    <div class="info-item" *ngIf="reserva?.informacionTransporte?.detalles">
+                      <strong>Detalles:</strong> {{ reserva?.informacionTransporte?.detalles }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Necesidades Especiales -->
+                <div class="form-section" *ngIf="reserva?.necesidadesEspeciales">
+                  <h4 class="section-title">
+                    <mat-icon>accessibility</mat-icon>
+                    Necesidades Especiales
+                  </h4>
+                  <div class="necesidades-info">
+                    <p>{{ reserva?.necesidadesEspeciales }}</p>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Observaciones</mat-label>
+                    <textarea matInput formControlName="observaciones" rows="3"
+                      placeholder="Notas sobre la reserva, preferencias del cliente, etc."></textarea>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row checkbox-row">
+                  <mat-checkbox formControlName="pagado" class="checkbox-pagado">
+                    <mat-icon>check_circle</mat-icon>
+                    Reserva pagada
+                  </mat-checkbox>
+                </div>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Historial">
+        <div class="historial-container" style="padding: 20px 0;">
+          <div class="historial-list" *ngIf="reserva?.historialCambios?.length; else noHistorial">
+            <div class="historial-item" *ngFor="let cambio of reserva?.historialCambios"
+              style="display: flex; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+              <div class="historial-icon"
+                style="background: #e3f2fd; color: #1976d2; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <mat-icon>{{ getIconoAccion(cambio.accion) }}</mat-icon>
+              </div>
+              <div class="historial-content" style="flex: 1;">
+                <div class="historial-header"
+                  style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <span class="accion" style="font-weight: 500; font-size: 1.1em;">{{ cambio.accion }}</span>
+                  <span class="fecha" style="color: #666; font-size: 0.9em;">{{ cambio.fecha | date:'medium' }}</span>
+                </div>
+                <div class="historial-usuario" style="font-size: 0.9em; color: #555; margin-bottom: 5px;">
+                  Por: <strong>{{ cambio.usuario }}</strong> <span *ngIf="cambio.rol">({{ cambio.rol }})</span>
+                </div>
+                <div class="historial-detalles" style="color: #333;">
+                  {{ cambio.detalles }}
+                </div>
+                <div class="historial-estados" *ngIf="cambio.estadoAnterior"
+                  style="margin-top: 8px; display: inline-flex; align-items: center; background: #f5f5f5; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">
+                  <span class="estado-old" style="color: #d32f2f;">{{ cambio.estadoAnterior }}</span>
+                  <mat-icon style="font-size: 16px; height: 16px; width: 16px; margin: 0 5px;">arrow_forward</mat-icon>
+                  <span class="estado-new" style="color: #388e3c; font-weight: 500;">{{ cambio.estadoNuevo }}</span>
+                </div>
               </div>
             </div>
           </div>
-
-          <!-- Necesidades Especiales -->
-          <div class="form-section" *ngIf="reserva?.necesidadesEspeciales">
-            <h4 class="section-title">
-              <mat-icon>accessibility</mat-icon>
-              Necesidades Especiales
-            </h4>
-            <div class="necesidades-info">
-              <p>{{ reserva?.necesidadesEspeciales }}</p>
+          <ng-template #noHistorial>
+            <div class="no-historial" style="text-align: center; padding: 40px; color: #888;">
+              <mat-icon
+                style="font-size: 48px; height: 48px; width: 48px; margin-bottom: 10px; opacity: 0.5;">history</mat-icon>
+              <p>No hay historial de cambios registrado para esta reserva.</p>
             </div>
-          </div>
-
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Observaciones</mat-label>
-              <textarea matInput formControlName="observaciones" rows="3" 
-                        placeholder="Notas sobre la reserva, preferencias del cliente, etc."></textarea>
-            </mat-form-field>
-          </div>
-
-          <div class="form-row checkbox-row">
-            <mat-checkbox formControlName="pagado" class="checkbox-pagado">
-              <mat-icon>check_circle</mat-icon>
-              Reserva pagada
-            </mat-checkbox>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
+          </ng-template>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
   </mat-dialog-content>
 
   <mat-dialog-actions align="end" class="dialog-actions">
     <!-- Botones principales para hostal -->
     <div class="acciones-principales" *ngIf="!editando">
-      <button 
-        mat-raised-button 
-        color="primary" 
-        class="btn-principal"
-        (click)="enEdicion = !enEdicion">
+      <button mat-raised-button color="primary" class="btn-principal" (click)="enEdicion = !enEdicion">
         <mat-icon>edit</mat-icon>
         EDITAR
       </button>
-      
-      <button 
-        mat-raised-button 
-        color="accent" 
-        class="btn-principal"
-        (click)="imprimirReserva()"
-        [disabled]="cargando">
+
+      <button mat-raised-button color="accent" class="btn-principal" (click)="imprimirReserva()" [disabled]="cargando">
         <mat-icon>print</mat-icon>
         IMPRIMIR
+      </button>
+
+      <button mat-raised-button style="background-color: #673AB7; color: white;" class="btn-principal"
+        (click)="activarDivision()"
+        [disabled]="cargando || reserva?.estado === 'Cancelada' || reserva?.estado === 'Finalizada'">
+        <mat-icon>call_split</mat-icon>
+        DIVIDIR
       </button>
     </div>
 
@@ -300,11 +387,7 @@
         <mat-icon>cancel</mat-icon>
         CANCELAR
       </button>
-      <button 
-        mat-raised-button 
-        color="primary" 
-        (click)="guardar()"
-        [disabled]="cargando || !form.valid"
+      <button mat-raised-button color="primary" (click)="guardar()" [disabled]="cargando || !form.valid"
         class="btn-guardar">
         <mat-spinner diameter="20" *ngIf="cargando"></mat-spinner>
         <mat-icon *ngIf="!cargando">save</mat-icon>
@@ -317,4 +400,4 @@
       CERRAR
     </button>
   </mat-dialog-actions>
-</div> 
+</div>

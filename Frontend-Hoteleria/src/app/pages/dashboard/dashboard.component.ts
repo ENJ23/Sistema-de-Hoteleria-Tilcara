@@ -14,10 +14,15 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule, DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatExpansionModule } from '@angular/material/expansion'; // Nuevo importa
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { ReservaService } from '../../services/reserva.service';
+import { DateTimeService } from '../../services/date-time.service';
 import { Reserva, ReservaResponse } from '../../models/reserva.model';
 
 // Configuración de formato de fecha DD/MM/YYYY
@@ -53,6 +58,21 @@ interface IngresosPorTipo {
   porcentaje: number;
 }
 
+interface IngresosPorHabitacion {
+  numero: string;
+  cantidad: number;
+  ingresos: number;
+  porcentaje: number;
+}
+
+interface ResumenAnual {
+  year: number;
+  totalIngresos: number;
+  totalReservas: number;
+  promedioMensual: number;
+  ingresosPorMes: { mes: string, ingresos: number, cantidad: number }[];
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -72,6 +92,7 @@ interface IngresosPorTipo {
     MatNativeDateModule,
     MatFormFieldModule,
     MatInputModule,
+    MatExpansionModule,
     FormsModule,
     ReactiveFormsModule
   ],
@@ -97,16 +118,27 @@ export class DashboardComponent implements OnInit {
     reservasRecientes: []
   };
 
+  resumenAnual: ResumenAnual = {
+    year: new Date().getFullYear(),
+    totalIngresos: 0,
+    totalReservas: 0,
+    promedioMensual: 0,
+    ingresosPorMes: []
+  };
+
   ingresosPorTipo: IngresosPorTipo[] = [];
-  
+  ingresosPorHabitacion: IngresosPorHabitacion[] = []; // Mensual
+  ingresosPorHabitacionAnual: IngresosPorHabitacion[] = []; // Anual
+
   // Estados
   loading = false;
+  loadingAnual = false;
   fechaActual = new Date();
   mesActual = new Date();
-  
+
   // Formulario para filtros
   filtrosForm: FormGroup;
-  
+
   // Columnas para la tabla de reservas recientes
   displayedColumns: string[] = ['cliente', 'habitacion', 'fechas', 'estado', 'pago', 'ingresos'];
 
@@ -114,7 +146,8 @@ export class DashboardComponent implements OnInit {
     private reservaService: ReservaService,
     private snackBar: MatSnackBar,
     private router: Router,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private dateTimeService: DateTimeService
   ) {
     this.filtrosForm = this.fb.group({
       fechaInicio: [this.obtenerPrimerDiaDelMes()],
@@ -122,8 +155,39 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  // Cotización Dólar
+  valorDolar: number = 0; // Se inicializa en 0 o se carga del localStorage
+
   ngOnInit(): void {
+    // Cargar valor del dólar guardado
+    const dolarGuardado = localStorage.getItem('valorDolar');
+    if (dolarGuardado) {
+      this.valorDolar = parseFloat(dolarGuardado);
+    }
+
+    // Existing logic for queryParams if any, otherwise remove this block
+    // this.router.queryParams.subscribe(params => {
+    //   // ... existing logic
+    // });
+
     this.cargarDatos();
+    this.cargarDatosAnuales();
+  }
+
+  actualizarValorDolar(valor: string | number): void {
+    const numVal = Number(valor);
+    this.valorDolar = isNaN(numVal) ? 0 : numVal;
+    localStorage.setItem('valorDolar', this.valorDolar.toString());
+  }
+
+  formatearDolar(montoPesos: number): string {
+    if (!this.valorDolar || this.valorDolar <= 0) return '$0.00 USD';
+    const montoUSD = montoPesos / this.valorDolar;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2
+    }).format(montoUSD);
   }
 
   private obtenerPrimerDiaDelMes(): Date {
@@ -139,28 +203,22 @@ export class DashboardComponent implements OnInit {
   private cargarDatos(): void {
     this.loading = true;
     const filtros = this.filtrosForm.value;
-    
+
     // ✅ DEBUGGING: Log de fechas solicitadas
+    const fechaInicioStr = this.dateTimeService.dateToString(filtros.fechaInicio);
+    const fechaFinStr = this.dateTimeService.dateToString(filtros.fechaFin);
+
     console.log('📅 Dashboard - Cargando datos para:', {
       mesActual: this.mesActual.getMonth() + 1 + '/' + this.mesActual.getFullYear(),
-      fechaInicio: filtros.fechaInicio.toISOString().split('T')[0],
-      fechaFin: filtros.fechaFin.toISOString().split('T')[0]
+      fechaInicio: fechaInicioStr,
+      fechaFin: fechaFinStr
     });
-    
+
     this.reservaService.getReservas({
-      fechaInicio: filtros.fechaInicio.toISOString().split('T')[0],
-      fechaFin: filtros.fechaFin.toISOString().split('T')[0]
+      fechaInicio: fechaInicioStr,
+      fechaFin: fechaFinStr
     }).subscribe({
       next: (response: ReservaResponse) => {
-        // ✅ DEBUGGING: Log de reservas recibidas
-        console.log('📊 Dashboard - Reservas recibidas:', response.reservas.length);
-        console.log('📊 Dashboard - Detalle de reservas:', response.reservas.map(r => ({
-          id: r._id,
-          fechaEntrada: r.fechaEntrada,
-          cliente: r.cliente?.nombre + ' ' + r.cliente?.apellido,
-          montoPagado: r.montoPagado
-        })));
-        
         this.procesarDatos(response.reservas);
         this.loading = false;
       },
@@ -170,6 +228,83 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private cargarDatosAnuales(): void {
+    this.loadingAnual = true;
+    const year = this.mesActual.getFullYear();
+    const fechaInicio = `${year}-01-01`;
+    const fechaFin = `${year}-12-31`;
+
+    console.log('📅 Dashboard - Cargando datos ANUALES para:', year);
+
+    this.reservaService.getReservasAll({
+      fechaInicio: fechaInicio,
+      fechaFin: fechaFin
+    }, 100, true).subscribe({ // Usar getReservasAll para traer todo paginado
+      next: (response: ReservaResponse) => {
+        const reservasRaw = response.reservas || [];
+        console.log('📊 Dashboard - Reservas ANUALES recibidas:', reservasRaw.length);
+
+        // CORRECCIÓN DUPLICADOS: Deduplicar explícitamente por _id
+        const uniqueReservas = Array.from(new Map(reservasRaw.map(item => [item._id, item])).values());
+
+        if (uniqueReservas.length !== reservasRaw.length) {
+          console.warn(`⚠️ CORREGIDO: Se eliminaron ${reservasRaw.length - uniqueReservas.length} duplicados.`);
+        }
+
+        this.procesarDatosAnuales(uniqueReservas, year);
+        this.loadingAnual = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar datos anuales:', error);
+        this.loadingAnual = false;
+      }
+    });
+  }
+
+  private procesarDatosAnuales(reservas: Reserva[], year: number): void {
+    let totalIngresos = 0;
+    const ingresosPorMesMap = new Map<number, { ingresos: number, cantidad: number }>();
+
+    // Inicializar meses
+    for (let i = 0; i < 12; i++) {
+      ingresosPorMesMap.set(i, { ingresos: 0, cantidad: 0 });
+    }
+
+    reservas.forEach(r => {
+      if (r.estado === 'Cancelada' || r.estado === 'No Show') return; // Excluir No Show también si no pagan
+      const monto = r.montoPagado || 0;
+      totalIngresos += monto;
+
+      // Determinar mes base (usamos fecha de entrada o fecha de pago si existe?)
+      // Generalmente para "Ingresos" se debería usar la fecha de pago, pero si no hay historial detallado,
+      // usamos la fecha de entrada como aproximación operativa o la fecha de creación.
+      // Dado el modelo, usaremos fechaEntrada para agrupar operativamente.
+      const fecha = new Date(r.fechaEntrada);
+      const mes = fecha.getMonth();
+
+      const current = ingresosPorMesMap.get(mes)!;
+      current.ingresos += monto;
+      current.cantidad++;
+    });
+
+    const ingresosPorMes = Array.from(ingresosPorMesMap.entries()).map(([mesIndex, data]) => ({
+      mes: this.obtenerNombreMes(mesIndex),
+      ingresos: data.ingresos,
+      cantidad: data.cantidad
+    }));
+
+    this.resumenAnual = {
+      year,
+      totalIngresos,
+      totalReservas: reservas.length,
+      promedioMensual: totalIngresos / 12,
+      ingresosPorMes
+    };
+
+    // Calcular desglose por habitación ANUAL
+    this.ingresosPorHabitacionAnual = this.calcularIngresosPorHabitacion(reservas);
   }
 
   private procesarDatos(reservas: Reserva[]): void {
@@ -194,9 +329,9 @@ export class DashboardComponent implements OnInit {
     reservasDelMes.forEach(reserva => {
       const montoPagado = reserva.montoPagado || 0;
       const precioTotal = reserva.precioTotal || 0;
-      
+
       totalIngresos += montoPagado;
-      
+
       if (reserva.estaCompletamentePagado) {
         ingresosCompletos += montoPagado;
         reservasCompletas++;
@@ -210,13 +345,21 @@ export class DashboardComponent implements OnInit {
 
     // Calcular ingresos por día
     const ingresosPorDia = this.calcularIngresosPorDia(reservasDelMes);
-    
+
     // Calcular ingresos por tipo de habitación
     this.ingresosPorTipo = this.calcularIngresosPorTipo(reservasDelMes);
 
+    // Calcular ingresos por habitación individual (Nuevo reporte)
+    this.ingresosPorHabitacion = this.calcularIngresosPorHabitacion(reservasDelMes);
+
     // Obtener reservas recientes (últimas 5)
-    const reservasRecientes = reservasDelMes
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    // Ordenar correctamente por fecha de creación descendente
+    const reservasRecientes = [...reservasDelMes]
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      })
       .slice(0, 5);
 
     this.resumen = {
@@ -231,25 +374,15 @@ export class DashboardComponent implements OnInit {
       ingresosPorDia,
       reservasRecientes
     };
-
-    // ✅ DEBUGGING: Log de resultados finales
-    console.log('📊 Dashboard - Resumen calculado:', {
-      totalIngresos,
-      totalReservas: reservasDelMes.length,
-      reservasCompletas,
-      reservasParciales,
-      reservasSinPago,
-      promedioPorReserva: this.resumen.promedioPorReserva
-    });
   }
 
   private calcularIngresosPorDia(reservas: Reserva[]): { fecha: string, ingresos: number }[] {
     const ingresosPorDia: { [key: string]: number } = {};
-    
+
     reservas.forEach(reserva => {
-      const fecha = new Date(reserva.fechaEntrada).toISOString().split('T')[0];
+      const fecha = reserva.fechaEntrada.split('T')[0];
       const montoPagado = reserva.montoPagado || 0;
-      
+
       if (ingresosPorDia[fecha]) {
         ingresosPorDia[fecha] += montoPagado;
       } else {
@@ -259,17 +392,17 @@ export class DashboardComponent implements OnInit {
 
     return Object.entries(ingresosPorDia)
       .map(([fecha, ingresos]) => ({ fecha, ingresos }))
-      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      .sort((a, b) => this.dateTimeService.stringToDate(a.fecha).getTime() - this.dateTimeService.stringToDate(b.fecha).getTime());
   }
 
   private calcularIngresosPorTipo(reservas: Reserva[]): IngresosPorTipo[] {
     const ingresosPorTipo: { [key: string]: { cantidad: number, ingresos: number } } = {};
-    
+
     reservas.forEach(reserva => {
-      const tipo = typeof reserva.habitacion === 'object' ? 
+      const tipo = typeof reserva.habitacion === 'object' ?
         (reserva.habitacion as any).tipo : 'Desconocido';
       const montoPagado = reserva.montoPagado || 0;
-      
+
       if (ingresosPorTipo[tipo]) {
         ingresosPorTipo[tipo].cantidad++;
         ingresosPorTipo[tipo].ingresos += montoPagado;
@@ -290,9 +423,162 @@ export class DashboardComponent implements OnInit {
       .sort((a, b) => b.ingresos - a.ingresos);
   }
 
+  private calcularIngresosPorHabitacion(reservas: Reserva[]): IngresosPorHabitacion[] {
+    const ingresosMap: { [key: string]: { cantidad: number, ingresos: number } } = {};
+
+    reservas.forEach(reserva => {
+      const numero = typeof reserva.habitacion === 'object' ?
+        (reserva.habitacion as any).numero : 'N/A';
+      const montoPagado = reserva.montoPagado || 0;
+
+      if (ingresosMap[numero]) {
+        ingresosMap[numero].cantidad++;
+        ingresosMap[numero].ingresos += montoPagado;
+      } else {
+        ingresosMap[numero] = { cantidad: 1, ingresos: montoPagado };
+      }
+    });
+
+    const totalIngresos = Object.values(ingresosMap).reduce((sum, item) => sum + item.ingresos, 0);
+
+    return Object.entries(ingresosMap)
+      .map(([numero, datos]) => ({
+        numero,
+        cantidad: datos.cantidad,
+        ingresos: datos.ingresos,
+        porcentaje: totalIngresos > 0 ? (datos.ingresos / totalIngresos) * 100 : 0
+      }))
+      .sort((a, b) => b.ingresos - a.ingresos); // Ordenar por ingresos descendente
+  }
+
+
+  exportarExcel(): void {
+    const wb = XLSX.utils.book_new();
+    const fechaReporte = this.dateTimeService.dateToString(new Date());
+
+    // 1. Hoja Resumen Mensual
+    const resumenData = [
+      ['Reporte de Ingresos Mensuales', `Mes: ${this.obtenerNombreMes(this.mesActual.getMonth())} ${this.mesActual.getFullYear()}`],
+      [''],
+      ['Concepto', 'Cantidad', 'Monto'],
+      ['Total Ingresos', this.resumen.totalReservas, this.resumen.totalIngresos],
+      ['Completamente Pagadas', this.resumen.reservasCompletas, this.resumen.ingresosCompletos],
+      ['Parcialmente Pagadas', this.resumen.reservasParciales, this.resumen.ingresosParciales],
+      ['Sin Pago', this.resumen.reservasSinPago, 0],
+      ['Promedio por Reserva', '', this.resumen.promedioPorReserva]
+    ];
+    const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen Mensual');
+
+    // 2. Hoja Desglose por Habitación (Mensual)
+    const desgloseHabData = [
+      ['Desglose por Habitación (Mensual)'],
+      ['Habitación', 'Reservas', 'Ingresos', '% del Total'],
+      ...this.ingresosPorHabitacion.map(h => [h.numero, h.cantidad, h.ingresos, (h.porcentaje / 100).toFixed(4)])
+    ];
+    const wsHabitaciones = XLSX.utils.aoa_to_sheet(desgloseHabData);
+    XLSX.utils.book_append_sheet(wb, wsHabitaciones, 'Por Habitación');
+
+    // 3. Hoja Resumen Anual
+    const anualData = [
+      [`Resumen Anual ${this.resumenAnual.year}`],
+      ['Concepto', 'Valor'],
+      ['Total Ingresos Anuales', this.resumenAnual.totalIngresos],
+      ['Total Reservas Anuales', this.resumenAnual.totalReservas],
+      ['Promedio Mensual', this.resumenAnual.promedioMensual],
+      [''],
+      ['Mes', 'Ingresos', 'Reservas'],
+      ...this.resumenAnual.ingresosPorMes.map(m => [m.mes, m.ingresos, m.cantidad])
+    ];
+    const wsAnual = XLSX.utils.aoa_to_sheet(anualData);
+    XLSX.utils.book_append_sheet(wb, wsAnual, 'Resumen Anual');
+
+    // Guardar archivo
+    XLSX.writeFile(wb, `Reporte_Ingresos_${fechaReporte}.xlsx`);
+  }
+
+  exportarPDF(): void {
+    const doc = new jsPDF();
+    const fechaReporte = this.dateTimeService.dateToString(new Date());
+    const mesNombre = this.obtenerNombreMes(this.mesActual.getMonth());
+    const year = this.mesActual.getFullYear();
+
+    // Título
+    doc.setFontSize(18);
+    doc.setTextColor(26, 35, 126); // Primary dark color
+    doc.text('Reporte de Gestión Hotelera', 14, 22);
+
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Fecha de emisión: ${fechaReporte}`, 14, 30);
+    doc.text(`Período: ${mesNombre} ${year}`, 14, 36);
+
+    // Resumen Principal
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text('Resumen del Mes', 14, 48);
+
+    autoTable(doc, {
+      startY: 52,
+      head: [['Concepto', 'Cantidad', 'Ingresos']],
+      body: [
+        ['Total General', this.resumen.totalReservas, `$${this.resumen.totalIngresos.toLocaleString('es-AR')}`],
+        ['Completamente Pagadas', this.resumen.reservasCompletas, `$${this.resumen.ingresosCompletos.toLocaleString('es-AR')}`],
+        ['Parcialmente Pagadas', this.resumen.reservasParciales, `$${this.resumen.ingresosParciales.toLocaleString('es-AR')}`],
+        ['Sin Pago', this.resumen.reservasSinPago, '$0.00'],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [26, 35, 126] }
+    });
+
+    // Desglose por Habitación
+    let finalY = (doc as any).lastAutoTable.finalY + 14;
+    doc.text('Ingresos por Habitación', 14, finalY);
+
+    const bodyHab = this.ingresosPorHabitacion.map(h => [
+      `Habitación ${h.numero}`,
+      h.cantidad,
+      `$${h.ingresos.toLocaleString('es-AR')}`,
+      `${h.porcentaje.toFixed(1)}%`
+    ]);
+
+    autoTable(doc, {
+      startY: finalY + 4,
+      head: [['Habitación', 'Reservas', 'Ingresos', '% Total']],
+      body: bodyHab,
+      theme: 'grid',
+      headStyles: { fillColor: [63, 81, 181] } // Primary color
+    });
+
+    // Resumen Anual
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.text(`Resumen Anual ${this.resumenAnual.year}`, 14, 20);
+
+    const bodyAnual = this.resumenAnual.ingresosPorMes.map(m => [
+      m.mes,
+      m.cantidad,
+      `$${m.ingresos.toLocaleString('es-AR')}`
+    ]);
+
+    // Agregar fila de total anual al final
+    bodyAnual.push(['TOTAL', this.resumenAnual.totalReservas, `$${this.resumenAnual.totalIngresos.toLocaleString('es-AR')}`]);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [['Mes', 'Reservas', 'Ingresos']],
+      body: bodyAnual,
+      theme: 'striped',
+      headStyles: { fillColor: [26, 35, 126] }
+    });
+
+    doc.save(`Reporte_Hotel_${mesNombre}_${year}.pdf`);
+  }
+
   // Métodos públicos
   actualizarDatos(): void {
     this.cargarDatos();
+    this.cargarDatosAnuales(); // Actualizar también anual
   }
 
   cambiarMes(direccion: 'anterior' | 'siguiente'): void {
@@ -301,23 +587,32 @@ export class DashboardComponent implements OnInit {
     } else {
       this.mesActual.setMonth(this.mesActual.getMonth() + 1);
     }
-    
+
     this.filtrosForm.patchValue({
       fechaInicio: this.obtenerPrimerDiaDelMes(),
       fechaFin: this.obtenerUltimoDiaDelMes()
     });
-    
+
     this.cargarDatos();
+
+    // Si cambió el año, recargar datos anuales
+    if (this.resumenAnual.year !== this.mesActual.getFullYear()) {
+      this.cargarDatosAnuales();
+    }
   }
 
   irAHoy(): void {
     // ✅ Actualizar mesActual antes de obtener fechas
+    const changedYear = this.mesActual.getFullYear() !== new Date().getFullYear();
     this.mesActual = new Date();
     this.filtrosForm.patchValue({
       fechaInicio: this.obtenerPrimerDiaDelMes(),
       fechaFin: this.obtenerUltimoDiaDelMes()
     });
     this.cargarDatos();
+    if (changedYear || this.resumenAnual.totalIngresos === 0) {
+      this.cargarDatosAnuales();
+    }
   }
 
   verReservas(): void {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FilterByHabitacionPipe } from '../../pipes/filter-by-habitacion.pipe';
 import { HabitacionService } from '../../services/habitacion.service';
 import { ReservaService } from '../../services/reserva.service';
+import { DateTimeService } from '../../services/date-time.service';
+import { Subject, takeUntil, debounceTime } from 'rxjs';
 
 interface DiaCalendario {
   fecha: Date;
@@ -38,8 +40,10 @@ interface OcupacionDia {
   checkIn?: boolean;
   checkOut?: boolean;
   esTransicion?: boolean;
-  esDiaEntrada?: boolean; // Nuevo
-  esDiaSalida?: boolean; // Nuevo
+  esDiaEntrada?: boolean;
+  esDiaSalida?: boolean;
+  estadoEntradaTransicion?: string; // Estado de la reserva que entra
+  estadoSalidaTransicion?: string;  // Estado de la reserva que sale
 }
 
 interface OcupacionCalendario {
@@ -63,20 +67,22 @@ interface OcupacionCalendario {
     FilterByHabitacionPipe
   ]
 })
-export class CalendarioOcupacionComponent implements OnInit {
+export class CalendarioOcupacionComponent implements OnInit, OnDestroy {
   fechaActual = new Date();
   mesActual = new Date();
   diasCalendario: DiaCalendario[] = [];
   habitaciones: Habitacion[] = [];
   ocupacionCalendario: OcupacionCalendario = {};
   cargando = false;
-  cargandoOcupacion = false; // Nueva variable para evitar llamadas múltiples
-  
+  cargandoOcupacion = false;
+  private destroy$ = new Subject<void>();
+
   constructor(
     private habitacionService: HabitacionService,
-    private reservaService: ReservaService
-  ) {}
-  
+    private reservaService: ReservaService,
+    private dateTimeService: DateTimeService
+  ) { }
+
   // Estados de ocupación
   estadosOcupacion = {
     disponible: { color: '#4CAF50', icon: 'hotel', label: 'Disponible' },
@@ -90,6 +96,17 @@ export class CalendarioOcupacionComponent implements OnInit {
   ngOnInit(): void {
     this.inicializarCalendario();
     this.cargarHabitaciones();
+    this.reservaService.reservaEvents$
+      .pipe(takeUntil(this.destroy$), debounceTime(300))
+      .subscribe(() => {
+        this.ocupacionCalendario = {};
+        this.generarOcupacion();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   inicializarCalendario(): void {
@@ -99,29 +116,18 @@ export class CalendarioOcupacionComponent implements OnInit {
   generarDiasCalendario(): void {
     const año = this.mesActual.getFullYear();
     const mes = this.mesActual.getMonth();
-    
-    // Primer día del mes
     const primerDia = new Date(año, mes, 1);
-    // Último día del mes
-    const ultimoDia = new Date(año, mes + 1, 0);
-    
-    // Día de la semana del primer día (0 = domingo, 1 = lunes, etc.)
     const diaSemanaPrimerDia = primerDia.getDay();
-    
-    // Ajustar para que la semana comience en lunes (1) en lugar de domingo (0)
     const inicioSemana = diaSemanaPrimerDia === 0 ? 6 : diaSemanaPrimerDia - 1;
-    
+
     this.diasCalendario = [];
-    
-    // Agregar días del mes anterior para completar la primera semana
     const primerDiaCalendario = new Date(primerDia);
     primerDiaCalendario.setDate(primerDiaCalendario.getDate() - inicioSemana);
-    
-    // Generar 42 días (6 semanas x 7 días) para cubrir todo el mes
+
     for (let i = 0; i < 42; i++) {
       const fecha = new Date(primerDiaCalendario);
       fecha.setDate(fecha.getDate() + i);
-      
+
       const dia: DiaCalendario = {
         fecha: fecha,
         numero: fecha.getDate(),
@@ -130,7 +136,7 @@ export class CalendarioOcupacionComponent implements OnInit {
         esFinDeSemana: fecha.getDay() === 0 || fecha.getDay() === 6,
         esPrimerDia: fecha.getDate() === 1
       };
-      
+
       this.diasCalendario.push(dia);
     }
   }
@@ -142,7 +148,7 @@ export class CalendarioOcupacionComponent implements OnInit {
 
   cargarHabitaciones(): void {
     this.cargando = true;
-    this.habitacionService.getHabitaciones(1, 100).subscribe({
+    this.habitacionService.getHabitacionesActivas().subscribe({
       next: (response) => {
         this.habitaciones = response.habitaciones.map(hab => ({
           _id: hab._id,
@@ -157,13 +163,9 @@ export class CalendarioOcupacionComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar habitaciones:', error);
-        // Si hay error, crear habitaciones de ejemplo para mostrar el calendario
         this.habitaciones = [
           { _id: '1', numero: '101', tipo: 'Individual', capacidad: 1, estado: 'Disponible', precioActual: 50 },
-          { _id: '2', numero: '102', tipo: 'Doble', capacidad: 2, estado: 'Disponible', precioActual: 75 },
-          { _id: '3', numero: '103', tipo: 'Triple', capacidad: 3, estado: 'Disponible', precioActual: 100 },
-          { _id: '4', numero: '201', tipo: 'Individual', capacidad: 1, estado: 'Disponible', precioActual: 50 },
-          { _id: '5', numero: '202', tipo: 'Doble', capacidad: 2, estado: 'Disponible', precioActual: 75 }
+          { _id: '2', numero: '102', tipo: 'Doble', capacidad: 2, estado: 'Disponible', precioActual: 75 }
         ];
         this.cargando = false;
         this.generarOcupacion();
@@ -173,121 +175,109 @@ export class CalendarioOcupacionComponent implements OnInit {
 
   generarOcupacion(): void {
     if (this.habitaciones.length === 0) return;
-    if (this.cargandoOcupacion) return; // Evitar llamadas múltiples
-    
-    console.log('Generando ocupación para:', this.mesActual.getMonth() + 1, this.mesActual.getFullYear());
-    console.log('Habitaciones disponibles:', this.habitaciones.length);
-    
+    if (this.cargandoOcupacion) return;
+
     this.cargandoOcupacion = true;
     this.cargando = true;
-    const fechaInicio = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth(), 1);
-    const fechaFin = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 0);
-    
-    console.log('Fechas de búsqueda:', fechaInicio.toISOString().split('T')[0], 'a', fechaFin.toISOString().split('T')[0]);
-    
-    // Obtener reservas para el mes actual
-    this.reservaService.getReservas({
-      fechaInicio: fechaInicio.toISOString().split('T')[0],
-      fechaFin: fechaFin.toISOString().split('T')[0]
-    }, 1, 1000).subscribe({
+
+    const mesAnterior = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() - 1, 1);
+    const mesSiguiente = new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 1);
+
+    const fechaInicio = this.dateTimeService.getFirstDayOfMonth(mesAnterior.getFullYear(), mesAnterior.getMonth() + 1);
+    const fechaFin = this.dateTimeService.getLastDayOfMonth(mesSiguiente.getFullYear(), mesSiguiente.getMonth() + 1);
+
+    this.reservaService.getReservasAll({
+      fechaInicio: this.dateTimeService.dateToString(fechaInicio),
+      fechaFin: this.dateTimeService.dateToString(fechaFin)
+    }, 100, true).subscribe({
       next: (response) => {
-        console.log('Respuesta del servidor:', response);
-        console.log('Reservas encontradas:', response.reservas?.length || 0);
-        
         this.ocupacionCalendario = {};
-        
+
         this.diasCalendario.forEach(dia => {
           if (dia.esMesActual) {
             const fechaStr = this.formatearFecha(dia.fecha);
             this.ocupacionCalendario[fechaStr] = [];
-            
+
             this.habitaciones.forEach(habitacion => {
-              // Buscar reservas para esta habitación en esta fecha
-              const reservasHabitacion = response.reservas.filter(reserva => {
-                const habitacionReserva = typeof reserva.habitacion === 'string' ? null : reserva.habitacion;
-                const coincideHabitacion = habitacionReserva && habitacionReserva.numero === habitacion.numero;
-                const coincideFecha = this.fechaEnRango(dia.fecha, reserva.fechaEntrada, reserva.fechaSalida);
-                
-                if (coincideHabitacion && coincideFecha) {
-                  console.log('Reserva encontrada para habitación', habitacion.numero, 'en fecha', fechaStr);
+              // Buscar TODAS las reservas que coincidan con esta habitación y fecha
+              const reservasCoincidentes = response.reservas.filter(reserva => {
+                let coincideHabitacion = false;
+                if (typeof reserva.habitacion === 'string') {
+                  coincideHabitacion = reserva.habitacion === habitacion._id;
+                } else if (reserva.habitacion) {
+                  coincideHabitacion = reserva.habitacion._id === habitacion._id || reserva.habitacion.numero === habitacion.numero;
                 }
-                
+
+                const coincideFecha = this.dateTimeService.isDateInRange(dia.fecha, reserva.fechaEntrada, reserva.fechaSalida);
                 return coincideHabitacion && coincideFecha;
               });
-              
-                             if (reservasHabitacion.length > 0) {
-                 const reserva = reservasHabitacion[0];
-                 const estado = this.mapearEstadoReserva(reserva.estado);
-                 const esDiaEntrada = this.esDiaEntrada(dia.fecha, reserva.fechaEntrada);
-                 const esDiaSalida = this.esDiaSalida(dia.fecha, reserva.fechaSalida);
-                 
-                 console.log(`Habitación ${habitacion.numero}, Fecha ${fechaStr}:`, {
-                   esDiaEntrada,
-                   esDiaSalida,
-                   fechaEntrada: reserva.fechaEntrada,
-                   fechaSalida: reserva.fechaSalida,
-                   fechaActual: dia.fecha.toDateString()
-                 });
-                 
-                 const ocupacion: OcupacionDia = {
-                  habitacionId: habitacion._id,
-                  habitacionNumero: habitacion.numero,
-                  estado: estado,
-                  reservaId: reserva._id,
-                  clienteNombre: this.obtenerNombreCliente(reserva.cliente),
-                  checkIn: esDiaEntrada,
-                  checkOut: esDiaSalida,
-                  esTransicion: esDiaEntrada && esDiaSalida,
-                  esDiaEntrada: esDiaEntrada,
-                  esDiaSalida: esDiaSalida
-                };
-                
-                this.ocupacionCalendario[fechaStr].push(ocupacion);
+
+              let ocupacion: OcupacionDia;
+
+              if (reservasCoincidentes.length > 0) {
+                // Analizar si hay una transición (una sale, otra entra)
+                const reservaSalida = reservasCoincidentes.find(r => this.dateTimeService.isCheckOutDate(dia.fecha, r.fechaSalida));
+                const reservaEntrada = reservasCoincidentes.find(r => this.dateTimeService.isCheckInDate(dia.fecha, r.fechaEntrada));
+
+                if (reservaSalida && reservaEntrada && reservaSalida._id !== reservaEntrada._id) {
+                  // Caso de TRANSICIÓN: Mostrar color dividido
+                  ocupacion = {
+                    habitacionId: habitacion._id,
+                    habitacionNumero: habitacion.numero,
+                    estado: 'transicion', // Estado especial
+                    reservaId: reservaEntrada._id, // Priorizamos la info de la que entra para click
+                    clienteNombre: `${this.obtenerNombreCliente(reservaSalida.cliente)} / ${this.obtenerNombreCliente(reservaEntrada.cliente)}`,
+                    checkIn: true,
+                    checkOut: true,
+                    esTransicion: true,
+                    esDiaEntrada: true,
+                    esDiaSalida: true,
+                    estadoSalidaTransicion: this.mapearEstadoReserva(reservaSalida.estado), // Color izquierda (Triangulo sup/izq)
+                    estadoEntradaTransicion: this.mapearEstadoReserva(reservaEntrada.estado) // Color derecha (Triangulo inf/der)
+                  };
+                } else {
+                  // Caso Normal (Tomamos la primera reserva válida, priorizando la que no sea solo checkout si hay conflicto raro)
+                  const reserva = reservasCoincidentes[0];
+                  const estado = this.mapearEstadoReserva(reserva.estado);
+                  const esDiaEntrada = this.dateTimeService.isCheckInDate(dia.fecha, reserva.fechaEntrada);
+                  const esDiaSalida = this.dateTimeService.isCheckOutDate(dia.fecha, reserva.fechaSalida);
+
+                  ocupacion = {
+                    habitacionId: habitacion._id,
+                    habitacionNumero: habitacion.numero,
+                    estado: estado,
+                    reservaId: reserva._id,
+                    clienteNombre: this.obtenerNombreCliente(reserva.cliente),
+                    checkIn: esDiaEntrada,
+                    checkOut: esDiaSalida,
+                    esTransicion: false,
+                    esDiaEntrada: esDiaEntrada,
+                    esDiaSalida: esDiaSalida
+                  };
+                }
               } else {
-                // Si no hay reservas, usar el estado de la habitación
-                const ocupacion: OcupacionDia = {
+                // Sin reservas
+                ocupacion = {
                   habitacionId: habitacion._id,
                   habitacionNumero: habitacion.numero,
                   estado: this.mapearEstadoHabitacion(habitacion.estado),
                   esTransicion: false,
-                  esDiaEntrada: false, // Nuevo
-                  esDiaSalida: false // Nuevo
+                  esDiaEntrada: false,
+                  esDiaSalida: false
                 };
-                
-                this.ocupacionCalendario[fechaStr].push(ocupacion);
               }
+
+              this.ocupacionCalendario[fechaStr].push(ocupacion);
             });
           }
         });
-        
+
         this.cargando = false;
         this.cargandoOcupacion = false;
       },
       error: (error) => {
         console.error('Error al cargar ocupación:', error);
-        // Si hay error, mostrar todas las habitaciones como disponibles
-        this.ocupacionCalendario = {};
-        
-        this.diasCalendario.forEach(dia => {
-          if (dia.esMesActual) {
-            const fechaStr = this.formatearFecha(dia.fecha);
-            this.ocupacionCalendario[fechaStr] = [];
-            
-            this.habitaciones.forEach(habitacion => {
-              const ocupacion: OcupacionDia = {
-                habitacionId: habitacion._id,
-                habitacionNumero: habitacion.numero,
-                estado: 'disponible',
-                esTransicion: false,
-                esDiaEntrada: false, // Nuevo
-                esDiaSalida: false // Nuevo
-              };
-              
-              this.ocupacionCalendario[fechaStr].push(ocupacion);
-            });
-          }
-        });
-        
+        this.ocupacionCalendario = {}; // Limpiar en error
         this.cargando = false;
         this.cargandoOcupacion = false;
       }
@@ -295,7 +285,8 @@ export class CalendarioOcupacionComponent implements OnInit {
   }
 
   formatearFecha(fecha: Date): string {
-    return fecha.toISOString().split('T')[0];
+    // CORREGIDO: Usar DateTimeService para formateo consistente
+    return this.dateTimeService.dateToString(fecha);
   }
 
   mesAnterior(): void {
@@ -321,27 +312,29 @@ export class CalendarioOcupacionComponent implements OnInit {
       console.log('obtenerClaseOcupacion: ocupacion es null/undefined');
       return 'ocupacion-disponible';
     }
-    
+
     let result: string;
     switch (ocupacion.estado) {
       case 'ocupada': result = 'ocupacion-ocupada'; break;
       case 'reservada': result = 'ocupacion-reservada'; break;
+      case 'finalizada': result = 'ocupacion-finalizada'; break; // CORREGIDO: Agregar estado finalizada
       case 'limpieza': result = 'ocupacion-limpieza'; break;
       case 'mantenimiento': result = 'ocupacion-mantenimiento'; break;
       case 'fueraServicio': result = 'ocupacion-fuera-servicio'; break;
       default: result = 'ocupacion-disponible'; break;
     }
-    
+
     console.log('obtenerClaseOcupacion result:', result, 'type:', typeof result);
     return result;
   }
 
   obtenerIconoOcupacion(ocupacion: OcupacionDia): string {
     if (!ocupacion) return 'hotel';
-    
+
     switch (ocupacion.estado) {
       case 'ocupada': return 'person';
       case 'reservada': return 'event';
+      case 'finalizada': return 'check_circle'; // CORREGIDO: Agregar icono para finalizada
       case 'limpieza': return 'cleaning_services';
       case 'mantenimiento': return 'handyman';
       case 'fueraServicio': return 'block';
@@ -351,13 +344,13 @@ export class CalendarioOcupacionComponent implements OnInit {
 
   obtenerTooltipOcupacion(ocupacion: OcupacionDia): string {
     if (!ocupacion) return 'Disponible';
-    
+
     let tooltip = `Habitación ${ocupacion.habitacionNumero}: ${ocupacion.estado}`;
-    
+
     if (ocupacion.clienteNombre) {
       tooltip += ` - ${ocupacion.clienteNombre}`;
     }
-    
+
     if (ocupacion.checkIn && ocupacion.checkOut) {
       tooltip += ' (Entrada y Salida)';
     } else if (ocupacion.checkIn) {
@@ -365,7 +358,7 @@ export class CalendarioOcupacionComponent implements OnInit {
     } else if (ocupacion.checkOut) {
       tooltip += ' (Salida)';
     }
-    
+
     return tooltip;
   }
 
@@ -393,41 +386,29 @@ export class CalendarioOcupacionComponent implements OnInit {
     const nombresDias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     return nombresDias[dia];
   }
-  
-  // Métodos auxiliares para el calendario
+
+  // CORREGIDO: Métodos auxiliares ahora usan DateTimeService para consistencia
+  // Estos métodos se mantienen para compatibilidad pero ahora usan DateTimeService internamente
   fechaEnRango(fecha: Date, fechaInicio: string, fechaFin: string): boolean {
-    const fechaInicioDate = new Date(fechaInicio);
-    const fechaFinDate = new Date(fechaFin);
-    const resultado = fecha >= fechaInicioDate && fecha <= fechaFinDate;
-    
-    // Log para debug
-    if (resultado) {
-      console.log('Fecha en rango:', fecha.toDateString(), 'entre', fechaInicioDate.toDateString(), 'y', fechaFinDate.toDateString());
-    }
-    
-    return resultado;
+    return this.dateTimeService.isDateInRange(fecha, fechaInicio, fechaFin);
   }
-  
+
   esFechaCheckIn(fecha: Date, fechaCheckIn: string): boolean {
-    const fechaCheckInDate = new Date(fechaCheckIn);
-    return fecha.toDateString() === fechaCheckInDate.toDateString();
+    return this.dateTimeService.isCheckInDate(fecha, fechaCheckIn);
   }
-  
+
   esFechaCheckOut(fecha: Date, fechaCheckOut: string): boolean {
-    const fechaCheckOutDate = new Date(fechaCheckOut);
-    return fecha.toDateString() === fechaCheckOutDate.toDateString();
+    return this.dateTimeService.isCheckOutDate(fecha, fechaCheckOut);
   }
 
-  // Nuevo método para determinar si es día de entrada
+  // Método para determinar si es día de entrada (usando DateTimeService)
   esDiaEntrada(fecha: Date, fechaEntrada: string): boolean {
-    const fechaEntradaDate = new Date(fechaEntrada);
-    return fecha.toDateString() === fechaEntradaDate.toDateString();
+    return this.dateTimeService.isCheckInDate(fecha, fechaEntrada);
   }
 
-  // Nuevo método para determinar si es día de salida
+  // Método para determinar si es día de salida (usando DateTimeService)
   esDiaSalida(fecha: Date, fechaSalida: string): boolean {
-    const fechaSalidaDate = new Date(fechaSalida);
-    return fecha.toDateString() === fechaSalidaDate.toDateString();
+    return this.dateTimeService.isCheckOutDate(fecha, fechaSalida);
   }
 
   // Nuevo método para obtener la clase CSS según el tipo de día
@@ -436,10 +417,10 @@ export class CalendarioOcupacionComponent implements OnInit {
       console.log('obtenerClaseDiaReserva: ocupacion es null/undefined');
       return 'ocupacion-disponible';
     }
-    
+
     const baseClass = this.obtenerClaseOcupacion(ocupacion);
     let result: string;
-    
+
     // Agregar clases específicas para entrada y salida
     if (ocupacion.esDiaEntrada && ocupacion.esDiaSalida) {
       result = `${baseClass} entrada-salida`;
@@ -450,7 +431,7 @@ export class CalendarioOcupacionComponent implements OnInit {
     } else {
       result = baseClass;
     }
-    
+
     console.log('obtenerClaseDiaReserva result:', result, 'type:', typeof result);
     return result;
   }
@@ -460,13 +441,13 @@ export class CalendarioOcupacionComponent implements OnInit {
     if (!ocupacion) {
       return { 'ocupacion-disponible': true };
     }
-    
+
     const baseClass = this.obtenerClaseOcupacion(ocupacion);
     const clases: { [key: string]: boolean } = {};
-    
+
     // Agregar la clase base
     clases[baseClass] = true;
-    
+
     // Agregar clases específicas para entrada y salida
     if (ocupacion.esDiaEntrada && ocupacion.esDiaSalida) {
       clases['entrada-salida'] = true;
@@ -475,11 +456,11 @@ export class CalendarioOcupacionComponent implements OnInit {
     } else if (ocupacion.esDiaSalida) {
       clases['solo-salida'] = true;
     }
-    
+
     console.log('getClaseOcupacion result:', clases);
     return clases;
   }
-  
+
   mapearEstadoReserva(estadoReserva: string): string {
     switch (estadoReserva.toLowerCase()) {
       case 'confirmada':
@@ -487,7 +468,8 @@ export class CalendarioOcupacionComponent implements OnInit {
         return 'ocupada';
       case 'pendiente':
         return 'reservada';
-      case 'completada':
+      case 'finalizada':
+        return 'finalizada';
       case 'cancelada':
       case 'no show':
         return 'disponible';
@@ -495,7 +477,7 @@ export class CalendarioOcupacionComponent implements OnInit {
         return 'disponible';
     }
   }
-  
+
   mapearEstadoHabitacion(estadoHabitacion: string): string {
     switch (estadoHabitacion.toLowerCase()) {
       case 'disponible':
@@ -513,9 +495,14 @@ export class CalendarioOcupacionComponent implements OnInit {
         return 'disponible';
     }
   }
-  
+
   obtenerNombreCliente(cliente: any): string {
     if (typeof cliente === 'string') return 'Cliente';
     return `${cliente.nombre} ${cliente.apellido}`;
+  }
+
+  obtenerColorEstado(estado: string): string {
+    const estadoKey = estado as keyof typeof this.estadosOcupacion;
+    return this.estadosOcupacion[estadoKey]?.color || '#4CAF50'; // Default to disponible green
   }
 }

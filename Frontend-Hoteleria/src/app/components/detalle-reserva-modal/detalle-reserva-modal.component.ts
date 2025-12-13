@@ -10,8 +10,18 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
+
 import { ReservaService } from '../../services/reserva.service';
 import { DateTimeService } from '../../services/date-time.service';
+import { HabitacionService } from '../../services/habitacion.service';
+import { Habitacion } from '../../models/habitacion.model';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule, provideNativeDateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { FormsModule } from '@angular/forms';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CamaInfo, TransporteInfo } from '../../models/reserva.model';
 import { PagoDialogComponent } from '../pago-dialog/pago-dialog.component';
 import { EditarPagoModalComponent } from '../editar-pago-modal/editar-pago-modal.component';
@@ -24,6 +34,10 @@ export interface DetalleReservaData {
 @Component({
   selector: 'app-detalle-reserva-modal',
   standalone: true,
+  providers: [
+    provideNativeDateAdapter(),
+    { provide: MAT_DATE_LOCALE, useValue: 'es-AR' }
+  ],
   imports: [
     CommonModule,
     MatDialogModule,
@@ -32,7 +46,14 @@ export interface DetalleReservaData {
     MatCardModule,
     MatChipsModule,
     MatDividerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    FormsModule,
+    MatInputModule,
+    MatProgressSpinnerModule
   ],
   template: `
     <div class="detalle-reserva-modal">
@@ -280,6 +301,56 @@ export interface DetalleReservaData {
                 </h4>
                 <p>{{ data.reserva.necesidadesEspeciales }}</p>
               </div>
+
+
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Sección de División de Reserva -->
+          <mat-card class="info-card division-card" *ngIf="modoDivision" style="border: 2px solid #673AB7; background-color: #F3E5F5; margin-top: 16px;">
+            <mat-card-header>
+              <mat-card-title style="color: #673AB7;">
+                <mat-icon class="card-icon">call_split</mat-icon>
+                Dividir Reserva / Cambio de Habitación
+              </mat-card-title>
+              <mat-card-subtitle>
+                Seleccione la fecha del cambio y la nueva habitación para el resto de la estadía.
+              </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="division-form" style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-top: 15px;">
+                <mat-form-field appearance="outline" style="flex: 1; min-width: 200px;">
+                  <mat-label>Fecha de Cambio</mat-label>
+                  <input matInput [matDatepicker]="pickerDivision" [(ngModel)]="fechaDivision" (dateChange)="onFechaDivisionChange($event)">
+                  <mat-datepicker-toggle matSuffix [for]="pickerDivision"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerDivision></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" style="flex: 1; min-width: 200px;">
+                  <mat-label>Nueva Habitación</mat-label>
+                  <mat-select [(ngModel)]="habitacionDestinoId" [disabled]="cargandoHabitaciones || !fechaDivision">
+                    <mat-option *ngIf="cargandoHabitaciones" disabled>
+                      <mat-spinner diameter="20" style="display: inline-block; vertical-align: middle; margin-right: 8px;"></mat-spinner>
+                      Buscando disponibilidad...
+                    </mat-option>
+                    <mat-option *ngIf="!cargandoHabitaciones && habitacionesDisponiblesDivision.length === 0 && fechaDivision" disabled>
+                      No hay habitaciones disponibles
+                    </mat-option>
+                    <mat-option *ngFor="let hab of habitacionesDisponiblesDivision" [value]="hab._id">
+                      Hab {{ hab.numero }} ({{ hab.tipo }}) - Cap: {{ hab.capacidad }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              
+              <div class="division-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button mat-button (click)="cancelarDivision()">CANCELAR</button>
+                <button mat-raised-button color="primary" style="background-color: #673AB7;" 
+                  (click)="confirmarDivision()"
+                  [disabled]="!habitacionDestinoId || cargando">
+                  CONFIRMAR CAMBIO
+                </button>
+              </div>
             </mat-card-content>
           </mat-card>
 
@@ -371,6 +442,17 @@ export interface DetalleReservaData {
             (click)="eliminarReserva()">
             <mat-icon>delete</mat-icon>
             <span class="btn-text">Eliminar</span>
+          </button>
+
+          <!-- Dividir Reserva -->
+          <button 
+            mat-raised-button 
+            style="background-color: #673AB7; color: white;"
+            class="action-btn-secondary dividir"
+            (click)="activarDivision()"
+            [disabled]="cargando || data.reserva.estado === 'Cancelada' || data.reserva.estado === 'Finalizada'">
+            <mat-icon>call_split</mat-icon>
+            <span class="btn-text">Dividir / Mover</span>
           </button>
         </div>
 
@@ -481,7 +563,7 @@ export interface DetalleReservaData {
       color: white;
     }
 
-    .estado-completada {
+    .estado-finalizada {
       background-color: #4caf50;
       color: white;
     }
@@ -1024,10 +1106,20 @@ export interface DetalleReservaData {
   `]
 })
 export class DetalleReservaModalComponent {
+
+  // --- Lógica Split Reservation ---
+  modoDivision = false;
+  fechaDivision: Date | null = null;
+  habitacionDestinoId: string | null = null;
+  habitacionesDisponiblesDivision: Habitacion[] = [];
+  cargandoHabitaciones = false;
+  cargando = false; // Add generic loading state if not exists
+
   constructor(
     public dialogRef: MatDialogRef<DetalleReservaModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: DetalleReservaData,
     private reservaService: ReservaService,
+    private habitacionService: HabitacionService, // Added
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private router: Router,
@@ -1053,33 +1145,33 @@ export class DetalleReservaModalComponent {
     }
 
     const horaCheckIn = this.dateTimeService.getCurrentTimeStringFormatted();
-    
+
     console.log('Realizando check-in:', {
       reservaId: this.data.reserva._id,
       horaCheckIn: horaCheckIn
     });
-    
+
     this.reservaService.checkIn(this.data.reserva._id, horaCheckIn).subscribe({
-      next: (reservaActualizada) => {
+      next: (reservaActualizada: any) => {
         this.snackBar.open(`✅ Check-in realizado exitosamente para ${this.data.reserva.cliente?.nombre} ${this.data.reserva.cliente?.apellido}`, 'Cerrar', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
-        
+
         // Actualizar los datos de la reserva en el modal
         this.data.reserva = reservaActualizada;
-        
-        this.dialogRef.close({ 
-          action: 'checkin', 
+
+        this.dialogRef.close({
+          action: 'checkin',
           reserva: reservaActualizada,
           horaCheckIn: horaCheckIn
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al procesar check-in:', error);
-        
+
         let mensajeError = '❌ Error al procesar el check-in. Intente nuevamente.';
-        
+
         if (error.status === 401) {
           mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
           this.authService.logout();
@@ -1090,7 +1182,7 @@ export class DetalleReservaModalComponent {
         } else if (error.status === 0) {
           mensajeError = '❌ Error de conexión. Verifique que el servidor esté ejecutándose.';
         }
-        
+
         this.snackBar.open(mensajeError, 'Cerrar', {
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -1110,33 +1202,33 @@ export class DetalleReservaModalComponent {
     }
 
     const horaCheckOut = this.dateTimeService.getCurrentTimeStringFormatted();
-    
+
     console.log('Realizando check-out:', {
       reservaId: this.data.reserva._id,
       horaCheckOut: horaCheckOut
     });
-    
+
     this.reservaService.checkOut(this.data.reserva._id, horaCheckOut).subscribe({
-      next: (reservaActualizada) => {
+      next: (reservaActualizada: any) => {
         this.snackBar.open(`✅ Check-out realizado exitosamente para ${this.data.reserva.cliente?.nombre} ${this.data.reserva.cliente?.apellido}`, 'Cerrar', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
-        
+
         // Actualizar los datos de la reserva en el modal
         this.data.reserva = reservaActualizada;
-        
-        this.dialogRef.close({ 
-          action: 'checkout', 
+
+        this.dialogRef.close({
+          action: 'checkout',
           reserva: reservaActualizada,
           horaCheckOut: horaCheckOut
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al procesar check-out:', error);
-        
+
         let mensajeError = '❌ Error al procesar el check-out. Intente nuevamente.';
-        
+
         if (error.status === 401) {
           mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
           this.authService.logout();
@@ -1147,7 +1239,7 @@ export class DetalleReservaModalComponent {
         } else if (error.status === 0) {
           mensajeError = '❌ Error de conexión. Verifique que el servidor esté ejecutándose.';
         }
-        
+
         this.snackBar.open(mensajeError, 'Cerrar', {
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -1182,33 +1274,33 @@ export class DetalleReservaModalComponent {
     if (!confirmacion) {
       return;
     }
-    
+
     console.log('Revirtiendo check-out:', {
       reservaId: this.data.reserva._id,
       estadoActual: this.data.reserva.estado
     });
-    
+
     this.reservaService.revertirCheckOut(this.data.reserva._id).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.snackBar.open(`✅ Check-out revertido exitosamente para ${this.data.reserva.cliente?.nombre} ${this.data.reserva.cliente?.apellido}`, 'Cerrar', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
-        
+
         // Actualizar los datos de la reserva en el modal
         this.data.reserva = response.reserva;
-        
-        this.dialogRef.close({ 
-          action: 'revertir-checkout', 
+
+        this.dialogRef.close({
+          action: 'revertir-checkout',
           reserva: response.reserva,
           mensaje: response.message
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al revertir check-out:', error);
-        
+
         let mensajeError = '❌ Error al revertir el check-out. Intente nuevamente.';
-        
+
         if (error.status === 401) {
           mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
           this.authService.logout();
@@ -1221,7 +1313,7 @@ export class DetalleReservaModalComponent {
         } else if (error.status === 0) {
           mensajeError = '❌ Error de conexión. Verifique que el servidor esté ejecutándose.';
         }
-        
+
         this.snackBar.open(mensajeError, 'Cerrar', {
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -1258,37 +1350,37 @@ export class DetalleReservaModalComponent {
         });
 
         this.reservaService.registrarPago(
-          this.data.reserva._id, 
-          result.metodoPago, 
+          this.data.reserva._id,
+          result.metodoPago,
           result.monto,
           result.observaciones
         ).subscribe({
-      next: (reservaActualizada) => {
-            const mensaje = reservaActualizada.estaCompletamentePagado ? 
+          next: (reservaActualizada: any) => {
+            const mensaje = reservaActualizada.estaCompletamentePagado ?
               `✅ Pago completado exitosamente por $${result.monto}` :
               `✅ Pago parcial registrado por $${result.monto}. Restante: $${reservaActualizada.montoRestante}`;
-            
+
             this.snackBar.open(mensaje, 'Cerrar', {
               duration: 4000,
               panelClass: ['success-snackbar']
             });
-            
+
             // Actualizar los datos de la reserva en el modal
             this.data.reserva = reservaActualizada;
-            
-            this.dialogRef.close({ 
-              action: 'pago', 
+
+            this.dialogRef.close({
+              action: 'pago',
               reserva: reservaActualizada,
               metodoPago: result.metodoPago,
               monto: result.monto,
               observaciones: result.observaciones
             });
-      },
-      error: (error) => {
-        console.error('Error al registrar pago:', error);
-            
+          },
+          error: (error: any) => {
+            console.error('Error al registrar pago:', error);
+
             let mensajeError = '❌ Error al registrar el pago. Intente nuevamente.';
-            
+
             if (error.status === 401) {
               mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
               this.authService.logout();
@@ -1301,7 +1393,7 @@ export class DetalleReservaModalComponent {
             } else if (error.status === 0) {
               mensajeError = '❌ Error de conexión. Verifique que el servidor esté ejecutándose.';
             }
-            
+
             this.snackBar.open(mensajeError, 'Cerrar', {
               duration: 5000,
               panelClass: ['error-snackbar']
@@ -1315,7 +1407,7 @@ export class DetalleReservaModalComponent {
   editarReserva(): void {
     // Cerrar el modal actual y navegar a la página de edición
     this.dialogRef.close({ action: 'editar', reserva: this.data.reserva });
-    
+
     // Navegar a la página de nueva reserva con los datos precargados
     this.router.navigate(['/nueva-reserva'], {
       queryParams: {
@@ -1364,7 +1456,7 @@ export class DetalleReservaModalComponent {
 
     // Generar PDF de la reserva
     this.reservaService.generarPDF(this.data.reserva._id).subscribe({
-      next: (blob) => {
+      next: (blob: any) => {
         // Verificar que el blob sea válido
         if (!blob || blob.size === 0) {
           this.snackBar.open('❌ Error: El PDF generado está vacío', 'Cerrar', {
@@ -1389,27 +1481,27 @@ export class DetalleReservaModalComponent {
         link.href = url;
         link.download = `reserva-${this.data.reserva._id}.pdf`;
         link.style.display = 'none';
-        
+
         // Agregar al DOM, hacer clic y remover
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
+
         // Limpiar la URL
         setTimeout(() => {
           window.URL.revokeObjectURL(url);
         }, 1000);
-        
+
         this.snackBar.open('✅ PDF descargado exitosamente', 'Cerrar', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al generar PDF:', error);
-        
+
         let mensajeError = '❌ Error al generar el PDF. Intente nuevamente.';
-        
+
         if (error.status === 401) {
           mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
           this.authService.logout();
@@ -1420,7 +1512,7 @@ export class DetalleReservaModalComponent {
         } else if (error.status === 0) {
           mensajeError = '❌ Error de conexión. Verifique que el servidor esté ejecutándose.';
         }
-        
+
         this.snackBar.open(mensajeError, 'Cerrar', {
           duration: 5000,
           panelClass: ['error-snackbar']
@@ -1432,10 +1524,10 @@ export class DetalleReservaModalComponent {
   private imprimirConNavegador(): void {
     // Crear contenido HTML para impresión
     const contenidoImpresion = this.generarContenidoImpresion();
-    
+
     // Abrir ventana de impresión
     const ventanaImpresion = window.open('', '_blank', 'width=800,height=600');
-    
+
     if (!ventanaImpresion) {
       this.snackBar.open('❌ No se pudo abrir la ventana de impresión. Verifique que los pop-ups estén habilitados.', 'Cerrar', {
         duration: 5000,
@@ -1446,7 +1538,7 @@ export class DetalleReservaModalComponent {
 
     ventanaImpresion.document.write(contenidoImpresion);
     ventanaImpresion.document.close();
-    
+
     // Esperar a que se cargue el contenido y luego imprimir
     ventanaImpresion.onload = () => {
       setTimeout(() => {
@@ -1454,7 +1546,7 @@ export class DetalleReservaModalComponent {
         ventanaImpresion.close();
       }, 500);
     };
-    
+
     this.snackBar.open('🖨️ Abriendo ventana de impresión...', 'Cerrar', {
       duration: 2000
     });
@@ -1462,8 +1554,8 @@ export class DetalleReservaModalComponent {
 
   private generarContenidoImpresion(): string {
     const reserva = this.data.reserva;
-    const fechaEntrada = new Date(reserva.fechaEntrada);
-    const fechaSalida = new Date(reserva.fechaSalida);
+    const fechaEntrada = this.dateTimeService.stringToDate(reserva.fechaEntrada);
+    const fechaSalida = this.dateTimeService.stringToDate(reserva.fechaSalida);
     const dias = Math.ceil((fechaSalida.getTime() - fechaEntrada.getTime()) / (1000 * 60 * 60 * 24));
 
     return `
@@ -1724,7 +1816,7 @@ export class DetalleReservaModalComponent {
               <div class="pago-item">
                 <strong>Pago #${index + 1}</strong><br>
                 Monto: $${pago.monto} | Método: ${pago.metodoPago}<br>
-                Fecha: ${this.formatDateDDMMYYYY(new Date(pago.fechaPago))}<br>
+                Fecha: ${this.dateTimeService.formatDateForDisplay(this.dateTimeService.stringToDate(pago.fechaPago))}<br>
                 ${pago.observaciones ? `Observaciones: ${pago.observaciones}<br>` : ''}
                 Registrado por: ${pago.registradoPor}
               </div>
@@ -1743,7 +1835,7 @@ export class DetalleReservaModalComponent {
         <div class="footer">
           <p>Este documento es generado automáticamente por el Sistema de Gestión Hotelera</p>
           <p>Para consultas contactar al hostal al +54 11 1234-5678</p>
-          <p>Generado el ${this.formatDateDDMMYYYY(new Date())}</p>
+          <p>Generado el ${this.dateTimeService.formatDateForDisplay(new Date())}</p>
         </div>
       </body>
       </html>
@@ -1755,7 +1847,7 @@ export class DetalleReservaModalComponent {
       'Pendiente': '#ff9800',
       'Confirmada': '#4caf50',
       'En curso': '#2196f3',
-      'Completada': '#4caf50',
+      'Finalizada': '#4caf50',
       'Cancelada': '#f44336',
       'No Show': '#9c27b0'
     };
@@ -1768,12 +1860,12 @@ export class DetalleReservaModalComponent {
     if (this.data.reserva.estaCompletamentePagado !== undefined) {
       return this.data.reserva.estaCompletamentePagado;
     }
-    
+
     // Calcular manualmente si no está disponible
     if (this.data.reserva.montoPagado !== undefined && this.data.reserva.precioTotal !== undefined) {
       return this.data.reserva.montoPagado >= this.data.reserva.precioTotal;
     }
-    
+
     // Fallback al campo pagado original
     return this.data.reserva.pagado || false;
   }
@@ -1783,11 +1875,11 @@ export class DetalleReservaModalComponent {
     if (this.isCompletamentePagado()) {
       return 'Completamente Pagado';
     }
-    
+
     if (this.data.reserva.montoPagado && this.data.reserva.montoPagado > 0) {
       return 'Pago Parcial';
     }
-    
+
     return 'Pago Pendiente';
   }
 
@@ -1843,25 +1935,25 @@ export class DetalleReservaModalComponent {
           pago._id,
           result.datosEdicion
         ).subscribe({
-          next: (reservaActualizada) => {
+          next: (reservaActualizada: any) => {
             this.snackBar.open('✅ Pago editado exitosamente', 'Cerrar', {
               duration: 4000,
               panelClass: ['success-snackbar']
             });
-            
+
             // Actualizar los datos de la reserva en el modal
             this.data.reserva = reservaActualizada;
-            
-            this.dialogRef.close({ 
-              action: 'pago-editado', 
-              reserva: reservaActualizada 
+
+            this.dialogRef.close({
+              action: 'pago-editado',
+              reserva: reservaActualizada
             });
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error al editar pago:', error);
-            
+
             let mensajeError = '❌ Error al editar el pago. Intente nuevamente.';
-            
+
             if (error.status === 401) {
               mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
               this.authService.logout();
@@ -1872,7 +1964,7 @@ export class DetalleReservaModalComponent {
             } else if (error.error && error.error.message) {
               mensajeError = `❌ ${error.error.message}`;
             }
-            
+
             this.snackBar.open(mensajeError, 'Cerrar', {
               duration: 5000,
               panelClass: ['error-snackbar']
@@ -1898,7 +1990,7 @@ export class DetalleReservaModalComponent {
       `¿Está seguro de que desea eliminar este pago?\n\n` +
       `Monto: $${pago.monto}\n` +
       `Método: ${pago.metodoPago}\n` +
-      `Fecha: ${this.formatDateDDMMYYYY(new Date(pago.fechaPago))}\n\n` +
+      `Fecha: ${this.dateTimeService.formatDateForDisplay(this.dateTimeService.stringToDate(pago.fechaPago))}\n\n` +
       `Esta acción no se puede deshacer.`
     );
 
@@ -1915,25 +2007,25 @@ export class DetalleReservaModalComponent {
       this.data.reserva._id,
       pago._id
     ).subscribe({
-      next: (reservaActualizada) => {
+      next: (reservaActualizada: any) => {
         this.snackBar.open('✅ Pago eliminado exitosamente', 'Cerrar', {
           duration: 4000,
           panelClass: ['success-snackbar']
         });
-        
+
         // Actualizar los datos de la reserva en el modal
         this.data.reserva = reservaActualizada;
-        
-        this.dialogRef.close({ 
-          action: 'pago-eliminado', 
-          reserva: reservaActualizada 
+
+        this.dialogRef.close({
+          action: 'pago-eliminado',
+          reserva: reservaActualizada
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al eliminar pago:', error);
-        
+
         let mensajeError = '❌ Error al eliminar el pago. Intente nuevamente.';
-        
+
         if (error.status === 401) {
           mensajeError = '❌ Sesión expirada. Debe iniciar sesión nuevamente.';
           this.authService.logout();
@@ -1944,11 +2036,132 @@ export class DetalleReservaModalComponent {
         } else if (error.error && error.error.message) {
           mensajeError = `❌ ${error.error.message}`;
         }
-        
+
         this.snackBar.open(mensajeError, 'Cerrar', {
           duration: 5000,
           panelClass: ['error-snackbar']
         });
+      }
+    });
+  }
+
+
+  // --- Métodos de División de Reserva ---
+  activarDivision() {
+    console.log('🔘 Botón Dividir clickeado');
+    this.modoDivision = true;
+    console.log('Estado modoDivision:', this.modoDivision);
+    console.log('Reserva fechaEntrada:', this.data.reserva?.fechaEntrada);
+
+    if (this.data.reserva?.fechaEntrada) {
+      // Use DateTimeService to safely parse and add days
+      const fechaEntrada = this.dateTimeService.stringToDate(this.data.reserva.fechaEntrada);
+      // Default split date: check-in + 1 day
+      const defaultDate = this.dateTimeService.addDays(fechaEntrada, 1);
+
+      this.fechaDivision = defaultDate;
+      console.log('Fecha división inicial:', this.fechaDivision);
+      this.buscarHabitacionesDivision();
+    } else {
+      console.warn('⚠️ No hay fecha de entrada en la reserva');
+    }
+
+    // Auto-scroll to division card
+    setTimeout(() => {
+      const element = document.querySelector('.division-card');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        console.log('📜 Scrolled to division card');
+      } else {
+        console.warn('⚠️ Division card element not found in DOM');
+      }
+    }, 100);
+  }
+
+  cancelarDivision() {
+    this.modoDivision = false;
+    this.fechaDivision = null;
+    this.habitacionDestinoId = null;
+    this.habitacionesDisponiblesDivision = [];
+  }
+
+  onFechaDivisionChange(event: any) {
+    console.log('📅 Fecha división cambiada:', event.value);
+    this.fechaDivision = event.value;
+    this.buscarHabitacionesDivision();
+  }
+
+  buscarHabitacionesDivision() {
+    console.log('🔍 Buscando habitaciones para división. Fecha:', this.fechaDivision);
+    if (!this.data.reserva || !this.fechaDivision) {
+      console.log('❌ Faltan datos para buscar:', { reserva: !!this.data.reserva, fecha: this.fechaDivision });
+      return;
+    }
+
+    // Convert string inputs to dates using DateTimeService to ensure consistent timezone handling
+    const fechaEntradaStr = this.data.reserva.fechaEntrada.split('T')[0];
+    const fechaSalidaStr = this.data.reserva.fechaSalida.split('T')[0];
+    const fechaDivStr = this.dateTimeService.formatDateToLocalString(this.fechaDivision);
+
+    console.log('Fechas comparadas (String):', { fechaEntradaStr, fechaDivStr, fechaSalidaStr });
+
+    // Validate logic: Split date must be AFTER Check-in and BEFORE Check-out.
+    // > fechaEntradaStr means at least the day after arrival.
+    // < fechaSalidaStr means at least the day before departure (so there is at least 1 night in new room).
+    // Actually, if I move on 17th and checkout is 18th, I stay 17th night in new room. 
+    // So fechaDiv must be < fechaSalida. 
+    // And fechaDiv > fechaEntrada.
+
+    if (fechaDivStr <= fechaEntradaStr || fechaDivStr >= fechaSalidaStr) {
+      this.habitacionesDisponiblesDivision = [];
+      console.warn('⚠️ Fecha inválida:', { fechaDivStr, range: [fechaEntradaStr, fechaSalidaStr] });
+      this.snackBar.open('La fecha de cambio debe ser posterior al check-in y anterior al check-out', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.cargandoHabitaciones = true;
+
+    // Search availability for the NEW period: [fechaDiv, fechaSalida]
+    // The current room is occupied by this reservation from [fechaEntrada, fechaSalida].
+    // We are looking for NEW rooms for [fechaDiv, fechaSalida].
+
+    this.habitacionService.getHabitacionesDisponibles(fechaDivStr, fechaSalidaStr).subscribe({
+      next: (disponibles: any[]) => {
+        // Filter out the current room because it is effectively occupied by US until we split it.
+        // Wait, if we split, we free the old room from fechaDiv.
+        // But the backend sees it as occupied.
+        // We should show other rooms.
+        this.habitacionesDisponiblesDivision = disponibles.filter(h => h._id !== this.data.reserva.habitacion._id);
+        console.log('✅ Habitaciones encontradas:', this.habitacionesDisponiblesDivision.length);
+        this.cargandoHabitaciones = false;
+      },
+      error: (err: any) => {
+        console.error('Error cargando habitaciones', err);
+        this.cargandoHabitaciones = false;
+        this.snackBar.open('Error al buscar disponibilidad', 'Cerrar', { duration: 3000 });
+      }
+    });
+  }
+
+  confirmarDivision() {
+    if (!this.data.reserva || !this.fechaDivision || !this.habitacionDestinoId) return;
+
+    this.cargando = true;
+
+    const fechaLocalStr = this.dateTimeService.formatDateToLocalString(this.fechaDivision);
+
+    this.reservaService.dividirReserva(this.data.reserva._id, fechaLocalStr, this.habitacionDestinoId).subscribe({
+      next: (res: any) => {
+        this.snackBar.open('Reserva dividida exitosamente', 'Cerrar', { duration: 3000 });
+        this.cargando = false;
+        this.modoDivision = false;
+        // Cerrar dialogo y actualizar
+        this.dialogRef.close({ action: 'update', reserva: res });
+      },
+      error: (err: any) => {
+        console.error('Error dividiendo reserva', err);
+        this.snackBar.open(err.error?.message || 'Error al dividir la reserva', 'Cerrar', { duration: 5000 });
+        this.cargando = false;
       }
     });
   }
@@ -1958,12 +2171,15 @@ export class DetalleReservaModalComponent {
   }
 
   eliminarReserva(): void {
-    // Confirmación simple y directa
+    // Confirmación para eliminación física permanente
     const confirmacion = confirm(
-      `¿Está seguro de que desea eliminar la reserva de ${this.data.reserva.cliente?.nombre} ${this.data.reserva.cliente?.apellido}?\n\n` +
+      `⚠️ ELIMINACIÓN PERMANENTE ⚠️\n\n` +
+      `¿Está seguro de que desea ELIMINAR PERMANENTEMENTE la reserva de ${this.data.reserva.cliente?.nombre} ${this.data.reserva.cliente?.apellido}?\n\n` +
       `Habitación: ${this.data.reserva.habitacion?.numero}\n` +
-      `Fechas: ${this.dateTimeService.formatDateForDisplay(new Date(this.data.reserva.fechaEntrada))} - ${this.dateTimeService.formatDateForDisplay(new Date(this.data.reserva.fechaSalida))}\n\n` +
-      `Esta acción NO se puede deshacer.`
+      `Fechas: ${this.dateTimeService.formatDateForDisplay(this.dateTimeService.stringToDate(this.data.reserva.fechaEntrada))} - ${this.dateTimeService.formatDateForDisplay(this.dateTimeService.stringToDate(this.data.reserva.fechaSalida))}\n\n` +
+      `⚠️ ADVERTENCIA: Esta acción eliminará la reserva PERMANENTEMENTE de la base de datos.\n` +
+      `Esta acción NO se puede deshacer.\n\n` +
+      `NOTA: Si desea cancelar la reserva correctamente (con registro de cancelación), use la opción "Cancelar" en lugar de "Eliminar".`
     );
 
     if (!confirmacion) {
@@ -1975,41 +2191,37 @@ export class DetalleReservaModalComponent {
   }
 
   private procesarEliminacion(): void {
-    console.log('Eliminando reserva:', this.data.reserva._id);
-    
-    this.snackBar.open('Eliminando reserva...', 'Cerrar', {
+    console.log('🗑️ Eliminando físicamente reserva:', this.data.reserva._id);
+
+    this.snackBar.open('Eliminando reserva de la base de datos...', 'Cerrar', {
       duration: 2000
     });
 
-    // Usar cancelarReserva en lugar de deleteReserva
-    const motivoCancelacion = 'Cancelación desde modal de detalles';
-    this.reservaService.cancelarReserva(this.data.reserva._id, motivoCancelacion).subscribe({
+    // Eliminar físicamente la reserva de la base de datos
+    this.reservaService.deleteReserva(this.data.reserva._id).subscribe({
       next: (response: any) => {
-        console.log('Reserva cancelada exitosamente:', response);
-        
-        this.snackBar.open('✅ Reserva cancelada exitosamente', 'Cerrar', {
+        console.log('✅ Reserva eliminada físicamente:', response);
+
+        this.snackBar.open('✅ Reserva eliminada correctamente de la base de datos', 'Cerrar', {
           duration: 4000,
           panelClass: ['snackbar-success']
         });
 
         // Cerrar el modal y retornar resultado para actualizar la vista
         this.dialogRef.close({
-          action: 'cancelada',
-          reserva: this.data.reserva,
-          cancelacion: response.cancelacion
+          action: 'eliminada',
+          reserva: this.data.reserva
         });
       },
       error: (error: any) => {
-        console.error('Error al cancelar reserva:', error);
-        
-        let mensajeError = '❌ Error al cancelar la reserva';
-        
+        console.error('❌ Error al eliminar reserva:', error);
+
+        let mensajeError = '❌ Error al eliminar la reserva';
+
         if (error.status === 404) {
-          mensajeError = '🔍 La reserva no fue encontrada. Puede que ya haya sido cancelada.';
+          mensajeError = '🔍 La reserva no fue encontrada. Puede que ya haya sido eliminada.';
         } else if (error.status === 403) {
-          mensajeError = '🚫 No tiene permisos para cancelar esta reserva. Contacte al administrador.';
-        } else if (error.status === 400) {
-          mensajeError = '⚠️ No se puede cancelar esta reserva en su estado actual.';
+          mensajeError = '🚫 No tiene permisos para eliminar esta reserva. Solo los encargados pueden eliminar reservas.';
         } else if (error.status === 401) {
           mensajeError = '🔐 Su sesión ha expirado. Será redirigido al login.';
           this.authService.logout();
