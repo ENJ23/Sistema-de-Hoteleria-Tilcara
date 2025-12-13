@@ -16,7 +16,8 @@
     border-spacing: 0;
     background: white;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
+    /* Fix for sticky headers */
 }
 
 .timeline-table th {
@@ -723,7 +724,7 @@
 }
 
 /* Responsiveness adjustments */
-@media (max-width: 600px) {
+@media (max-width: 960px) {
     .calendario-header {
         flex-direction: column;
         align-items: stretch;
@@ -741,11 +742,83 @@
         order: 1;
     }
 
+    /* Allow Grid View on Mobile */
     .timeline-table-container {
-        /* On mobile, standard table might scroll, Agenda view should be default */
-        display: none;
+        display: block;
+        /* Show container */
+        max-width: 100vw;
+        /* Ensure it fits viewport width */
+        margin: 0 -10px;
+        /* Negative margin to counteract page padding if needed */
+        width: calc(100% + 20px);
+        border-radius: 0;
+    }
+
+    /* COMPACT MODE FOR MOBILE */
+    .timeline-table {
+        min-width: auto;
+        /* Allow shrinking */
+    }
+
+    /* Reduce Header Sizes */
+    .timeline-table th,
+    .mes-indicator-cell,
+    .mes-indicator-day {
+        font-size: 10px;
+        padding: 4px 2px;
+    }
+
+    .dia-header {
+        min-width: 25px;
+        /* Compact width */
+    }
+
+    .dia-numero {
+        font-size: 11px;
+    }
+
+    /* Reduce Cell Sizes */
+    .celda-ocupacion {
+        min-width: 25px;
+        height: 25px;
+        /* Compact height */
+        padding: 1px;
+    }
+
+    .habitacion-info {
+        min-width: 60px;
+        /* Reduced width for room column */
+        max-width: 60px;
+    }
+
+    .habitacion-numero {
+        font-size: 11px;
+    }
+
+    .habitacion-capacidad {
+        font-size: 9px;
+    }
+
+    /* Adjust Sticky Header Z-Indices for correct layering */
+    .mes-indicator-cell {
+        z-index: 30 !important;
+        /* Top-Left Corner must be highest */
+    }
+
+    .habitacion-header {
+        z-index: 29;
+    }
+
+    .mes-indicator-day {
+        z-index: 28;
+    }
+
+    .habitacion-info {
+        z-index: 27;
+        /* Left column */
     }
 }
+
 
 /* DRAG AND DROP STYLES */
 .celda-content-wrapper {
