@@ -11,7 +11,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatChipListbox } from '@angular/material/chips';
 
 // Models y servicios
 import { Habitacion } from '../../../models/habitacion.model';
@@ -37,7 +36,6 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
     MatDividerModule,
     MatListModule,
     MatChipsModule,
-    MatChipListbox,
     MatSnackBarModule,
     // Componentes
     HeaderComponent,
@@ -47,14 +45,14 @@ import { LoadingSpinnerComponent } from '../../../shared/components/loading-spin
 export class DetalleHabitacionComponent implements OnInit {
   habitacion: Habitacion | null = null;
   loading = true;
-  
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private habitacionService: HabitacionService,
     private snackBar: MatSnackBar,
     private location: Location
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.obtenerHabitacion();
@@ -83,7 +81,7 @@ export class DetalleHabitacionComponent implements OnInit {
 
   cambiarEstado(nuevoEstado: string): void {
     if (!this.habitacion) return;
-    
+
     this.loading = true;
     this.habitacionService.updateEstado(this.habitacion._id, nuevoEstado).subscribe({
       next: (habitacionActualizada) => {
@@ -140,26 +138,26 @@ export class DetalleHabitacionComponent implements OnInit {
   }
 
   getNextEstadoText(estadoActual: string): string {
-    const estados: {[key: string]: string} = {
+    const estados: { [key: string]: string } = {
       'Disponible': 'Marcar como Ocupada',
       'Ocupada': 'Marcar como Disponible',
       'Mantenimiento': 'Finalizar Mantenimiento',
       'Reservada': 'Check-in',
       'default': 'Cambiar Estado'
     };
-    
+
     return estados[estadoActual] || estados['default'];
   }
 
   getNextEstado(estadoActual: string): string {
-    const estados: {[key: string]: string} = {
+    const estados: { [key: string]: string } = {
       'Disponible': 'Ocupada',
       'Ocupada': 'Disponible',
       'Mantenimiento': 'Disponible',
       'Reservada': 'Ocupada',
       'default': 'Disponible'
     };
-    
+
     return estados[estadoActual] || estados['default'];
   }
 

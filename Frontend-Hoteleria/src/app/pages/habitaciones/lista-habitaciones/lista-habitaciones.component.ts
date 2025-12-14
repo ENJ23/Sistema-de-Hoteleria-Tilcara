@@ -30,7 +30,6 @@ import { HabitacionService, HabitacionResponse } from '../../../services/habitac
 import { ReservaService } from '../../../services/reserva.service'; // Importar ReservaService
 import { Reserva } from '../../../models/reserva.model'; // Importar Reserva model
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-lista-habitaciones',
@@ -202,7 +201,6 @@ export class ListaHabitacionesComponent implements OnInit {
   constructor(
     private habitacionService: HabitacionService,
     private reservaService: ReservaService, // Inyectar ReservaService
-    private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
     private dialog: MatDialog,

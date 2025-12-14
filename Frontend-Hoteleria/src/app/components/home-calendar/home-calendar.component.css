@@ -30,7 +30,8 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 30;
+    /* High priority (Row 1) */
 }
 
 .mes-indicator-row {
@@ -42,9 +43,12 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 8px;
     text-align: center;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
     position: sticky;
+    top: 0;
     left: 0;
-    z-index: 15;
+    z-index: 40;
+    /* Highest priority (Corner) */
 }
 
 .mes-indicator {
@@ -85,8 +89,11 @@
     background: linear-gradient(135deg, #4c63d2 0%, #667eea 100%) !important;
     min-width: 30px;
     position: sticky;
+    top: 45px;
+    /* Offset for second row */
     left: 0;
-    z-index: 25;
+    z-index: 35;
+    /* High priority (Left Column + Sticky Top) */
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     border-right: 2px solid rgba(255, 255, 255, 0.2);
     will-change: transform;
@@ -96,7 +103,15 @@
 
 .dia-header {
     min-width: 45px;
-    position: relative;
+    min-width: 45px;
+    position: sticky;
+    top: 45px;
+    /* Offset for second row (approx height of first row) */
+    z-index: 25;
+    /* Lower than Row 1 but higher than body */
+    background: white;
+    /* Ensure non-transparent */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .dia-header.hoy {

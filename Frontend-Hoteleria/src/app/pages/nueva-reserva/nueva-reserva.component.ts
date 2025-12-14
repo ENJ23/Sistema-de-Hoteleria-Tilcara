@@ -102,33 +102,33 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   habitaciones: Habitacion[] = [];
   habitacionesDisponibles: Habitacion[] = [];
   habitacionesFiltradas: Observable<Habitacion[]> = of([]);
-  
+
   cargando = false;
   guardando = false;
   fechaSeleccionada?: Date;
   habitacionSeleccionada?: Habitacion;
   modoClic = false;
-  
+
   // Propiedades para modo de edición
   modoEdicion = false;
   reservaId?: string;
   reservaOriginal?: Reserva;
-  
+
   // Estados y tipos
   estadosReserva = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Finalizada', 'No Show'];
   metodosPago = ['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal'];
-  
+
   // Precios
   precioPorNoche = 0;
   precioTotal = 0;
   numeroNoches = 0;
-  
+
   // Destructor para observables
   private destroy$ = new Subject<void>();
-  
+
   // Referencia al dialog
   private dialogRef?: any;
-  
+
   // Flag para prevenir múltiples aperturas
   private abriendoDialog = false;
 
@@ -161,7 +161,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       documentoCliente: ['', [Validators.minLength(5), Validators.maxLength(20)]],
       direccionCliente: [''],
       nacionalidadCliente: [''],
-      
+
       // Información de la reserva
       habitacion: ['', Validators.required],
       fechaEntrada: ['', [Validators.required, this.validarFechaEntrada.bind(this)]],
@@ -173,7 +173,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       pagado: [false],
       metodoPago: [''],
       observaciones: [''],
-      
+
       // Nuevos campos para configuración específica
       configuracionCamas: this.fb.array([]),
       tipoTransporte: [''],
@@ -235,14 +235,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   private cargarDatosIniciales(): void {
     this.cargando = true;
-    
+
     // Cargar habitaciones
     this.habitacionService.getHabitaciones(1, 100).subscribe({
       next: (response) => {
         this.habitaciones = response.habitaciones;
         this.cargando = false;
         this.verificarParametrosRuta();
-        
+
         // Después de cargar las habitaciones, verificar si hay habitación pendiente de configurar
         this.route.queryParams.subscribe(params => {
           if (params['habitacion'] && this.habitaciones.length > 0) {
@@ -298,18 +298,18 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           if (!value || value === '') {
             return of(this.habitaciones);
           }
-          
+
           // Si es un ID válido (24 caracteres hexadecimales), no filtrar
           if (typeof value === 'string' && value.length === 24 && /^[a-f0-9]+$/i.test(value)) {
             return of([]);
           }
-          
+
           // Si es texto de búsqueda, filtrar
           if (typeof value === 'string' && value.trim().length > 0) {
             const habitacionesFiltradas = this.filtrarHabitaciones(value);
             return of(habitacionesFiltradas);
           }
-          
+
           return of([]);
         })
       )
@@ -330,25 +330,29 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
         this.cargarReservaParaEdicion(params['reservaId']);
         return;
       }
-      
+
       // Modo de creación normal
       if (params['fecha']) {
         // DEBUGGING: Logs para diagnosticar el problema
         console.log('🔍 DEBUGGING NUEVA RESERVA:');
         console.log('📅 Fecha recibida como string:', params['fecha']);
-        
+
         this.fechaSeleccionada = this.dateTimeService.stringToDate(params['fecha']);
         console.log('📅 Fecha convertida con stringToDate:', this.fechaSeleccionada);
-        console.log('📅 Fecha ISO string:', this.fechaSeleccionada.toISOString());
-        console.log('📅 Fecha local string:', this.fechaSeleccionada.toLocaleDateString());
-        
+
+        // Calcular fecha de salida (día siguiente)
+        const fechaSalida = new Date(this.fechaSeleccionada);
+        fechaSalida.setDate(fechaSalida.getDate() + 1);
+
         this.reservaForm.patchValue({
-          fechaEntrada: this.fechaSeleccionada
+          fechaEntrada: this.fechaSeleccionada,
+          fechaSalida: fechaSalida
         });
-        
-        console.log('📅 Fecha asignada al formulario:', this.reservaForm.get('fechaEntrada')?.value);
+
+        console.log('📅 Fecha entrada asignada:', this.reservaForm.get('fechaEntrada')?.value);
+        console.log('📅 Fecha salida asignada automática:', this.reservaForm.get('fechaSalida')?.value);
       }
-      
+
       if (params['habitacion']) {
         // Si las habitaciones ya están cargadas, buscar inmediatamente
         if (this.habitaciones.length > 0) {
@@ -364,7 +368,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   private cargarReservaParaEdicion(reservaId: string): void {
     this.cargando = true;
-    
+
     this.reservaService.getReserva(reservaId).subscribe({
       next: (reserva) => {
         this.reservaOriginal = reserva;
@@ -466,17 +470,17 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       this.precioTotal = reserva.precioTotal;
       console.log('💰 Precio total precargado:', this.precioTotal);
     }
-    
+
     // Calcular precios (esto actualizará el cálculo local)
     this.calcularPrecio();
-    
+
     console.log('✅ Datos precargados correctamente');
   }
 
 
   private buscarYConfigurarHabitacion(habitacionId: string): void {
     this.habitacionSeleccionada = this.habitaciones.find(h => h._id === habitacionId);
-    
+
     if (this.habitacionSeleccionada) {
       this.reservaForm.patchValue({
         habitacion: this.habitacionSeleccionada._id
@@ -489,7 +493,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   private filtrarHabitaciones(termino: string): Habitacion[] {
     const terminoLower = termino.toLowerCase();
-    return this.habitaciones.filter(hab => 
+    return this.habitaciones.filter(hab =>
       hab.numero.toLowerCase().includes(terminoLower) ||
       hab.tipo.toLowerCase().includes(terminoLower) ||
       hab.estado.toLowerCase().includes(terminoLower)
@@ -518,7 +522,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       const entrada = this.dateTimeService.stringToDate(entradaStr);
       const salida = this.dateTimeService.stringToDate(salidaStr);
       this.numeroNoches = this.dateTimeService.calculateDaysDifference(entrada, salida);
-      
+
       if (this.numeroNoches > 0) {
         this.precioTotal = this.numeroNoches * precioPorNoche;
       } else {
@@ -541,7 +545,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     if (!this.habitaciones || this.habitaciones.length === 0) {
       return '';
     }
-    
+
     if (typeof habitacion === 'string') {
       // Si es un ID, buscar la habitación completa
       const habitacionCompleta = this.habitaciones.find(h => h._id === habitacion);
@@ -554,11 +558,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       }
       return ''; // Retornar string vacío si no se encuentra
     }
-    
+
     if (habitacion && habitacion._id) {
       return `${habitacion.numero} - ${habitacion.tipo} (${habitacion.estado})`;
     }
-    
+
     return '';
   }
 
@@ -572,13 +576,13 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   onHabitacionClick(): void {
     console.log('=== CLIC EN CAMPO HABITACIÓN ===');
     console.log('Habitaciones disponibles:', this.habitaciones.length);
-    
+
     // Activar modo clic para evitar que el observador sobrescriba
     this.modoClic = true;
-    
+
     // Mostrar todas las habitaciones cuando se hace clic
     this.mostrarTodasHabitaciones();
-    
+
     // Desactivar modo clic después de un breve delay
     setTimeout(() => {
       this.modoClic = false;
@@ -592,29 +596,29 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     console.log('Evento completo:', event);
     console.log('Evento option:', event.option);
     console.log('Valor de la habitación seleccionada:', event.option.value);
-    
+
     const habitacionId = event.option.value;
     console.log('Habitación ID extraído:', habitacionId);
-    
+
     // Buscar la habitación completa
     const habitacionCompleta = this.habitaciones.find(h => h._id === habitacionId);
     console.log('Habitación encontrada:', habitacionCompleta);
-    
+
     if (habitacionCompleta) {
       // Configurar la habitación seleccionada
       this.habitacionSeleccionada = habitacionCompleta;
-      
+
       // Actualizar el precio de la habitación seleccionada
       this.actualizarPrecioHabitacion(habitacionId);
-      
+
       // Asegurar que el formulario tenga el valor correcto
       this.reservaForm.patchValue({
         habitacion: habitacionId
       });
-      
+
       console.log('✅ Habitación seleccionada y configurada:', habitacionCompleta);
     }
-    
+
     // Cerrar el autocompletado después de un breve delay
     setTimeout(() => {
       this.habitacionesFiltradas = of([]);
@@ -633,12 +637,12 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     this.abriendoDialog = true;
     console.log('🔍 Abriendo selector de habitaciones');
     console.log('Habitaciones disponibles:', this.habitaciones.length);
-    
+
     const dialogData: SelectorHabitacionesData = {
       habitaciones: this.habitaciones,
       habitacionSeleccionada: this.habitacionSeleccionada
     };
-    
+
     this.dialogRef = this.dialog.open(SelectorHabitacionesDialogComponent, {
       width: '800px',
       maxHeight: '80vh',
@@ -671,18 +675,18 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   confirmarSeleccionHabitacion(habitacion: Habitacion): void {
     console.log('✅ Confirmando selección de habitación:', habitacion);
-    
+
     // Configurar la habitación seleccionada
     this.habitacionSeleccionada = habitacion;
-    
+
     // Actualizar el formulario
     this.reservaForm.patchValue({
       habitacion: habitacion._id
     });
-    
+
     // Actualizar el precio
     this.actualizarPrecioHabitacion(habitacion._id);
-    
+
     // Mostrar mensaje de confirmación
     this.mostrarMensaje(`Habitación ${habitacion.numero} seleccionada`, 'success');
   }
@@ -691,7 +695,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   private validarFechasEnTiempoReal(): void {
     const fechaEntradaRaw = this.reservaForm.get('fechaEntrada')?.value;
     const fechaSalidaRaw = this.reservaForm.get('fechaSalida')?.value;
-    
+
     if (fechaEntradaRaw && fechaSalidaRaw) {
       const entradaStr = fechaEntradaRaw instanceof Date ? this.dateTimeService.dateToString(fechaEntradaRaw) : fechaEntradaRaw;
       const salidaStr = fechaSalidaRaw instanceof Date ? this.dateTimeService.dateToString(fechaSalidaRaw) : fechaSalidaRaw;
@@ -699,14 +703,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       const salida = this.dateTimeService.stringToDate(salidaStr);
       const hoy = this.dateTimeService.getCurrentDate();
       hoy.setHours(0, 0, 0, 0);
-      
+
       // Validar fecha de entrada
       if (!this.modoEdicion && entrada < hoy) {
         this.reservaForm.get('fechaEntrada')?.setErrors({ fechaAnterior: true });
       } else {
         this.reservaForm.get('fechaEntrada')?.setErrors(null);
       }
-      
+
       // Validar fecha de salida
       if (salida <= entrada) {
         this.reservaForm.get('fechaSalida')?.setErrors({ fechaInvalida: true });
@@ -719,30 +723,30 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   // Validadores personalizados
   validarFechaEntrada(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    
+
     // En modo edición permitimos fecha de entrada anterior a hoy (reserva en curso)
     if (this.modoEdicion) return null;
 
-    const fecha = control.value instanceof Date 
-      ? control.value 
+    const fecha = control.value instanceof Date
+      ? control.value
       : this.dateTimeService.stringToDate(control.value);
     const hoy = this.dateTimeService.getCurrentDate();
     hoy.setHours(0, 0, 0, 0);
-    
+
     if (fecha < hoy) {
       return { fechaAnterior: true };
     }
-    
+
     return null;
   }
 
   validarFechaSalida(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    
+
     const salidaStr = control.value instanceof Date ? this.dateTimeService.dateToString(control.value) : control.value;
     const fechaSalida = this.dateTimeService.stringToDate(salidaStr);
     const fechaEntrada = this.reservaForm?.get('fechaEntrada')?.value;
-    
+
     if (fechaEntrada) {
       const entradaStr = fechaEntrada instanceof Date ? this.dateTimeService.dateToString(fechaEntrada) : fechaEntrada;
       const fechaEntradaDate = this.dateTimeService.stringToDate(entradaStr);
@@ -750,18 +754,18 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
         return { fechaInvalida: true };
       }
     }
-    
+
     return null;
   }
 
   validarFormatoHora(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    
+
     const horaRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!horaRegex.test(control.value)) {
       return { formatoHoraInvalido: true };
     }
-    
+
     return null;
   }
 
@@ -769,7 +773,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   validarFechas(): boolean {
     const fechaEntradaRaw = this.reservaForm.get('fechaEntrada')?.value;
     const fechaSalidaRaw = this.reservaForm.get('fechaSalida')?.value;
-    
+
     if (fechaEntradaRaw && fechaSalidaRaw) {
       const entradaStr = fechaEntradaRaw instanceof Date ? this.dateTimeService.dateToString(fechaEntradaRaw) : fechaEntradaRaw;
       const salidaStr = fechaSalidaRaw instanceof Date ? this.dateTimeService.dateToString(fechaSalidaRaw) : fechaSalidaRaw;
@@ -777,7 +781,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       const salida = this.dateTimeService.stringToDate(salidaStr);
       const hoy = this.dateTimeService.getCurrentDate();
       hoy.setHours(0, 0, 0, 0);
-      
+
       // Validar que la fecha de entrada no sea anterior a hoy (solo creación)
       if (!this.modoEdicion) {
         if (entrada < hoy) {
@@ -788,7 +792,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           this.reservaForm.get('fechaEntrada')?.setErrors(null);
         }
       }
-      
+
       // Validar que la fecha de salida sea posterior a la entrada
       if (salida <= entrada) {
         this.reservaForm.get('fechaSalida')?.setErrors({ fechaInvalida: true });
@@ -797,10 +801,10 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       } else {
         this.reservaForm.get('fechaSalida')?.setErrors(null);
       }
-      
+
       return true;
     }
-    
+
     return false;
   }
 
@@ -808,51 +812,51 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     const habitacionId = this.reservaForm.get('habitacion')?.value;
     const fechaEntrada = this.reservaForm.get('fechaEntrada')?.value;
     const fechaSalida = this.reservaForm.get('fechaSalida')?.value;
-    
+
     if (habitacionId && fechaEntrada && fechaSalida) {
       try {
         // Usar el método checkDisponibilidad que está implementado en el servicio
         const disponible = await firstValueFrom(this.reservaService.checkDisponibilidad(
-          habitacionId, 
+          habitacionId,
           fechaEntrada instanceof Date ? this.dateTimeService.dateToString(fechaEntrada) : fechaEntrada,
           fechaSalida instanceof Date ? this.dateTimeService.dateToString(fechaSalida) : fechaSalida,
           this.modoEdicion ? this.reservaId : undefined
         ));
-        
+
         if (!disponible) {
           this.mostrarMensaje('🚫 La habitación no está disponible para las fechas seleccionadas. Por favor, seleccione otras fechas o una habitación diferente.', 'error');
           return false;
         }
-        
+
         return true;
       } catch (error: any) {
         console.error('Error al verificar disponibilidad:', error);
-        
+
         // Si es un error 500, 403 o 404, puede ser que el endpoint no exista o haya problemas
         if (error.status === 500 || error.status === 403 || error.status === 404) {
           this.mostrarMensaje('⚠️ Advertencia: No se pudo verificar la disponibilidad. Continuando con la reserva...', 'info');
           return true;
         }
-        
+
         this.mostrarMensaje('🔍 Error al verificar disponibilidad de la habitación. Por favor, intente nuevamente.', 'error');
         return false;
       }
     }
-    
+
     return true; // Si no hay datos suficientes, permitir continuar
   }
 
   async guardarReserva(): Promise<void> {
     // Marcar todos los campos como tocados para mostrar errores
     this.marcarTodosLosCamposComoTocados();
-    
+
     // Validación específica de campos obligatorios
     const erroresFaltantes = this.validarCamposObligatorios();
     if (erroresFaltantes.length > 0) {
       this.mostrarMensaje(`❌ Complete los siguientes campos: ${erroresFaltantes.join(', ')}`, 'error');
       return;
     }
-    
+
     if (this.reservaForm.invalid) {
       this.mostrarMensaje('❌ Por favor, corrija los errores mostrados en el formulario', 'error');
       return;
@@ -874,56 +878,56 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     // Crear la reserva con los datos del cliente embebidos
     const metodoPagoValue = this.reservaForm.get('metodoPago')?.value;
     const observacionesValue = this.reservaForm.get('observaciones')?.value;
-    
+
     // Preparar datos con validaciones y formateo
     const fechaEntrada = this.reservaForm.get('fechaEntrada')?.value;
     const fechaSalida = this.reservaForm.get('fechaSalida')?.value;
     const horaEntrada = this.reservaForm.get('horaEntrada')?.value;
     const horaSalida = this.reservaForm.get('horaSalida')?.value;
     const precioPorNoche = this.reservaForm.get('precioPorNoche')?.value;
-    
-    
+
+
     // Validar que las fechas sean válidas
     if (!fechaEntrada || !fechaSalida) {
       this.mostrarMensaje('📅 Las fechas de entrada y salida son obligatorias', 'error');
       return;
     }
-    
+
     // Validar que el precio sea válido
     if (!precioPorNoche || precioPorNoche <= 0) {
       this.mostrarMensaje('💰 El precio por noche debe ser mayor a $0', 'error');
       return;
     }
-    
+
     // Validar formato de horas
     const horaEntradaRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     const horaSalidaRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    
+
     if (horaEntrada && !horaEntradaRegex.test(horaEntrada)) {
       this.mostrarMensaje('🕐 Formato de hora de entrada inválido. Use formato HH:MM (24 horas)', 'error');
       return;
     }
-    
+
     if (horaSalida && !horaSalidaRegex.test(horaSalida)) {
       this.mostrarMensaje('🕐 Formato de hora de salida inválido. Use formato HH:MM (24 horas)', 'error');
       return;
     }
-    
+
     // DEBUGGING: Logs para diagnosticar el problema
     console.log('🔍 DEBUGGING GUARDAR RESERVA:');
     console.log('📅 Fecha entrada del formulario:', fechaEntrada);
     console.log('📅 Fecha salida del formulario:', fechaSalida);
     console.log('📅 Tipo fecha entrada:', typeof fechaEntrada);
     console.log('📅 Tipo fecha salida:', typeof fechaSalida);
-    
-    const fechaEntradaFormateada = fechaEntrada instanceof Date ? 
+
+    const fechaEntradaFormateada = fechaEntrada instanceof Date ?
       this.dateTimeService.dateToString(fechaEntrada) : fechaEntrada;
-    const fechaSalidaFormateada = fechaSalida instanceof Date ? 
+    const fechaSalidaFormateada = fechaSalida instanceof Date ?
       this.dateTimeService.dateToString(fechaSalida) : fechaSalida;
-    
+
     console.log('📅 Fecha entrada formateada:', fechaEntradaFormateada);
     console.log('📅 Fecha salida formateada:', fechaSalidaFormateada);
-    
+
     // Preparar configuración de camas
     const configuracionCamas: CamaInfo[] = this.camas.controls
       .filter(cama => cama.get('tipo')?.value && cama.get('cantidad')?.value)
@@ -991,8 +995,8 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     this.reservaService.createReserva(reservaData).subscribe({
       next: (reserva) => {
         this.mostrarMensaje('Reserva creada exitosamente', 'success');
-        this.router.navigate(['/'], { 
-          queryParams: { 
+        this.router.navigate(['/'], {
+          queryParams: {
             reservaCreada: reserva._id,
             mensaje: 'Reserva creada exitosamente'
           }
@@ -1032,16 +1036,16 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     this.reservaService.updateReserva(this.reservaId!, reservaUpdateData).subscribe({
       next: (reserva) => {
         console.log('✅ Reserva actualizada:', reserva);
-        
+
         // Actualizar el precio total en la interfaz con el valor del backend
         if (reserva.precioTotal) {
           this.precioTotal = reserva.precioTotal;
           console.log('💰 Precio total actualizado desde backend:', this.precioTotal);
         }
-        
+
         this.mostrarMensaje('Reserva actualizada exitosamente', 'success');
-        this.router.navigate(['/'], { 
-          queryParams: { 
+        this.router.navigate(['/'], {
+          queryParams: {
             reservaActualizada: reserva._id,
             mensaje: 'Reserva actualizada exitosamente'
           }
@@ -1058,18 +1062,18 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     console.error(`Error al ${accion} reserva:`, error);
     console.error('Error completo:', error);
     console.error('Error details:', error.error);
-    
+
     let mensajeError = `Error al ${accion} la reserva`;
-    
+
     // Manejo específico de errores de validación del backend
     if (error.error && error.error.errors && Array.isArray(error.error.errors)) {
       console.error('Errores de validación:', error.error.errors);
-      
+
       // Mapear errores específicos a mensajes personalizados
       const erroresPersonalizados = error.error.errors.map((err: any) => {
         const campo = err.param || err.field || '';
         const mensaje = err.msg || err.message || '';
-        
+
         // Mensajes personalizados por campo con nombres amigables
         switch (campo) {
           case 'cliente.nombre':
@@ -1108,11 +1112,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
             return mensaje || 'Campo inválido';
         }
       });
-      
+
       this.mostrarMensaje(erroresPersonalizados.join('. '), 'error');
       return;
     }
-    
+
     // Manejo específico de diferentes tipos de errores HTTP
     if (error.status === 400) {
       if (error.error?.message) {
@@ -1150,14 +1154,14 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       const errorMessage = error.error?.message || '';
       const errorDetails = error.error?.error || '';
       const errorType = error.error?.errorType || '';
-      
+
       // Logging detallado para debugging
       console.error('🔍 DEBUGGING ERROR 500:');
       console.error('Error message:', errorMessage);
       console.error('Error details:', errorDetails);
       console.error('Error type:', errorType);
       console.error('Full error object:', error.error);
-      
+
       // Usar errorType del backend si está disponible, sino usar detección por texto
       if (errorType === 'required' || errorMessage.includes('required') || errorDetails.includes('required')) {
         mensajeError = '❌ Faltan datos obligatorios. Por favor, complete todos los campos requeridos.';
@@ -1200,7 +1204,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     } else {
       mensajeError = `❌ Error inesperado (${error.status || 'desconocido'}). Por favor, intente nuevamente.`;
     }
-    
+
     this.mostrarMensaje(mensajeError, 'error');
     this.guardando = false;
   }
@@ -1231,7 +1235,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   // Validar campos obligatorios y retornar lista de campos faltantes
   private validarCamposObligatorios(): string[] {
     const camposFaltantes: string[] = [];
-    
+
     // Campos obligatorios con sus nombres amigables
     const camposObligatorios = [
       { control: 'habitacion', nombre: 'Habitación' },
@@ -1245,35 +1249,35 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       { control: 'apellidoCliente', nombre: 'Apellido del Cliente' },
       { control: 'telefonoCliente', nombre: 'Teléfono del Cliente' }
     ];
-    
+
     camposObligatorios.forEach(campo => {
       const control = this.reservaForm.get(campo.control);
       if (!control || !control.value || (typeof control.value === 'string' && control.value.trim() === '')) {
         camposFaltantes.push(campo.nombre);
       }
     });
-    
+
     // Validar método de pago si está marcado como pagado
     if (this.reservaForm.get('pagado')?.value && !this.reservaForm.get('metodoPago')?.value) {
       camposFaltantes.push('Método de Pago');
     }
-    
+
     return camposFaltantes;
   }
 
   // Métodos para el template
   getErrorMessage(controlName: string): string {
     const control = this.reservaForm.get(controlName);
-    
+
     // Solo mostrar errores si el campo ha sido tocado o el formulario ha sido enviado
     if (!control || (!control.touched && !this.reservaForm.dirty)) {
       return '';
     }
-    
+
     if (!control.errors) {
       return '';
     }
-    
+
     // Mensajes personalizados por campo
     if (control.hasError('required')) {
       switch (controlName) {
@@ -1301,7 +1305,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           return 'Este campo es requerido';
       }
     }
-    
+
     if (control.hasError('min')) {
       switch (controlName) {
         case 'precioPorNoche':
@@ -1310,7 +1314,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           return 'El valor debe ser mayor a 0';
       }
     }
-    
+
     if (control.hasError('minlength')) {
       switch (controlName) {
         case 'nombreCliente':
@@ -1325,7 +1329,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           return 'El campo es muy corto';
       }
     }
-    
+
     if (control.hasError('maxlength')) {
       switch (controlName) {
         case 'nombreCliente':
@@ -1340,11 +1344,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           return 'El campo es muy largo';
       }
     }
-    
+
     if (control.hasError('email')) {
       return '📧 Ingrese un email válido (ejemplo: usuario@ejemplo.com)';
     }
-    
+
     if (control.hasError('pattern')) {
       switch (controlName) {
         case 'horaEntrada':
@@ -1359,36 +1363,36 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           return 'Formato inválido';
       }
     }
-    
+
     if (control.hasError('fechaInvalida')) {
       return '📅 La fecha de salida debe ser posterior a la fecha de entrada';
     }
-    
+
     if (control.hasError('fechaAnterior')) {
       return '📅 La fecha de entrada no puede ser anterior a hoy';
     }
-    
+
     if (control.hasError('formatoHoraInvalido')) {
       return '🕐 Formato de hora inválido. Use formato HH:MM (24 horas)';
     }
-    
+
     // Errores personalizados
     if (control.hasError('custom')) {
       return control.errors['custom'];
     }
-    
+
     return '';
   }
 
   isFieldInvalid(controlName: string): boolean {
     const control = this.reservaForm.get(controlName);
-    
+
     // Los campos del cliente son opcionales, no considerarlos inválidos
     const camposCliente = ['nombreCliente', 'apellidoCliente', 'emailCliente', 'telefonoCliente', 'documentoCliente', 'direccionCliente', 'nacionalidadCliente'];
     if (camposCliente.includes(controlName)) {
       return false;
     }
-    
+
     // Mostrar errores si el campo es inválido y ha sido tocado, o si el formulario ha sido enviado
     return !!(control && control.invalid && (control.dirty || control.touched || this.reservaForm.dirty));
   }

@@ -1184,7 +1184,9 @@ router.patch('/:id/pago', [
 // NOTA: Para cancelar correctamente una reserva, usar el endpoint PATCH /:id/estado con estado 'Cancelada'
 router.delete('/:id', [
     verifyToken,
-    isEncargado // Solo encargados pueden eliminar físicamente
+    isEncargado, // Solo encargados pueden eliminar físicamente
+    require('express-validator').param('id').isMongoId().withMessage('ID de reserva inválido'),
+    manejarErroresValidacion
 ], async (req, res) => {
     try {
         const reserva = await Reserva.findById(req.params.id).populate('habitacion');
@@ -1218,7 +1220,8 @@ router.delete('/:id', [
         console.error('❌ Error al eliminar reserva:', error);
         res.status(500).json({
             message: 'Error al eliminar reserva',
-            error: error.message
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
