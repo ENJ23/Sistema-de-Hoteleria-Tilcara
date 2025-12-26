@@ -73,6 +73,13 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   
+  // Auditoría de Reservas
+  {
+    path: 'auditoria-reservas',
+    loadComponent: () => import('./pages/auditoria-reservas/auditoria-reservas.component').then(m => m.AuditoriaReservasComponent),
+    canActivate: [AuthGuard]
+  },
+  
   // Ruta por defecto (redirige a la página principal)
   { path: '**', redirectTo: '' }
 ];

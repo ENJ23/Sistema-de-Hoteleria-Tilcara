@@ -113,13 +113,37 @@ export class HomeComponentClean implements OnInit, OnDestroy {
   onMoverReserva(event: { reserva: ReservaResumen, nuevaFechaEntrada: string, nuevaFechaSalida: string, nuevaHabitacionId: string }): void {
     if (!event.reserva._id) return;
 
+    // CONFIRMACIÓN DE SEGURIDAD PARA DRAG & DROP
+    const clienteNombre = `${event.reserva.cliente?.nombre || ''} ${event.reserva.cliente?.apellido || ''}`.trim() || 'Cliente';
+    const fechaEntradaOriginal = this.dateTime.formatYMD(this.dateTime.parseYMD(event.reserva.fechaEntrada));
+    const fechaSalidaOriginal = this.dateTime.formatYMD(this.dateTime.parseYMD(event.reserva.fechaSalida));
+    const habitacionOriginal = typeof event.reserva.habitacion === 'string' ? event.reserva.habitacion : event.reserva.habitacion?.numero || 'N/A';
+    
+    // Buscar nueva habitación
+    const nuevaHab = this.ocupacionHabitaciones.find(oh => 
+      oh.habitacion.id === event.nuevaHabitacionId || oh.habitacion._id === event.nuevaHabitacionId
+    );
+    const habitacionNueva = nuevaHab?.habitacion.numero || 'N/A';
+    
+    const mensaje = `⚠️ CONFIRMACIÓN DE CAMBIO\n\n` +
+      `Reserva: ${clienteNombre}\n` +
+      `Habitación: ${habitacionOriginal} → ${habitacionNueva}\n` +
+      `Fechas: ${fechaEntradaOriginal} / ${fechaSalidaOriginal} → ${event.nuevaFechaEntrada} / ${event.nuevaFechaSalida}\n\n` +
+      `¿Confirma este cambio? Esta acción quedará registrada en el historial de auditoría.`;
+    
+    if (!confirm(mensaje)) {
+      this.snack.open('❌ Cambio cancelado', 'Cerrar', { duration: 2000 });
+      // Forzar recarga para restaurar posición visual
+      this.cargarOcupacion(true);
+      return;
+    }
+
     this.cargandoOcupacion = true;
 
-    // 1. Obtener la reserva completa primero para tener todos los datos requeridos por el backend (precio, horas, clientes, etc.)
+    // 1. Obtener la reserva completa primero para tener todos los datos requeridos por el backend
     this.reservaService.getReserva(event.reserva._id).pipe(
       switchMap(reservaCompleta => {
         // 2. Construir payload con datos originales + cambios
-        // El backend valida presencia de precioPorNoche, horas, etc.
         const updateData: any = {
           fechaEntrada: event.nuevaFechaEntrada,
           fechaSalida: event.nuevaFechaSalida,
@@ -129,27 +153,26 @@ export class HomeComponentClean implements OnInit, OnDestroy {
           horaEntrada: reservaCompleta.horaEntrada,
           horaSalida: reservaCompleta.horaSalida,
           estado: reservaCompleta.estado,
-          cliente: reservaCompleta.cliente, // Por si acaso el backend lo valida anidado, aunque suele ser el ID o objeto
+          cliente: reservaCompleta.cliente,
           configuracionCamas: reservaCompleta.configuracionCamas,
           informacionTransporte: reservaCompleta.informacionTransporte,
           necesidadesEspeciales: reservaCompleta.necesidadesEspeciales
         };
 
-        // Asegurar que fechaEntrada/Salida tengan formato YYYY-MM-DD si el backend lo requiere estricto
-        // (Ya vienen así del evento, pero por seguridad)
-
         return this.reservaService.updateReserva(event.reserva._id!, updateData);
       })
     ).subscribe({
       next: () => {
-        this.snack.open('Reserva movida exitosamente', 'Cerrar', { duration: 3000 });
+        this.snack.open('✅ Reserva movida exitosamente. Cambio registrado en auditoría.', 'Cerrar', { duration: 4000 });
         this.cargarOcupacion(true);
       },
       error: (err: any) => {
         this.cargandoOcupacion = false;
-        console.error('Error al mover reserva', err);
+        console.error('❌ Error al mover reserva', err);
         const msg = err.error?.message || 'Error al mover la reserva.';
         this.snack.open(`${msg} Verifique disponibilidad.`, 'Cerrar', { duration: 5000 });
+        // Recargar para restaurar estado visual
+        this.cargarOcupacion(true);
       }
     });
   }
@@ -489,6 +512,7 @@ export class HomeComponentClean implements OnInit, OnDestroy {
   abrirNuevaReserva(): void { this.router.navigate(['/reservas/nueva']); }
   gestionarHabitaciones(): void { this.router.navigate(['/habitaciones']); }
   irACalendario(): void { this.router.navigate(['/calendario']); }
+  irAAuditoriaReservas(): void { this.router.navigate(['/auditoria-reservas']); }
 
   // Acciones UI
   agregarNota(texto: string): void { if (!texto) return; const hoy = this.formatearFecha(new Date()); (this.notasPorFecha[hoy] ||= []).push(texto); this.mostrarMensaje('Nota agregada'); }

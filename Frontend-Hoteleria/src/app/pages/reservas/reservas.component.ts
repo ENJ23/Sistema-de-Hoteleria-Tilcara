@@ -483,4 +483,9 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
   irAAuditoria(): void {
     this.router.navigate(['/auditoria-cancelaciones']);
   }
+
+  // Ir a auditoría de reservas
+  irAAuditoriaReservas(): void {
+    this.router.navigate(['/auditoria-reservas']);
+  }
 }

@@ -377,7 +377,7 @@ router.get('/', [
         // OPTIMIZADO: Usar lean() para mejor rendimiento y campos selectivos
         const reservas = await Reserva.find(query)
             .populate(populateOptions)
-            .select('fechaEntrada fechaSalida estado precioTotal montoPagado historialPagos cliente habitacion fechaCreacion')
+            .select('fechaEntrada fechaSalida estado precioTotal precioPorNoche montoPagado historialPagos cliente habitacion fechaCreacion horaEntrada horaSalida')
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ fechaCreacion: -1 })
@@ -547,6 +547,121 @@ router.get('/cancelaciones/test', async (req, res) => {
         console.error('❌ Error en endpoint de prueba:', error);
         res.status(500).json({
             message: 'Error en endpoint de prueba',
+            error: error.message
+        });
+    }
+});
+
+// GET - Obtener historial de auditoría de reservas
+router.get('/auditoria/historial', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        console.log('🔍 Endpoint /auditoria/historial llamado');
+        console.log('📋 Query params:', req.query);
+
+        const { 
+            fechaInicio = '', 
+            fechaFin = '', 
+            accion = '',
+            usuario = '',
+            page = 1,
+            limit = 50
+        } = req.query;
+
+        // Buscar todas las reservas que tengan historial de cambios
+        let query = {
+            'historialCambios.0': { $exists: true } // Tiene al menos un cambio
+        };
+
+        // Construir pipeline de agregación para desplegar el historial
+        const pipeline = [
+            { $match: query },
+            { $unwind: '$historialCambios' },
+            // Filtros adicionales
+            ...(fechaInicio && fechaFin ? [{
+                $match: {
+                    'historialCambios.fecha': {
+                        $gte: new Date(fechaInicio),
+                        $lte: new Date(fechaFin)
+                    }
+                }
+            }] : []),
+            ...(accion ? [{
+                $match: {
+                    'historialCambios.accion': { $regex: accion, $options: 'i' }
+                }
+            }] : []),
+            ...(usuario ? [{
+                $match: {
+                    'historialCambios.usuario': { $regex: usuario, $options: 'i' }
+                }
+            }] : []),
+            // Proyectar campos relevantes
+            {
+                $project: {
+                    reservaId: '$_id',
+                    cliente: 1,
+                    habitacion: 1,
+                    fechaEntrada: 1,
+                    fechaSalida: 1,
+                    estado: 1,
+                    cambio: '$historialCambios'
+                }
+            },
+            // Ordenar por fecha de cambio (más reciente primero)
+            { $sort: { 'cambio.fecha': -1 } },
+            // Paginación
+            { $skip: (parseInt(page) - 1) * parseInt(limit) },
+            { $limit: parseInt(limit) }
+        ];
+
+        const historial = await Reserva.aggregate(pipeline);
+
+        // Población manual de habitación (aggregate no usa populate)
+        await Habitacion.populate(historial, { path: 'habitacion', select: 'numero tipo' });
+
+        // Contar total de registros
+        const countPipeline = [
+            { $match: query },
+            { $unwind: '$historialCambios' },
+            ...(fechaInicio && fechaFin ? [{
+                $match: {
+                    'historialCambios.fecha': {
+                        $gte: new Date(fechaInicio),
+                        $lte: new Date(fechaFin)
+                    }
+                }
+            }] : []),
+            ...(accion ? [{
+                $match: {
+                    'historialCambios.accion': { $regex: accion, $options: 'i' }
+                }
+            }] : []),
+            ...(usuario ? [{
+                $match: {
+                    'historialCambios.usuario': { $regex: usuario, $options: 'i' }
+                }
+            }] : []),
+            { $count: 'total' }
+        ];
+
+        const countResult = await Reserva.aggregate(countPipeline);
+        const total = countResult.length > 0 ? countResult[0].total : 0;
+
+        console.log('✅ Historial de auditoría obtenido:', historial.length, 'registros');
+
+        res.json({
+            historial,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit))
+        });
+    } catch (error) {
+        console.error('❌ Error al obtener historial de auditoría:', error);
+        res.status(500).json({
+            message: 'Error al obtener historial de auditoría',
             error: error.message
         });
     }
@@ -838,7 +953,8 @@ router.put('/:id', [
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const reserva = await Reserva.findById(req.params.id);
+        // CORREGIDO: Poblar habitación para tener acceso al número
+        const reserva = await Reserva.findById(req.params.id).populate('habitacion', 'numero tipo');
         if (!reserva) {
             return res.status(404).json({ message: 'Reserva no encontrada' });
         }
@@ -889,28 +1005,75 @@ router.put('/:id', [
             datosActualizacion.necesidadesEspeciales = req.body.necesidadesEspeciales;
         }
 
-        // Detectar cambios para auditoría
+        // Detectar cambios para auditoría (MEJORADO)
         let cambios = [];
-        if (fechaEntrada && new Date(fechaEntrada).getTime() !== new Date(reserva.fechaEntrada).getTime()) cambios.push(`Fecha Entrada`);
-        if (fechaSalida && new Date(fechaSalida).getTime() !== new Date(reserva.fechaSalida).getTime()) cambios.push(`Fecha Salida`);
-        if (habitacion && habitacion !== reserva.habitacion.toString()) cambios.push('Habitación');
-        if (req.body.precioPorNoche && parseFloat(req.body.precioPorNoche) !== reserva.precioPorNoche) cambios.push('Precio');
+        let detallesCambios = [];
+        
+        // Detectar cambio de fecha de entrada
+        if (fechaEntrada && new Date(fechaEntrada).getTime() !== new Date(reserva.fechaEntrada).getTime()) {
+            cambios.push(`Fecha Entrada`);
+            const fechaAnterior = new Date(reserva.fechaEntrada).toLocaleDateString('es-AR');
+            const fechaNueva = new Date(fechaEntrada).toLocaleDateString('es-AR');
+            detallesCambios.push(`Fecha Entrada: ${fechaAnterior} → ${fechaNueva}`);
+        }
+        
+        // Detectar cambio de fecha de salida
+        if (fechaSalida && new Date(fechaSalida).getTime() !== new Date(reserva.fechaSalida).getTime()) {
+            cambios.push(`Fecha Salida`);
+            const fechaAnterior = new Date(reserva.fechaSalida).toLocaleDateString('es-AR');
+            const fechaNueva = new Date(fechaSalida).toLocaleDateString('es-AR');
+            detallesCambios.push(`Fecha Salida: ${fechaAnterior} → ${fechaNueva}`);
+        }
+        
+        // Detectar cambio de habitación
+        if (habitacion && habitacion !== reserva.habitacion.toString()) {
+            cambios.push('Habitación');
+            // Obtener números de habitación para mejor legibilidad
+            const habitacionAnterior = reserva.habitacion.numero || reserva.habitacion.toString();
+            // Buscar la nueva habitación para obtener su número
+            const nuevaHabitacion = await Habitacion.findById(habitacion);
+            const habitacionNueva = nuevaHabitacion ? nuevaHabitacion.numero : habitacion;
+            detallesCambios.push(`Habitación: ${habitacionAnterior} → ${habitacionNueva}`);
+        }
+        
+        // Detectar cambio de precio
+        if (req.body.precioPorNoche && parseFloat(req.body.precioPorNoche) !== reserva.precioPorNoche) {
+            cambios.push('Precio');
+            detallesCambios.push(`Precio por noche: $${reserva.precioPorNoche} → $${req.body.precioPorNoche}`);
+        }
+        
+        // Detectar cambio de estado
+        if (req.body.estado && req.body.estado !== reserva.estado) {
+            cambios.push('Estado');
+            detallesCambios.push(`Estado: ${reserva.estado} → ${req.body.estado}`);
+        }
 
-        // Si hay cambios, agregar al historial usando $push
+        // Si hay cambios, agregar al historial con detalles completos
         if (cambios.length > 0) {
-            // Importante: Si usamos $push, no podemos mezclar con campos de nivel superior en algunas versiones/configuraciones,
-            // pero Mongoose suele manejarlo. Para seguridad, usamos la sintaxis de update operator completa si fuera necesario,
-            // pero aquí datosActualizacion es un objeto plano.
-            // Estrategia: Agregar el push al objeto de actualización
+            // Detectar si el cambio fue por drag & drop (cambio de fecha y/o habitación sin otros campos)
+            const esDragDrop = (cambios.includes('Fecha Entrada') || cambios.includes('Fecha Salida') || cambios.includes('Habitación')) &&
+                              !cambios.includes('Precio') && !req.body.estado;
+            
+            const accionRealizada = esDragDrop ? 'Movimiento de Reserva (Drag & Drop)' : 'Modificación Manual';
+            
             datosActualizacion.$push = {
                 historialCambios: {
                     usuario: req.userId ? req.userId.nombre : 'Sistema',
                     rol: req.userId ? req.userId.rol : 'Sistema',
-                    accion: 'Modificación',
-                    detalles: `Actualización de campos: ${cambios.join(', ')}`,
-                    fecha: new Date()
+                    accion: accionRealizada,
+                    detalles: detallesCambios.join(' | '),
+                    fecha: new Date(),
+                    estadoAnterior: reserva.estado,
+                    estadoNuevo: req.body.estado || reserva.estado
                 }
             };
+            
+            console.log('📝 Registro de auditoría:', {
+                accion: accionRealizada,
+                cambios: cambios.join(', '),
+                detalles: detallesCambios,
+                usuario: req.userId ? req.userId.nombre : 'Sistema'
+            });
         }
 
         // Recalcular precio total si cambian las fechas o el precio por noche

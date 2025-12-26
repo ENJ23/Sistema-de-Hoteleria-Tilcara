@@ -91,7 +91,14 @@
             <li class="nav-item" *ngIf="isEncargado">
               <a class="nav-link" [routerLink]="['/auditoria-cancelaciones']" routerLinkActive="active">
                 <mat-icon>audit</mat-icon>
-                <span>Auditoría</span>
+                <span>Auditoría Cancelaciones</span>
+              </a>
+            </li>
+            
+            <li class="nav-item" *ngIf="isEncargado">
+              <a class="nav-link" [routerLink]="['/auditoria-reservas']" routerLinkActive="active">
+                <mat-icon>history</mat-icon>
+                <span>Auditoría Reservas</span>
               </a>
             </li>
           </ul>

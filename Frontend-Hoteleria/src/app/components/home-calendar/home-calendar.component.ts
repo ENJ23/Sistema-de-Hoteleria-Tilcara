@@ -19,6 +19,7 @@ export interface ReservaResumen {
     habitacion?: string | HabitacionResumen;
     montoPagado?: number;
     precioTotal?: number;
+    precioPorNoche?: number;
 }
 export interface EstadoDiaReserva {
     reservaPrincipal?: ReservaResumen;
