@@ -377,7 +377,7 @@ router.get('/', [
         // OPTIMIZADO: Usar lean() para mejor rendimiento y campos selectivos
         const reservas = await Reserva.find(query)
             .populate(populateOptions)
-            .select('fechaEntrada fechaSalida estado precioTotal precioPorNoche montoPagado historialPagos cliente habitacion fechaCreacion horaEntrada horaSalida')
+            .select('fechaEntrada fechaSalida estado precioTotal precioPorNoche montoPagado historialPagos cliente habitacion fechaCreacion horaEntrada horaSalida observaciones')
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ fechaCreacion: -1 })
