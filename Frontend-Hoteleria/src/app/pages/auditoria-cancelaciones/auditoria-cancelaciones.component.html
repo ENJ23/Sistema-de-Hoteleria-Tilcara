@@ -212,12 +212,27 @@
           <th mat-header-cell *matHeaderCellDef class="actions-col"></th>
           <td mat-cell *matCellDef="let row" class="actions-col">
             <div class="actions-wrapper">
+              <!-- Ver detalles -->
               <button mat-icon-button matTooltip="Ver detalles" (click)="verDetalles(row)">
                 <mat-icon>visibility</mat-icon>
               </button>
+              
+              <!-- Procesar reembolso -->
               <button mat-icon-button color="accent" matTooltip="Procesar Reembolso"
                 *ngIf="row.estadoReembolso === 'Pendiente'" (click)="procesarReembolso(row)">
                 <mat-icon>payments</mat-icon>
+              </button>
+              
+              <!-- Cerrar sin reembolsar -->
+              <button mat-icon-button color="warn" matTooltip="Cerrar sin reembolsar"
+                *ngIf="puedeCerrarSinReembolsar(row)" (click)="cerrarSinReembolsar(row)">
+                <mat-icon>block</mat-icon>
+              </button>
+              
+              <!-- Eliminar cancelación -->
+              <button mat-icon-button color="warn" matTooltip="Eliminar cancelación"
+                *ngIf="puedeEliminar(row)" (click)="eliminarCancelacion(row)">
+                <mat-icon>delete</mat-icon>
               </button>
             </div>
           </td>

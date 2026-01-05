@@ -652,6 +652,37 @@
     padding: 20px;
   }
 
+  /* Custom Range Responsive */
+  .custom-range-form {
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .range-inputs {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .range-separator {
+    display: none;
+    /* Hide 'al' text for cleaner stacked look */
+  }
+
+  .date-field {
+    width: 100% !important;
+  }
+
+  .btn-apply {
+    width: 100%;
+    margin-top: 4px;
+    border: 1px solid var(--primary-light);
+  }
+
   .reserva-item {
     grid-template-columns: 1fr;
     gap: 12px;

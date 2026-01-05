@@ -2209,6 +2209,117 @@ router.patch('/cancelaciones/:id/reembolso/completar', [
     }
 });
 
+// PATCH - Cerrar cancelación sin reembolsar (marcar como rechazado)
+router.patch('/cancelaciones/:id/cerrar-sin-reembolsar', [
+    verifyToken,
+    isEncargado,
+    body('motivo').notEmpty().withMessage('El motivo es obligatorio'),
+    body('motivo').isLength({ max: 500 }).withMessage('El motivo no puede exceder 500 caracteres')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const cancelacion = await CancelacionReserva.findById(req.params.id);
+
+        if (!cancelacion) {
+            return res.status(404).json({ message: 'Cancelación no encontrada' });
+        }
+
+        if (cancelacion.estadoReembolso !== 'Pendiente') {
+            return res.status(400).json({
+                message: 'Solo se pueden cerrar cancelaciones con estado Pendiente',
+                estadoActual: cancelacion.estadoReembolso
+            });
+        }
+
+        const procesadoPor = req.userId ? req.userId.nombre : 'Sistema';
+        const { motivo } = req.body;
+
+        // Cambiar estado a Rechazado y agregar observaciones
+        cancelacion.estadoReembolso = 'Rechazado';
+        cancelacion.reembolso = {
+            monto: 0,
+            metodoReembolso: 'N/A',
+            fechaReembolso: new Date(),
+            procesadoPor: procesadoPor,
+            observaciones: `Cerrado sin reembolsar - Motivo: ${motivo}`
+        };
+
+        await cancelacion.save();
+
+        console.log('🚫 Cancelación cerrada sin reembolsar:', {
+            cancelacionId: cancelacion._id,
+            reservaId: cancelacion.reservaId,
+            motivo: motivo,
+            procesadoPor: procesadoPor
+        });
+
+        res.json({
+            message: 'Cancelación cerrada sin reembolsar',
+            cancelacion: {
+                _id: cancelacion._id,
+                estadoReembolso: cancelacion.estadoReembolso,
+                reembolso: cancelacion.reembolso
+            }
+        });
+    } catch (error) {
+        console.error('Error al cerrar cancelación:', error);
+        res.status(500).json({
+            message: 'Error al cerrar cancelación sin reembolsar',
+            error: error.message
+        });
+    }
+});
+
+// DELETE - Eliminar una cancelación
+router.delete('/cancelaciones/:id', [
+    verifyToken,
+    isEncargado
+], async (req, res) => {
+    try {
+        const cancelacion = await CancelacionReserva.findById(req.params.id);
+
+        if (!cancelacion) {
+            return res.status(404).json({ message: 'Cancelación no encontrada' });
+        }
+
+        // Solo permitir eliminar cancelaciones que no hayan sido procesadas
+        if (cancelacion.estadoReembolso === 'Procesado' || cancelacion.estadoReembolso === 'Completado') {
+            return res.status(400).json({
+                message: 'No se pueden eliminar cancelaciones con reembolsos procesados o completados',
+                estadoActual: cancelacion.estadoReembolso,
+                sugerencia: 'Si desea cerrar esta cancelación, use la opción "Cerrar sin reembolsar"'
+            });
+        }
+
+        const reservaId = cancelacion.reservaId;
+        const clienteNombre = `${cancelacion.cliente.nombre} ${cancelacion.cliente.apellido}`;
+
+        await CancelacionReserva.findByIdAndDelete(req.params.id);
+
+        console.log('🗑️ Cancelación eliminada:', {
+            cancelacionId: req.params.id,
+            reservaId: reservaId,
+            cliente: clienteNombre,
+            eliminadoPor: req.userId ? req.userId.nombre : 'Sistema'
+        });
+
+        res.json({
+            message: 'Cancelación eliminada correctamente',
+            cancelacionId: req.params.id
+        });
+    } catch (error) {
+        console.error('Error al eliminar cancelación:', error);
+        res.status(500).json({
+            message: 'Error al eliminar cancelación',
+            error: error.message
+        });
+    }
+});
+
 // GET - Estadísticas de reembolsos
 router.get('/cancelaciones/estadisticas', [
     verifyToken,

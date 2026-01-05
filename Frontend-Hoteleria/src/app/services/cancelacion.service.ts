@@ -113,6 +113,16 @@ export class CancelacionService {
     return this.http.patch(`${this.apiUrl}/cancelaciones/${cancelacionId}/reembolso/completar`, {});
   }
 
+  // Cerrar cancelación sin reembolsar
+  cerrarSinReembolsar(cancelacionId: string, motivo: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/cancelaciones/${cancelacionId}/cerrar-sin-reembolsar`, { motivo });
+  }
+
+  // Eliminar cancelación
+  eliminarCancelacion(cancelacionId: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/cancelaciones/${cancelacionId}`);
+  }
+
   // Obtener estadísticas de reembolsos
   getEstadisticasReembolsos(): Observable<EstadisticasReembolsos> {
     return this.http.get<EstadisticasReembolsos>(`${this.apiUrl}/cancelaciones/estadisticas`);

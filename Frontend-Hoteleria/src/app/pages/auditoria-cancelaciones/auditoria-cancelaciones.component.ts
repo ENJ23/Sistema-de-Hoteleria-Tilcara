@@ -231,8 +231,109 @@ export class AuditoriaCancelacionesComponent implements OnInit {
         this.snackBar.open('✅ Operación completada', 'Cerrar', {
           duration: 2000
         });
+        this.cargarCancelaciones();
+        this.cargarEstadisticas();
       }
     });
+  }
+
+  cerrarSinReembolsar(cancelacion: CancelacionReserva): void {
+    const motivo = prompt('Ingrese el motivo por el cual se cierra esta cancelación sin reembolsar:');
+    
+    if (!motivo || motivo.trim() === '') {
+      this.snackBar.open('⚠️ Debe ingresar un motivo', 'Cerrar', {
+        duration: 3000
+      });
+      return;
+    }
+
+    const confirmacion = confirm(
+      `¿Está seguro de cerrar esta cancelación sin reembolsar?\n\n` +
+      `Cliente: ${cancelacion.cliente.nombre} ${cancelacion.cliente.apellido}\n` +
+      `Monto pagado: ${this.formatearPrecio(cancelacion.montoPagado)}\n` +
+      `Motivo: ${motivo}\n\n` +
+      `Esta acción marcará el reembolso como RECHAZADO y no se devolverá dinero al cliente.`
+    );
+
+    if (!confirmacion) return;
+
+    this.loading = true;
+    this.cancelacionService.cerrarSinReembolsar(cancelacion._id, motivo).subscribe({
+      next: () => {
+        this.snackBar.open('✅ Cancelación cerrada sin reembolsar', 'Cerrar', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+        this.cargarCancelaciones();
+        this.cargarEstadisticas();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error al cerrar cancelación:', error);
+        this.snackBar.open(
+          error.error?.message || '❌ Error al cerrar cancelación sin reembolsar',
+          'Cerrar',
+          {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          }
+        );
+        this.loading = false;
+      }
+    });
+  }
+
+  eliminarCancelacion(cancelacion: CancelacionReserva): void {
+    const confirmacion = confirm(
+      `¿Está seguro de ELIMINAR esta cancelación?\n\n` +
+      `Cliente: ${cancelacion.cliente.nombre} ${cancelacion.cliente.apellido}\n` +
+      `Habitación: ${cancelacion.habitacion.numero}\n` +
+      `Estado: ${cancelacion.estadoReembolso}\n\n` +
+      `⚠️ ADVERTENCIA: Esta acción es PERMANENTE y no se puede deshacer.\n` +
+      `Solo se pueden eliminar cancelaciones Pendientes o Rechazadas.\n\n` +
+      `¿Desea continuar?`
+    );
+
+    if (!confirmacion) return;
+
+    this.loading = true;
+    this.cancelacionService.eliminarCancelacion(cancelacion._id).subscribe({
+      next: () => {
+        this.snackBar.open('✅ Cancelación eliminada correctamente', 'Cerrar', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+        this.cargarCancelaciones();
+        this.cargarEstadisticas();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error al eliminar cancelación:', error);
+        let mensaje = '❌ Error al eliminar cancelación';
+        
+        if (error.error?.message) {
+          mensaje = error.error.message;
+        }
+        
+        if (error.error?.sugerencia) {
+          mensaje += `\n\n💡 ${error.error.sugerencia}`;
+        }
+
+        this.snackBar.open(mensaje, 'Cerrar', {
+          duration: 7000,
+          panelClass: ['error-snackbar']
+        });
+        this.loading = false;
+      }
+    });
+  }
+
+  puedeCerrarSinReembolsar(cancelacion: CancelacionReserva): boolean {
+    return cancelacion.estadoReembolso === 'Pendiente';
+  }
+
+  puedeEliminar(cancelacion: CancelacionReserva): boolean {
+    return cancelacion.estadoReembolso === 'Pendiente' || cancelacion.estadoReembolso === 'Rechazado';
   }
 
   formatearPrecio(precio: number): string {
