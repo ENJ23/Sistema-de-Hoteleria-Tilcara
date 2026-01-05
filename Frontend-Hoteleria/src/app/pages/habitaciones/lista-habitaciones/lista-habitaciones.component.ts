@@ -22,7 +22,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 // Models y servicios
 import {
   Habitacion,
-  EstadoHabitacion,
   TipoHabitacion,
   HabitacionFilters
 } from '../../../models/habitacion.model';
@@ -75,7 +74,6 @@ export class ListaHabitacionesComponent implements OnInit {
 
   // Filtros
   filtros: HabitacionFilters = {
-    estado: '',
     tipo: '',
     piso: undefined,
     precioMin: undefined,
@@ -85,7 +83,6 @@ export class ListaHabitacionesComponent implements OnInit {
   };
 
   // Opciones para los selects de filtrado
-  estados: EstadoHabitacion[] = [];
   tipos: TipoHabitacion[] = [];
 
   // Para manejar la suscripción
@@ -96,28 +93,17 @@ export class ListaHabitacionesComponent implements OnInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   /**
-   * Obtiene la clase CSS para el badge de estado
+   * Obtiene la clase CSS para el badge de disponibilidad
    */
-  getBadgeClass(estado: string): string {
-    switch (estado?.toLowerCase()) {
-      case 'disponible':
-        return 'status-disponible';
-      case 'ocupada':
-        return 'status-ocupada';
-      case 'mantenimiento':
-        return 'status-mantenimiento';
-      case 'reservada':
-        return 'status-reservada';
-      default:
-        return 'status-default';
-    }
+  getBadgeClass(activa: boolean): string {
+    return activa ? 'status-disponible' : 'status-inactivo';
   }
 
   /**
-   * Cambia el estado de una habitación
+   * Cambia la disponibilidad de una habitación
    */
-  cambiarEstado(habitacion: Habitacion, nuevoEstado: EstadoHabitacion): void {
-    this.habitacionService.cambiarEstadoHabitacion(habitacion._id, nuevoEstado).subscribe({
+  cambiarDisponibilidad(habitacion: Habitacion, activa: boolean): void {
+    this.habitacionService.cambiarDisponibilidad(habitacion._id, activa).subscribe({
       next: (habActualizada: Habitacion) => {
         // Actualizar la habitación en la lista
         const index = this.dataSource.data.findIndex(h => h._id === habActualizada._id);
@@ -126,8 +112,8 @@ export class ListaHabitacionesComponent implements OnInit {
           data[index] = habActualizada;
           this.dataSource.data = data;
         }
-        this.snackBar.open('Estado actualizado correctamente', 'Cerrar', { duration: 3000 });
-        // Recargar para verificar estado real con reservas
+        this.snackBar.open('Disponibilidad actualizada correctamente', 'Cerrar', { duration: 3000 });
+        // Recargar para verificar disponibilidad real
         this.cargarHabitaciones();
       },
       error: (error: any) => {
@@ -221,7 +207,6 @@ export class ListaHabitacionesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.estados = this.habitacionService.getEstadosHabitacion();
     this.tipos = this.habitacionService.getTiposHabitacion();
 
     // Cargar habitaciones iniciales
@@ -282,7 +267,6 @@ export class ListaHabitacionesComponent implements OnInit {
    */
   limpiarFiltros(): void {
     this.filtros = {
-      estado: '',
       tipo: '',
       piso: undefined,
       precioMin: undefined,
@@ -315,53 +299,27 @@ export class ListaHabitacionesComponent implements OnInit {
   }
 
 
-  /**
-   * Obtiene el color del badge según el estado de la habitación
-   */
-  getEstadoColor(estado: EstadoHabitacion): string {
-    const colores: Record<EstadoHabitacion, string> = {
-      'Disponible': '#4caf50',  // Verde
-      'Ocupada': '#f44336',     // Rojo
-      'Mantenimiento': '#ff9800', // Naranja
-      'Reservada': '#2196f3',    // Azul
-      'Fuera de servicio': '#9e9e9e' // Gris
-    };
-    return colores[estado] || '#9e9e9e';
-  }
+
 
   /**
-   * Obtiene el icono correspondiente al estado de la habitación
-   */
-  getEstadoIcon(estado: EstadoHabitacion): string {
-    const iconos: Record<EstadoHabitacion, string> = {
-      'Disponible': 'check_circle',
-      'Ocupada': 'event_busy',
-      'Mantenimiento': 'build',
-      'Reservada': 'event_available',
-      'Fuera de servicio': 'block'
-    };
-    return iconos[estado] || 'help';
-  }
-
-  /**
-   * Obtiene el número de habitaciones disponibles
+   * Obtiene el número de habitaciones activas
    */
   getHabitacionesDisponibles(): number {
-    return this.dataSource.data.filter(h => h.estado === 'Disponible').length;
+    return this.dataSource.data.filter(h => h.activa).length;
   }
 
   /**
-   * Obtiene el número de habitaciones ocupadas
+   * Obtiene el número de habitaciones inactivas
    */
   getHabitacionesOcupadas(): number {
-    return this.dataSource.data.filter(h => h.estado === 'Ocupada').length;
+    return this.dataSource.data.filter(h => !h.activa).length;
   }
 
   /**
-   * Obtiene el número de habitaciones en mantenimiento
+   * Obtiene el número de habitaciones inactivas
    */
-  getHabitacionesMantenimiento(): number {
-    return this.dataSource.data.filter(h => h.estado === 'Mantenimiento').length;
+  getHabitacionesInactivas(): number {
+    return this.dataSource.data.filter(h => !h.activa).length;
   }
 
   /**
@@ -391,7 +349,7 @@ export class ListaHabitacionesComponent implements OnInit {
       habitacionesResp: this.habitacionService.getHabitaciones(
         this.pageIndex + 1,
         this.pageSize,
-        this.filtros.estado as EstadoHabitacion,
+        undefined,
         this.filtros.tipo as TipoHabitacion,
         this.filtros.busqueda
       ),

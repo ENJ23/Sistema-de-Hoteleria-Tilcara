@@ -44,7 +44,7 @@
       <div 
         *ngFor="let habitacion of habitaciones" 
         class="fila-habitacion"
-        [ngClass]="'estado-' + habitacion.estado.toLowerCase()">
+        [ngClass]="habitacion.activa ? 'estado-disponible' : 'estado-inactivo'">
         
         <!-- Información de la habitación -->
         <div class="celda-habitacion" (click)="seleccionarHabitacion(habitacion)">

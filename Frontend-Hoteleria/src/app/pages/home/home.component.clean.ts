@@ -245,8 +245,8 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     const finExcl = this.dateTime.addDays(this.dateTime.finMes(this.fechaReferencia), 1);
     const filtros = { fechaInicio: this.dateTime.formatYMD(inicio), fechaFin: this.dateTime.formatYMD(finExcl) };
 
-    // Usamos getHabitaciones general para maximizar compatibilidad por ahora
-    this.habitacionService.getHabitaciones(1, 100).pipe(
+    // Solo cargar habitaciones activas para el calendario
+    this.habitacionService.getHabitaciones(1, 100, true).pipe(
       switchMap(resp => {
         const habs: HabitacionResumen[] = (resp.habitaciones || []).map((h: Habitacion) => ({ id: (h as any)._id, numero: h.numero, tipo: h.tipo, capacidad: h.capacidad, activa: h.activa }));
         return this.reservaService.getReservasAll(filtros, 100, true).pipe(

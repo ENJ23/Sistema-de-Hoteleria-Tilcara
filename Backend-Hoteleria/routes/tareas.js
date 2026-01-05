@@ -79,7 +79,7 @@ router.get('/', authJwt.verifyToken, async (req, res) => {
         _id: tarea.habitacion._id,
         numero: tarea.habitacion.numero,
         tipo: tarea.habitacion.tipo,
-        estado: tarea.habitacion.estado
+        activa: tarea.habitacion.activa
       },
       estado: tarea.estado,
       fechaCreacion: tarea.fechaCreacion,

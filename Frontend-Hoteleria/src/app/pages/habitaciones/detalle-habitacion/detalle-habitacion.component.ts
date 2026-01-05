@@ -79,21 +79,21 @@ export class DetalleHabitacionComponent implements OnInit {
     });
   }
 
-  cambiarEstado(nuevoEstado: string): void {
+  cambiarDisponibilidad(activa: boolean): void {
     if (!this.habitacion) return;
 
     this.loading = true;
-    this.habitacionService.updateEstado(this.habitacion._id, nuevoEstado).subscribe({
+    this.habitacionService.cambiarDisponibilidad(this.habitacion._id, activa).subscribe({
       next: (habitacionActualizada) => {
         if (this.habitacion) {
-          this.habitacion.estado = habitacionActualizada.estado;
+          this.habitacion.activa = habitacionActualizada.activa;
         }
-        this.mostrarMensaje(`Estado cambiado a: ${nuevoEstado}`, 'success');
+        this.mostrarMensaje(`Habitación ${activa ? 'activada' : 'desactivada'}`, 'success');
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error al actualizar el estado', error);
-        this.mostrarError('No se pudo actualizar el estado de la habitación');
+        console.error('Error al cambiar disponibilidad', error);
+        this.mostrarError('No se pudo cambiar la disponibilidad de la habitación');
         this.loading = false;
       }
     });
@@ -120,74 +120,5 @@ export class DetalleHabitacionComponent implements OnInit {
 
   private mostrarError(mensaje: string): void {
     this.mostrarMensaje(mensaje, 'error');
-  }
-
-  getBadgeClass(estado: string): string {
-    switch (estado) {
-      case 'Disponible':
-        return 'badge-disponible';
-      case 'Ocupada':
-        return 'badge-ocupada';
-      case 'Mantenimiento':
-        return 'badge-mantenimiento';
-      case 'Reservada':
-        return 'badge-reservada';
-      default:
-        return 'badge-secondary';
-    }
-  }
-
-  getNextEstadoText(estadoActual: string): string {
-    const estados: { [key: string]: string } = {
-      'Disponible': 'Marcar como Ocupada',
-      'Ocupada': 'Marcar como Disponible',
-      'Mantenimiento': 'Finalizar Mantenimiento',
-      'Reservada': 'Check-in',
-      'default': 'Cambiar Estado'
-    };
-
-    return estados[estadoActual] || estados['default'];
-  }
-
-  getNextEstado(estadoActual: string): string {
-    const estados: { [key: string]: string } = {
-      'Disponible': 'Ocupada',
-      'Ocupada': 'Disponible',
-      'Mantenimiento': 'Disponible',
-      'Reservada': 'Ocupada',
-      'default': 'Disponible'
-    };
-
-    return estados[estadoActual] || estados['default'];
-  }
-
-  getEstadoButtonColor(estado: string): string {
-    switch (estado) {
-      case 'Disponible':
-        return 'accent';
-      case 'Ocupada':
-        return 'warn';
-      case 'Mantenimiento':
-        return 'primary';
-      case 'Reservada':
-        return 'accent';
-      default:
-        return 'primary';
-    }
-  }
-
-  getEstadoIcon(estado: string): string {
-    switch (estado) {
-      case 'Disponible':
-        return 'check_circle';
-      case 'Ocupada':
-        return 'event_busy';
-      case 'Mantenimiento':
-        return 'build';
-      case 'Reservada':
-        return 'event_available';
-      default:
-        return 'help';
-    }
   }
 }

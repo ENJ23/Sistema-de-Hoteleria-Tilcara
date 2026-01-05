@@ -1,217 +1,183 @@
-<div class="auditoria-reservas-container">
+<div class="page-container">
   <!-- Header -->
   <div class="page-header">
-    <div class="header-content">
-      <button mat-icon-button class="back-button" (click)="router.navigate(['/home'])">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <div class="header-text">
-        <h1>Auditoría de Reservas</h1>
-        <p class="subtitle">Historial completo de cambios y modificaciones</p>
+    <div class="header-text">
+      <div class="title-group">
+        <button mat-icon-button class="back-btn" (click)="router.navigate(['/home'])">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <div class="icon-box">
+          <mat-icon>history</mat-icon>
+        </div>
+        <div>
+          <h1 class="page-title">Auditoría de Reservas</h1>
+          <p class="page-subtitle">Historial completo de cambios y modificaciones</p>
+        </div>
       </div>
     </div>
     <div class="header-actions">
       <button mat-raised-button color="primary" (click)="exportarCSV()">
         <mat-icon>download</mat-icon>
-        EXPORTAR CSV
+        Exportar CSV
       </button>
     </div>
   </div>
 
   <!-- Filtros -->
-  <mat-card class="filtros-card">
-    <mat-card-content>
-      <form [formGroup]="filtrosForm" class="filtros-form">
-        <div class="filtros-grid">
-          <mat-form-field appearance="outline" class="filtro-field">
-            <mat-label>Tipo de Acción</mat-label>
-            <mat-select formControlName="accion">
-              <mat-option value="">Todas las acciones</mat-option>
-              <mat-option *ngFor="let tipo of tiposAccion" [value]="tipo">
-                {{ tipo }}
-              </mat-option>
-            </mat-select>
-            <mat-icon matPrefix>filter_list</mat-icon>
-          </mat-form-field>
+  <mat-card class="toolbar-section">
+    <div class="toolbar-header">
+      <h3><mat-icon>filter_list</mat-icon> Filtros de Búsqueda</h3>
+      <div class="toolbar-actions">
+        <button mat-button color="warn" (click)="limpiarFiltros()">
+          <mat-icon>clear</mat-icon> Limpiar
+        </button>
+        <button mat-raised-button color="primary" (click)="aplicarFiltros()" [disabled]="loading">
+          <mat-icon>search</mat-icon> Buscar
+        </button>
+      </div>
+    </div>
 
-          <mat-form-field appearance="outline" class="filtro-field">
-            <mat-label>Usuario</mat-label>
-            <input matInput formControlName="usuario" placeholder="Nombre del usuario">
-            <mat-icon matPrefix>person</mat-icon>
-          </mat-form-field>
+    <form [formGroup]="filtrosForm" class="filters-form">
+      <div class="filters-row">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Tipo de Acción</mat-label>
+          <mat-select formControlName="accion">
+            <mat-option value="">Todas</mat-option>
+            <mat-option *ngFor="let tipo of tiposAccion" [value]="tipo">
+              {{ tipo }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filtro-field">
-            <mat-label>Fecha Inicio</mat-label>
-            <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio">
-            <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
-            <mat-datepicker #pickerInicio></mat-datepicker>
-            <mat-icon matPrefix>event</mat-icon>
-          </mat-form-field>
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Usuario</mat-label>
+          <input matInput formControlName="usuario" placeholder="Nombre...">
+          <mat-icon matSuffix>person</mat-icon>
+        </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filtro-field">
-            <mat-label>Fecha Fin</mat-label>
-            <input matInput [matDatepicker]="pickerFin" formControlName="fechaFin">
-            <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
-            <mat-datepicker #pickerFin></mat-datepicker>
-            <mat-icon matPrefix>event</mat-icon>
-          </mat-form-field>
-        </div>
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha Inicio</mat-label>
+          <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio">
+          <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+          <mat-datepicker #pickerInicio></mat-datepicker>
+        </mat-form-field>
 
-        <div class="filtros-actions">
-          <button mat-raised-button color="primary" (click)="aplicarFiltros()" [disabled]="loading">
-            <mat-icon>search</mat-icon>
-            BUSCAR
-          </button>
-          <button mat-button (click)="limpiarFiltros()">
-            <mat-icon>clear</mat-icon>
-            LIMPIAR
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha Fin</mat-label>
+          <input matInput [matDatepicker]="pickerFin" formControlName="fechaFin">
+          <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
+          <mat-datepicker #pickerFin></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </form>
   </mat-card>
 
-  <!-- Tabla de Registros -->
-  <mat-card class="tabla-card">
-    <mat-card-content>
-      <!-- Loading Spinner -->
-      <div class="loading-container" *ngIf="loading">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p>Cargando historial de auditoría...</p>
-      </div>
+  <!-- Tabla -->
+  <div class="table-container">
+    <div *ngIf="loading" class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando historial...</p>
+    </div>
 
-      <!-- Tabla -->
-      <div class="table-container" *ngIf="!loading">
-        <table mat-table [dataSource]="registros" class="auditoria-table">
-          
-          <!-- Fecha Column -->
-          <ng-container matColumnDef="fecha">
-            <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
-            <td mat-cell *matCellDef="let registro">
-              <div class="fecha-cell">
-                <mat-icon class="cell-icon">schedule</mat-icon>
-                <span>{{ formatearFecha(registro.cambio.fecha) }}</span>
+    <div *ngIf="!loading && registros.length === 0" class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <h3>No se encontraron registros</h3>
+      <p>Intenta cambiar los filtros de búsqueda</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading && registros.length > 0">
+      <table mat-table [dataSource]="registros" class="modern-table">
+
+        <!-- Fecha -->
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha y Hora</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="cell-content">
+              <span class="font-medium text-main">{{ formatearFecha(row.cambio.fecha) }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Acción -->
+        <ng-container matColumnDef="accion">
+          <th mat-header-cell *matHeaderCellDef>Acción</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="action-badge" [ngClass]="getClaseAccion(row.cambio.accion)">
+              <mat-icon class="badge-icon">{{ getIconoAccion(row.cambio.accion) }}</mat-icon>
+              {{ row.cambio.accion }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Usuario -->
+        <ng-container matColumnDef="usuario">
+          <th mat-header-cell *matHeaderCellDef>Usuario</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="user-cell">
+              <div class="user-avatar">
+                <mat-icon>person</mat-icon>
               </div>
-            </td>
-          </ng-container>
-
-          <!-- Acción Column -->
-          <ng-container matColumnDef="accion">
-            <th mat-header-cell *matHeaderCellDef>Acción</th>
-            <td mat-cell *matCellDef="let registro">
-              <mat-chip [color]="getColorAccion(registro.cambio.accion)" class="accion-chip">
-                <mat-icon>{{ getIconoAccion(registro.cambio.accion) }}</mat-icon>
-                {{ registro.cambio.accion }}
-              </mat-chip>
-            </td>
-          </ng-container>
-
-          <!-- Usuario Column -->
-          <ng-container matColumnDef="usuario">
-            <th mat-header-cell *matHeaderCellDef>Usuario</th>
-            <td mat-cell *matCellDef="let registro">
-              <div class="usuario-cell">
-                <mat-icon class="cell-icon">account_circle</mat-icon>
-                <div class="usuario-info">
-                  <span class="usuario-nombre">{{ registro.cambio.usuario }}</span>
-                  <span class="usuario-rol" *ngIf="registro.cambio.rol">{{ registro.cambio.rol }}</span>
-                </div>
+              <div class="user-info">
+                <span class="user-name">{{ row.cambio.usuario }}</span>
+                <span class="user-role text-muted text-xs" *ngIf="row.cambio.rol">{{ row.cambio.rol }}</span>
               </div>
-            </td>
-          </ng-container>
+            </div>
+          </td>
+        </ng-container>
 
-          <!-- Reserva Column -->
-          <ng-container matColumnDef="reserva">
-            <th mat-header-cell *matHeaderCellDef>Reserva</th>
-            <td mat-cell *matCellDef="let registro">
-              <div class="reserva-cell">
-                <div class="reserva-cliente">
-                  <mat-icon class="cell-icon">person</mat-icon>
-                  <strong>{{ registro.cliente.nombre }} {{ registro.cliente.apellido }}</strong>
-                </div>
-                <div class="reserva-habitacion">
-                  <mat-icon class="cell-icon">hotel</mat-icon>
-                  <span>Hab {{ registro.habitacion?.numero || 'N/A' }}</span>
-                </div>
-                <div class="reserva-estado">
-                  <mat-chip class="estado-chip" [ngClass]="'estado-' + registro.estado.toLowerCase()">
-                    {{ registro.estado }}
-                  </mat-chip>
-                </div>
-              </div>
-            </td>
-          </ng-container>
+        <!-- Reserva -->
+        <ng-container matColumnDef="reserva">
+          <th mat-header-cell *matHeaderCellDef>Reserva Afectada</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="cell-content">
+              <span class="font-medium">{{ row.cliente.nombre }} {{ row.cliente.apellido }}</span>
+              <span class="text-secondary text-sm">Hab: {{ row.habitacion?.numero || 'N/A' }}</span>
+            </div>
+          </td>
+        </ng-container>
 
-          <!-- Detalles Column -->
-          <ng-container matColumnDef="detalles">
-            <th mat-header-cell *matHeaderCellDef>Detalles del Cambio</th>
-            <td mat-cell *matCellDef="let registro">
-              <div class="detalles-cell">
-                <mat-icon class="cell-icon">info</mat-icon>
-                <span class="detalles-texto">{{ registro.cambio.detalles }}</span>
-              </div>
-            </td>
-          </ng-container>
+        <!-- Detalles -->
+        <ng-container matColumnDef="detalles">
+          <th mat-header-cell *matHeaderCellDef>Detalles</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="details-text" [matTooltip]="row.cambio.detalles">
+              {{ row.cambio.detalles }}
+            </span>
+          </td>
+        </ng-container>
 
-          <!-- Acciones Column -->
-          <ng-container matColumnDef="acciones">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
-            <td mat-cell *matCellDef="let registro">
-              <button mat-icon-button 
-                      color="primary" 
-                      (click)="verDetalleReserva(registro.reservaId)"
-                      matTooltip="Ver reserva completa">
-                <mat-icon>visibility</mat-icon>
-              </button>
-            </td>
-          </ng-container>
+        <!-- Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button color="primary" (click)="verDetalleReserva(row.reservaId)" matTooltip="Ver Reserva">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="registro-row"></tr>
-        </table>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"></tr>
+      </table>
+    </div>
 
-        <!-- Sin resultados -->
-        <div class="no-results" *ngIf="registros.length === 0 && !loading">
-          <mat-icon>search_off</mat-icon>
-          <h3>No se encontraron registros</h3>
-          <p>Intenta ajustar los filtros de búsqueda</p>
-        </div>
-      </div>
+    <!-- Paginator -->
+    <mat-paginator [length]="totalRegistros" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </div>
 
-      <!-- Paginación -->
-      <mat-paginator 
-        *ngIf="!loading && registros.length > 0"
-        [length]="totalRegistros"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-        [pageIndex]="pageIndex"
-        (page)="onPageChange($event)"
-        showFirstLastButtons>
-      </mat-paginator>
-    </mat-card-content>
-  </mat-card>
-
-  <!-- Información adicional -->
+  <!-- Info Card -->
   <mat-card class="info-card">
-    <mat-card-content>
-      <div class="info-content">
+    <div class="info-content">
+      <div class="info-icon">
         <mat-icon>info</mat-icon>
-        <div class="info-text">
-          <h4>Acerca de la Auditoría</h4>
-          <p>
-            Este sistema registra automáticamente todos los cambios realizados en las reservas, incluyendo:
-          </p>
-          <ul>
-            <li><strong>Drag & Drop:</strong> Movimientos de reservas entre fechas/habitaciones</li>
-            <li><strong>Modificaciones Manuales:</strong> Ediciones directas de datos</li>
-            <li><strong>Cambios de Estado:</strong> Check-in, check-out, cancelaciones</li>
-            <li><strong>Pagos:</strong> Registros y modificaciones de pagos</li>
-          </ul>
-          <p class="warning-text">
-            ⚠️ Los cambios por Drag & Drop requieren confirmación y quedan registrados con el usuario responsable.
-          </p>
-        </div>
       </div>
-    </mat-card-content>
+      <div class="info-text">
+        <h4>Información del Sistema de Auditoría</h4>
+        <p>El sistema registra automáticamente cambios de estado, modificaciones de reserva, pagos y movimientos (drag &
+          drop).</p>
+      </div>
+    </div>
   </mat-card>
 </div>

@@ -131,11 +131,7 @@ export {};
                 }
               } else {
                 // Si no hay reservas para este día específico, la habitación está disponible
-                if (habitacion.estado === 'mantenimiento') {
-                  ocupacion.ocupacionPorDia[fechaStr] = { tipo: 'mantenimiento' };
-                } else {
-                  ocupacion.ocupacionPorDia[fechaStr] = { tipo: 'disponible' };
-                }
+                ocupacion.ocupacionPorDia[fechaStr] = { tipo: 'disponible' };
               }
             }
           });
@@ -1117,15 +1113,17 @@ export {};
   }
 
   gestionarLimpieza(): void {
-    // Mostrar habitaciones que necesitan limpieza
-    const habitacionesOcupadas = this.habitaciones.filter(h => h.estado === 'ocupada');
-    const habitacionesLimpieza = this.habitaciones.filter(h => h.estado === 'limpieza');
+    // Mostrar habitaciones con reservas en check-out hoy
+    const reservasHoyCheckOut = this.reservasHoy.filter(r => 
+      this.esFechaCheckOut(new Date(), r.fechaSalida) &&
+      (r.estado === 'En curso' || r.estado === 'En Curso')
+    );
     
     const mensaje = `
 HABITACIONES PARA LIMPIEZA:
-${habitacionesOcupadas.length > 0 ? 
-  `\nOcupadas (check-out pendiente):\n${habitacionesOcupadas.map(h => `- Hab. ${h.numero}`).join('\n')}` : 
-  '\nNo hay habitaciones ocupadas pendientes de limpieza'}
+${reservasHoyCheckOut.length > 0 ? 
+  `\nCheck-out hoy:\n${[...new Set(reservasHoyCheckOut.map(r => r.habitacion.numero))].map(num => `- Hab. ${num}`).join('\n')}` : 
+  '\nNo hay habitaciones con check-out hoy'}
 
 ${habitacionesLimpieza.length > 0 ? 
   `\nEn limpieza:\n${habitacionesLimpieza.map(h => `- Hab. ${h.numero}`).join('\n')}` : 
@@ -1202,12 +1200,12 @@ ${habitacionesLimpieza.length > 0 ?
   }
 
   gestionarMantenimiento(): void {
-    // Mostrar habitaciones en mantenimiento
-    const habitacionesMantenimiento = this.habitaciones.filter(h => h.estado === 'mantenimiento');
+    // Mostrar tareas de mantenimiento pendientes
+    const tareasMantenimiento = this.tareas?.filter(t => t.tipo === 'mantenimiento' && t.estado === 'pendiente') || [];
     
-    const mensaje = `GESTIÓN DE MANTENIMIENTO:\n\n${habitacionesMantenimiento.length > 0 ? 
-      `Habitaciones en mantenimiento:\n${habitacionesMantenimiento.map(h => `- Hab. ${h.numero}`).join('\n')}` : 
-      'No hay habitaciones en mantenimiento'}\n\n¿Qué acción desea realizar?\n1. Marcar habitación como disponible\n2. Reportar problema\n3. Ver historial de mantenimiento\n4. Cancelar`;
+    const mensaje = `GESTIÓN DE MANTENIMIENTO:\n\n${tareasMantenimiento.length > 0 ? 
+      `Tareas pendientes:\n${tareasMantenimiento.map(t => `- Hab. ${t.habitacion.numero}: ${t.descripcion}`).join('\n')}` : 
+      'No hay tareas de mantenimiento pendientes'}\n\n¿Qué acción desea realizar?\n1. Crear nueva tarea\n2. Ver historial de mantenimiento\n3. Cancelar`;
 
     const accion = prompt(mensaje);
     
@@ -1436,15 +1434,17 @@ ${habitacionesLimpieza.length > 0 ?
   }
 
   private verDetallesLimpieza(): void {
-    const habitacionesLimpieza = this.habitaciones.filter(h => h.estado === 'limpieza');
+    const reservasCheckOut = this.reservasHoy.filter(r => 
+      this.esFechaCheckOut(new Date(), r.fechaSalida)
+    );
     
-    if (habitacionesLimpieza.length === 0) {
-      this.mostrarMensaje('No hay habitaciones en limpieza');
+    if (reservasCheckOut.length === 0) {
+      this.mostrarMensaje('No hay habitaciones con check-out hoy');
       return;
     }
 
-    const detalles = habitacionesLimpieza.map(h => 
-      `Habitación ${h.numero}:\n- Tipo: ${h.tipo}\n- Capacidad: ${h.capacidad}`
+    const detalles = reservasCheckOut.map(r => 
+      `Habitación ${r.habitacion.numero}:\n- Tipo: ${r.habitacion.tipo}\n- Check-out: ${this.formatearFecha(r.fechaSalida)}`
     ).join('\n\n');
 
     alert(`DETALLES DE LIMPIEZA:\n\n${detalles}`);
@@ -1514,20 +1514,24 @@ ${habitacionesLimpieza.length > 0 ?
 
   // Métodos auxiliares para Reportes
   private generarReporteOcupacion(): void {
-    const habitacionesDisponibles = this.habitaciones.filter(h => h.estado === 'disponible').length;
-    const habitacionesOcupadas = this.habitaciones.filter(h => h.estado === 'ocupada').length;
-    const habitacionesReservadas = this.habitaciones.filter(h => h.estado === 'reservada').length;
-    const habitacionesLimpieza = this.habitaciones.filter(h => h.estado === 'limpieza').length;
-    const habitacionesMantenimiento = this.habitaciones.filter(h => h.estado === 'mantenimiento').length;
+    // Contar habitaciones activas/inactivas
+    const habitacionesActivas = this.habitaciones.filter(h => h.activa).length;
+    const habitacionesInactivas = this.habitaciones.filter(h => !h.activa).length;
+    
+    // Contar reservas por estado
+    const reservasEnCurso = this.reservasHoy.filter(r => r.estado === 'En curso' || r.estado === 'En Curso').length;
+    const reservasConfirmadas = this.reservasHoy.filter(r => r.estado === 'Confirmada').length;
+    const reservasPendientes = this.reservasHoy.filter(r => r.estado === 'Pendiente').length;
     
     const reporte = `REPORTE DE OCUPACIÓN - ${this.dateTimeService.formatDateForDisplay(this.fechaActual)}\n\n` +
       `Total de habitaciones: ${this.habitaciones.length}\n` +
-      `Disponibles: ${habitacionesDisponibles}\n` +
-      `Ocupadas: ${habitacionesOcupadas}\n` +
-      `Reservadas: ${habitacionesReservadas}\n` +
-      `En limpieza: ${habitacionesLimpieza}\n` +
-      `En mantenimiento: ${habitacionesMantenimiento}\n` +
-      `Porcentaje de ocupación: ${Math.round(((habitacionesOcupadas + habitacionesReservadas) / this.habitaciones.length) * 100)}%`;
+      `Activas: ${habitacionesActivas}\n` +
+      `Inactivas: ${habitacionesInactivas}\n\n` +
+      `RESERVAS HOY:\n` +
+      `En curso: ${reservasEnCurso}\n` +
+      `Confirmadas: ${reservasConfirmadas}\n` +
+      `Pendientes: ${reservasPendientes}\n` +
+      `Porcentaje de ocupación: ${Math.round((reservasEnCurso / habitacionesActivas) * 100)}%`;
 
     alert(reporte);
   }
@@ -1559,7 +1563,7 @@ ${habitacionesLimpieza.length > 0 ?
   private generarReporteEstadoHabitaciones(): void {
     const reporte = `REPORTE DE ESTADO DE HABITACIONES - ${this.dateTimeService.formatDateForDisplay(this.fechaActual)}\n\n` +
       this.habitaciones.map(h => 
-        `Habitación ${h.numero}:\n- Tipo: ${h.tipo}\n- Estado: ${h.estado}\n- Capacidad: ${h.capacidad}`
+        `Habitación ${h.numero}:\n- Tipo: ${h.tipo}\n- Activa: ${h.activa ? 'Sí' : 'No'}\n- Capacidad: ${h.capacidad}`
       ).join('\n\n');
 
     alert(reporte);
@@ -1567,7 +1571,7 @@ ${habitacionesLimpieza.length > 0 ?
 
   // Métodos auxiliares para Mantenimiento
   private marcarHabitacionDisponible(): void {
-    const habitacionesMantenimiento = this.habitaciones.filter(h => h.estado === 'mantenimiento');
+    const tareasMantenimiento = this.tareas?.filter(t => t.tipo === 'mantenimiento' && t.estado === 'pendiente') || [];
     
     if (habitacionesMantenimiento.length === 0) {
       this.mostrarMensaje('No hay habitaciones en mantenimiento');

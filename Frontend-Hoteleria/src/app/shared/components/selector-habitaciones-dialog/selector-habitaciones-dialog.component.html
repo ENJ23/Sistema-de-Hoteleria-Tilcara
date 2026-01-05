@@ -13,8 +13,8 @@
         <mat-card-content>
           <div class="habitacion-header">
             <h3>{{ habitacion.numero }}</h3>
-            <mat-chip [class]="'estado-' + habitacion.estado">
-              {{ habitacion.estado | titlecase }}
+            <mat-chip [class]="habitacion.activa ? 'estado-disponible' : 'estado-inactivo'">
+              {{ habitacion.activa ? 'Activa' : 'Inactiva' }}
             </mat-chip>
           </div>
           <div class="habitacion-info">

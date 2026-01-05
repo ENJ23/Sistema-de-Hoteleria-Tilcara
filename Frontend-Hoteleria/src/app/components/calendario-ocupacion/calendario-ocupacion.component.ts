@@ -27,7 +27,7 @@ interface Habitacion {
   numero: string;
   tipo: string;
   capacidad: number;
-  estado: string;
+  activa: boolean;
   precioActual: number;
 }
 
@@ -155,7 +155,7 @@ export class CalendarioOcupacionComponent implements OnInit, OnDestroy {
           numero: hab.numero,
           tipo: hab.tipo,
           capacidad: hab.capacidad,
-          estado: hab.estado,
+          activa: hab.activa || true,
           precioActual: hab.precioActual
         }));
         this.cargando = false;
@@ -164,8 +164,8 @@ export class CalendarioOcupacionComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Error al cargar habitaciones:', error);
         this.habitaciones = [
-          { _id: '1', numero: '101', tipo: 'Individual', capacidad: 1, estado: 'Disponible', precioActual: 50 },
-          { _id: '2', numero: '102', tipo: 'Doble', capacidad: 2, estado: 'Disponible', precioActual: 75 }
+          { _id: '1', numero: '101', tipo: 'Individual', capacidad: 1, activa: true, precioActual: 50 },
+          { _id: '2', numero: '102', tipo: 'Doble', capacidad: 2, activa: true, precioActual: 75 }
         ];
         this.cargando = false;
         this.generarOcupacion();
@@ -260,7 +260,7 @@ export class CalendarioOcupacionComponent implements OnInit, OnDestroy {
                 ocupacion = {
                   habitacionId: habitacion._id,
                   habitacionNumero: habitacion.numero,
-                  estado: this.mapearEstadoHabitacion(habitacion.estado),
+                  estado: 'disponible',
                   esTransicion: false,
                   esDiaEntrada: false,
                   esDiaSalida: false

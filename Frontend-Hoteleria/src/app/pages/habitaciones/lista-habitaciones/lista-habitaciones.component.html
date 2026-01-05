@@ -1,204 +1,187 @@
-<div class="rooms-container">
+<div class="page-container">
   <!-- Header Section -->
   <div class="page-header">
     <div class="header-content">
-      <div class="title-section">
-        <mat-icon class="header-icon">hotel</mat-icon>
-        <div class="title-text">
-          <h1 class="page-title">Gestión de Habitaciones</h1>
-          <p class="page-subtitle">Administra y supervisa todas las habitaciones del hotel</p>
-        </div>
-      </div>
-      <button mat-raised-button color="primary" routerLink="nueva" class="add-button">
-        <mat-icon>add_circle</mat-icon>
-        <span>Nueva Habitación</span>
+      <h1 class="page-title">Gestión de Habitaciones</h1>
+      <p class="page-subtitle">Administra y supervisa el inventario de habitaciones.</p>
+    </div>
+    <div class="header-actions">
+      <button mat-flat-button color="primary" routerLink="nueva" class="btn-create">
+        <mat-icon>add</mat-icon>
+        Nueva Habitación
       </button>
     </div>
   </div>
 
-  <!-- Stats Cards -->
-  <div class="stats-section" *ngIf="!loading">
-    <div class="stats-grid">
-      <div class="stat-card total">
-        <div class="stat-icon">
-          <mat-icon>hotel</mat-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ totalHabitaciones }}</div>
-          <div class="stat-label">Total Habitaciones</div>
-        </div>
+  <!-- Stats Grid -->
+  <div class="stats-grid" *ngIf="!loading">
+    <div class="stat-card">
+      <div class="stat-icon primary-bg">
+        <mat-icon>hotel</mat-icon>
       </div>
-      
-      <div class="stat-card available">
-        <div class="stat-icon">
-          <mat-icon>check_circle</mat-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ getHabitacionesDisponibles() }}</div>
-          <div class="stat-label">Disponibles</div>
-        </div>
+      <div class="stat-info">
+        <span class="stat-label">Total</span>
+        <span class="stat-value">{{ totalHabitaciones }}</span>
       </div>
-      
-      <div class="stat-card occupied">
-        <div class="stat-icon">
-          <mat-icon>event_busy</mat-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ getHabitacionesOcupadas() }}</div>
-          <div class="stat-label">Ocupadas</div>
-        </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon success-bg">
+        <mat-icon>check_circle</mat-icon>
       </div>
-      
-      <div class="stat-card maintenance">
-        <div class="stat-icon">
-          <mat-icon>build</mat-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-number">{{ getHabitacionesMantenimiento() }}</div>
-          <div class="stat-label">Mantenimiento</div>
-        </div>
+      <div class="stat-info">
+        <span class="stat-label">Disponibles</span>
+        <span class="stat-value">{{ getHabitacionesDisponibles() }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon error-bg">
+        <mat-icon>no_meeting_room</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Ocupadas</span>
+        <span class="stat-value">{{ getHabitacionesOcupadas() }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon warning-bg">
+        <mat-icon>block</mat-icon>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Inactivas</span>
+        <span class="stat-value">{{ getHabitacionesInactivas() }}</span>
       </div>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    <!-- Search and Filters -->
-    <div class="search-section">
-      <mat-card class="search-card">
-        <mat-card-content>
-          <div class="search-container">
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-label>Buscar habitaciones</mat-label>
-              <input matInput (keyup)="aplicarFiltro($event)" placeholder="Número, tipo, piso...">
-              <mat-icon matSuffix>search</mat-icon>
-            </mat-form-field>
-            
-            <div class="filter-buttons">
-              <button mat-stroked-button (click)="limpiarFiltros()" class="filter-btn">
-                <mat-icon>clear</mat-icon>
-                Limpiar
-              </button>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
+  <!-- Main Content Card -->
+  <div class="main-content-card">
+
+    <!-- Search & Toolbar -->
+    <div class="toolbar-section">
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input type="text" (keyup)="aplicarFiltro($event)" placeholder="Buscar habitación...">
+      </div>
+
+      <div class="toolbar-actions">
+        <button mat-button class="btn-filter" [matMenuTriggerFor]="filterMenu">
+          <mat-icon>filter_list</mat-icon>
+          Filtrar
+        </button>
+        <mat-menu #filterMenu="matMenu">
+          <button mat-menu-item (click)="limpiarFiltros()">Limpiar Filtros</button>
+        </mat-menu>
+
+        <button mat-icon-button class="refresh-btn" (click)="cargarHabitaciones()" matTooltip="Actualizar">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
     </div>
 
-    <!-- Rooms Grid/Table -->
-    <div class="rooms-section">
-      <mat-card class="rooms-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon class="card-icon">room</mat-icon>
-            Lista de Habitaciones
-          </mat-card-title>
-          <mat-card-subtitle>{{ totalHabitaciones }} habitaciones registradas</mat-card-subtitle>
-        </mat-card-header>
-        
-        <mat-card-content>
-          <!-- Loading State -->
-          <div class="loading-container" *ngIf="loading">
-            <mat-spinner diameter="50"></mat-spinner>
-            <p class="loading-text">Cargando habitaciones...</p>
-          </div>
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
 
-          <!-- Rooms Grid View -->
-          <div class="rooms-grid" *ngIf="!loading && dataSource.data.length > 0">
-            <div class="room-card" *ngFor="let habitacion of dataSource.data" 
-                 [ngClass]="'room-' + habitacion.estado.toLowerCase().replace(' ', '-')">
-              
-              <!-- Room Header -->
-              <div class="room-header">
-                <div class="room-number">
-                  <mat-icon class="room-icon">room</mat-icon>
-                  <span class="number-text">{{ habitacion.numero }}</span>
-                </div>
-                <div class="room-status">
-                  <span class="status-badge" [ngClass]="getBadgeClass(habitacion.estado)">
-                    <mat-icon class="status-icon">{{ getEstadoIcon(habitacion.estado) }}</mat-icon>
-                    {{ habitacion.estado }}
-                  </span>
-                </div>
-              </div>
+    <!-- Rooms Table -->
+    <div class="table-responsive">
+      <table mat-table [dataSource]="dataSource" matSort class="modern-table">
 
-              <!-- Room Info -->
-              <div class="room-info">
-                <div class="info-row">
-                  <mat-icon class="info-icon">category</mat-icon>
-                  <span class="info-label">Tipo:</span>
-                  <span class="info-value">{{ habitacion.tipo }}</span>
-                </div>
-                
-                <div class="info-row">
-                  <mat-icon class="info-icon">layers</mat-icon>
-                  <span class="info-label">Piso:</span>
-                  <span class="info-value">{{ habitacion.piso || '-' }}</span>
-                </div>
-                
-                <div class="info-row">
-                  <mat-icon class="info-icon">people</mat-icon>
-                  <span class="info-label">Capacidad:</span>
-                  <span class="info-value">{{ habitacion.capacidad }} personas</span>
-                </div>
-                
-                <div class="info-row price-row">
-                  <mat-icon class="info-icon">attach_money</mat-icon>
-                  <span class="info-label">Precio:</span>
-                  <span class="price-value">{{ habitacion.precioActual | currency }}</span>
-                  <span class="price-period">/noche</span>
-                </div>
-              </div>
-
-              <!-- Room Actions -->
-              <div class="room-actions">
-                <button mat-icon-button color="primary" (click)="verDetalle(habitacion._id)" 
-                        matTooltip="Ver Detalle" class="action-btn">
-                  <mat-icon>visibility</mat-icon>
-                </button>
-                
-                <button mat-icon-button color="accent" (click)="editarHabitacion(habitacion._id)" 
-                        matTooltip="Editar" class="action-btn">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                
-                <button mat-icon-button 
-                        [color]="habitacion.estado === 'Disponible' ? 'warn' : 'primary'" 
-                        (click)="cambiarEstado(habitacion, habitacion.estado === 'Disponible' ? 'Ocupada' : 'Disponible')"
-                        matTooltip="Cambiar Estado" class="action-btn">
-                  <mat-icon>{{ habitacion.estado === 'Disponible' ? 'event_busy' : 'check_circle' }}</mat-icon>
-                </button>
-                
-                <button mat-icon-button color="warn" (click)="confirmarEliminacion(habitacion)" 
-                        matTooltip="Eliminar" class="action-btn">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
+        <!-- Número Column -->
+        <ng-container matColumnDef="numero">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Habitación</th>
+          <td mat-cell *matCellDef="let habitacion">
+            <div class="room-identity">
+              <span class="room-number">{{ habitacion.numero }}</span>
             </div>
-          </div>
+          </td>
+        </ng-container>
 
-          <!-- Empty State -->
-          <div class="empty-state" *ngIf="!loading && dataSource.data.length === 0">
-            <mat-icon class="empty-icon">hotel</mat-icon>
-            <h3 class="empty-title">No hay habitaciones</h3>
-            <p class="empty-subtitle">No se encontraron habitaciones con los filtros aplicados</p>
-            <button mat-raised-button color="primary" routerLink="nueva" class="empty-action">
-              <mat-icon>add</mat-icon>
-              Crear Primera Habitación
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
+        <!-- Tipo Column -->
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+          <td mat-cell *matCellDef="let habitacion">
+            <div class="cell-content">
+              <mat-icon class="cell-icon text-muted">category</mat-icon>
+              {{ habitacion.tipo }}
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Piso Column -->
+        <ng-container matColumnDef="piso">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Piso</th>
+          <td mat-cell *matCellDef="let habitacion">
+            {{ habitacion.piso || '-' }}
+          </td>
+        </ng-container>
+
+        <!-- Capacidad Column -->
+        <ng-container matColumnDef="capacidad">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Capacidad</th>
+          <td mat-cell *matCellDef="let habitacion">
+            <div class="cell-content">
+              <mat-icon class="cell-icon text-muted">group</mat-icon>
+              {{ habitacion.capacidad }} pers.
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Precio Column -->
+        <ng-container matColumnDef="precioActual">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Precio</th>
+          <td mat-cell *matCellDef="let habitacion">
+            <span class="price-tag">$ {{ habitacion.precioActual | number:'1.0-2' }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Estado Column -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+          <td mat-cell *matCellDef="let habitacion">
+            <span class="status-badge" [ngClass]="habitacion.activa ? 'estado-disponible' : 'estado-inactivo'">
+              {{ habitacion.activa ? 'Activa' : 'Inactiva' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Acciones Column -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let habitacion">
+            <div class="actions-wrapper">
+              <button mat-icon-button (click)="verDetalle(habitacion._id)" matTooltip="Ver detalle">
+                <mat-icon class="action-icon text-primary">visibility</mat-icon>
+              </button>
+              <button mat-icon-button (click)="editarHabitacion(habitacion._id)" matTooltip="Editar">
+                <mat-icon class="action-icon text-muted">edit</mat-icon>
+              </button>
+              <button mat-icon-button [color]="habitacion.activa ? 'warn' : 'primary'"
+                (click)="cambiarDisponibilidad(habitacion, !habitacion.activa)"
+                matTooltip="Cambiar Disponibilidad">
+                <mat-icon class="action-icon">{{ habitacion.activa ? 'lock' : 'lock_open' }}</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover-row"></tr>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading && dataSource.data.length === 0">
+      <mat-icon class="empty-icon">search_off</mat-icon>
+      <h3>No se encontraron habitaciones</h3>
+      <p>Intenta ajustar los filtros de búsqueda.</p>
+      <button mat-stroked-button color="primary" (click)="limpiarFiltros()">Limpiar Filtros</button>
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-section" *ngIf="!loading && dataSource.data.length > 0">
-      <mat-paginator 
-        [pageSizeOptions]="[6, 12, 24, 48]" 
-        showFirstLastButtons
-        [pageSize]="12"
-        class="custom-paginator">
-      </mat-paginator>
-    </div>
+    <mat-paginator [pageSizeOptions]="[8, 12, 24, 48]" showFirstLastButtons class="custom-paginator"></mat-paginator>
   </div>
 </div>

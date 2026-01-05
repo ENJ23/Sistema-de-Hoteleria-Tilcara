@@ -9,8 +9,7 @@ import {
   HabitacionCreate,
   HabitacionUpdate,
   HabitacionFilters,
-  TipoHabitacion,
-  EstadoHabitacion
+  TipoHabitacion
 } from '../models/habitacion.model';
 import { environment } from '../../environments/environment';
 
@@ -51,18 +50,17 @@ export class HabitacionService {
   getHabitaciones(
     page: number = 1,
     limit: number = 10,
-    estado?: EstadoHabitacion,
+    activa?: boolean,
     tipo?: TipoHabitacion,
     busqueda?: string
   ): Observable<HabitacionResponse> {
-    console.log('Solicitando habitaciones con parámetros:', { page, limit, estado, tipo, busqueda });
+    console.log('Solicitando habitaciones con parámetros:', { page, limit, activa, tipo, busqueda });
 
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
-    // CORREGIDO: No filtrar por activa para mostrar todas las habitaciones
 
-    if (estado) params = params.set('estado', estado);
+    if (activa !== undefined) params = params.set('activa', activa.toString());
     if (tipo) params = params.set('tipo', tipo);
     if (busqueda) params = params.set('search', busqueda);
 
@@ -285,31 +283,14 @@ export class HabitacionService {
     return ['Individual', 'Doble', 'Triple', 'Suite', 'Familiar'];
   }
 
-  // Obtener estados de habitación disponibles
-  getEstadosHabitacion(): EstadoHabitacion[] {
-    return ['Disponible', 'Ocupada', 'Mantenimiento', 'Reservada', 'Fuera de servicio'];
-  }
-
-  // Cambiar el estado de una habitación
-  cambiarEstadoHabitacion(id: string, estado: EstadoHabitacion): Observable<Habitacion> {
+  // Cambiar la disponibilidad de una habitación
+  cambiarDisponibilidad(id: string, activa: boolean): Observable<Habitacion> {
     return this.http.patch<Habitacion>(
-      `${this.apiUrl}/${id}/estado`,
-      { estado },
+      `${this.apiUrl}/${id}/disponibilidad`,
+      { activa },
       { headers: this.authService.getAuthHeaders() }
     ).pipe(
       catchError(this.handleError)
     );
-  }
-
-  // Obtener el color según el estado de la habitación
-  getEstadoColor(estado: EstadoHabitacion): string {
-    const colores: Record<EstadoHabitacion, string> = {
-      'Disponible': 'primary',
-      'Ocupada': 'warn',
-      'Mantenimiento': 'accent',
-      'Reservada': 'accent',
-      'Fuera de servicio': 'warn'
-    };
-    return colores[estado] || '';
   }
 } 

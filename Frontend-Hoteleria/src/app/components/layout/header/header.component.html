@@ -1,183 +1,131 @@
-<!-- Header Principal del Sistema de Hostal -->
-<header class="header-hostal">
-  <!-- Barra superior con información del hostal -->
-  <div class="header-top">
-    <div class="container">
-      <div class="header-info">
-        <div class="hostal-info">
-          <div class="hostal-logo">
-            <mat-icon class="logo-icon">hotel</mat-icon>
-            <span class="hostal-name">Hostal del Centro</span>
-          </div>
-          <div class="hostal-details">
-            <span class="hostal-address">
-              <mat-icon>location_on</mat-icon>
-              Calle Principal 123
-            </span>
-            <span class="hostal-phone">
-              <mat-icon>phone</mat-icon>
-              +54 11 1234-5678
-            </span>
-          </div>
-        </div>
-        
-        <div class="header-actions">
-          <div class="current-time">
-            <mat-icon>schedule</mat-icon>
-            <span>{{ currentTime | date:'HH:mm' }}</span>
-          </div>
-          <div class="current-date">
-            <mat-icon>calendar_today</mat-icon>
-            <span>{{ currentTime | date:'EEEE, d MMMM' }}</span>
-          </div>
-        </div>
+<header class="header-main">
+  <!-- System Status Bar (Slim Top) -->
+  <div class="system-status-bar">
+    <div class="container status-container">
+      <div class="status-item online">
+        <div class="status-dot"></div>
+        <span>Sistema Online</span>
+      </div>
+      <div class="date-display">
+        {{ currentTime | date:'EEEE, d MMMM' | titlecase }}
       </div>
     </div>
   </div>
 
-  <!-- Barra de navegación principal -->
-  <nav class="navbar-main">
-    <div class="container">
-      <div class="nav-content">
-        <!-- Logo y título principal -->
-        <div class="nav-brand">
-          <div class="brand-container">
-            <mat-icon class="brand-icon">hotel</mat-icon>
-            <div class="brand-text">
-              <h1 class="brand-title">Sistema de Hostal</h1>
-              <p class="brand-subtitle">Gestión Inteligente</p>
+  <!-- Main Navigation -->
+  <nav class="navbar">
+    <div class="container navbar-container">
+
+      <!-- Brand -->
+      <a class="nav-brand" [routerLink]="['/']">
+        <div class="brand-icon-wrapper">
+          <mat-icon>domain</mat-icon>
+        </div>
+        <div class="brand-info">
+          <h1 class="brand-title">Hostal del Centro</h1>
+          <span class="brand-subtitle">Gestión Hotelera</span>
+        </div>
+      </a>
+
+      <!-- Desktop Menu -->
+      <div class="nav-links-desktop">
+        <a class="nav-link" [routerLink]="['/dashboard']" routerLinkActive="active" *ngIf="isLoggedIn">
+          <mat-icon>dashboard</mat-icon>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-link" [routerLink]="['/reservas']" routerLinkActive="active" *ngIf="isLoggedIn">
+          <mat-icon>calendar_month</mat-icon>
+          <span>Reservas</span>
+        </a>
+        <a class="nav-link" [routerLink]="['/habitaciones']" routerLinkActive="active"
+          *ngIf="isEncargado || isLimpieza">
+          <mat-icon>bedroom_parent</mat-icon>
+          <span>Habitaciones</span>
+        </a>
+
+        <!-- Auditoría Links -->
+        <a class="nav-link" [routerLink]="['/auditoria-reservas']" routerLinkActive="active" *ngIf="isEncargado">
+          <mat-icon>fact_check</mat-icon>
+          <span>Audit. Reservas</span>
+        </a>
+
+        <a class="nav-link" [routerLink]="['/auditoria-cancelaciones']" routerLinkActive="active" *ngIf="isEncargado">
+          <mat-icon>rule_folder</mat-icon>
+          <span>Audit. Cancelaciones</span>
+        </a>
+      </div>
+
+      <!-- User Actions & Mobile Toggle -->
+      <div class="nav-actions">
+
+        <ng-container *ngIf="isLoggedIn; else loginBtn">
+          <!-- User Profile Dropdown Trigger -->
+          <div class="user-profile-trigger" (click)="toggleUserMenu()">
+            <div class="user-avatar" [class]="userRole">
+              {{ (userName?.charAt(0) || 'U') | uppercase }}
+            </div>
+            <div class="user-meta desktop-only">
+              <span class="user-name">{{ userName }}</span>
+              <span class="user-role">{{ getRoleDisplayName() }}</span>
+            </div>
+            <mat-icon class="dropdown-arrow">expand_more</mat-icon>
+
+            <!-- Dropdown Menu -->
+            <div class="user-dropdown-menu" [class.show]="isUserMenuOpen">
+              <div class="dropdown-header mobile-only">
+                <span class="user-name">{{ userName }}</span>
+                <span class="user-role">{{ getRoleDisplayName() }}</span>
+              </div>
+              <a [routerLink]="['/perfil']" class="dropdown-item">
+                <mat-icon>person</mat-icon> Perfil
+              </a>
+              <a [routerLink]="['/configuracion']" *ngIf="isEncargado" class="dropdown-item">
+                <mat-icon>settings</mat-icon> Configuración
+              </a>
+              <div class="dropdown-divider"></div>
+              <button (click)="logout()" class="dropdown-item danger">
+                <mat-icon>logout</mat-icon> Cerrar Sesión
+              </button>
             </div>
           </div>
-        </div>
+        </ng-container>
 
-        <!-- Menú de navegación -->
-        <div class="nav-menu" [class.menu-open]="isMenuOpen">
-          <ul class="nav-list">
-            <li class="nav-item">
-              <a class="nav-link" [routerLink]="['/']" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-                <mat-icon>home</mat-icon>
-                <span>Inicio</span>
-              </a>
-            </li>
+        <ng-template #loginBtn>
+          <a [routerLink]="['/login']" class="btn-login-nav">
+            <mat-icon>login</mat-icon> Iniciar Sesión
+          </a>
+        </ng-template>
 
-            <li class="nav-item" *ngIf="isLoggedIn">
-              <a class="nav-link" [routerLink]="['/dashboard']" routerLinkActive="active">
-                <mat-icon>dashboard</mat-icon>
-                <span>Dashboard</span>
-              </a>
-            </li>
-
-            <li class="nav-item" *ngIf="isLoggedIn">
-              <a class="nav-link" [routerLink]="['/reservas']" routerLinkActive="active">
-                <mat-icon>list_alt</mat-icon>
-                <span>Reservas</span>
-              </a>
-            </li>
-            
-            <li class="nav-item" *ngIf="isEncargado || isLimpieza">
-              <a class="nav-link" [routerLink]="['/habitaciones']" routerLinkActive="active">
-                <mat-icon>bed</mat-icon>
-                <span>Habitaciones</span>
-              </a>
-            </li>
-            
-            <li class="nav-item" *ngIf="isEncargado">
-              <a class="nav-link" [routerLink]="['/reportes']" routerLinkActive="active">
-                <mat-icon>assessment</mat-icon>
-                <span>Reportes</span>
-              </a>
-            </li>
-            
-            <li class="nav-item" *ngIf="isEncargado">
-              <a class="nav-link" [routerLink]="['/auditoria-cancelaciones']" routerLinkActive="active">
-                <mat-icon>audit</mat-icon>
-                <span>Auditoría Cancelaciones</span>
-              </a>
-            </li>
-            
-            <li class="nav-item" *ngIf="isEncargado">
-              <a class="nav-link" [routerLink]="['/auditoria-reservas']" routerLinkActive="active">
-                <mat-icon>history</mat-icon>
-                <span>Auditoría Reservas</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Acciones del usuario -->
-        <div class="nav-user">
-          <ng-container *ngIf="isLoggedIn; else loginSection">
-            <!-- Usuario logueado -->
-            <div class="user-profile">
-              <div class="user-avatar">
-                <mat-icon [class]="'role-icon ' + userRole">{{ getRoleIcon() }}</mat-icon>
-              </div>
-              <div class="user-info">
-                <div class="user-greeting">{{ getGreeting() }}</div>
-                <div class="user-name">{{ userName || 'Usuario' }}</div>
-                <div class="user-role">{{ getRoleDisplayName() }}</div>
-              </div>
-              
-              <!-- Menú desplegable del usuario -->
-              <div class="user-dropdown">
-                <button class="dropdown-toggle" (click)="toggleUserMenu()">
-                  <mat-icon>expand_more</mat-icon>
-                </button>
-                <div class="dropdown-menu" [class.show]="isUserMenuOpen">
-                  <a class="dropdown-item" [routerLink]="['/perfil']">
-                    <mat-icon>person</mat-icon>
-                    <span>Mi Perfil</span>
-                  </a>
-                  <a class="dropdown-item" [routerLink]="['/configuracion']" *ngIf="isEncargado">
-                    <mat-icon>settings</mat-icon>
-                    <span>Configuración</span>
-                  </a>
-                  <div class="dropdown-divider"></div>
-                  <button class="dropdown-item logout-btn" (click)="logout()">
-                    <mat-icon>logout</mat-icon>
-                    <span>Cerrar Sesión</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </ng-container>
-          
-          <ng-template #loginSection>
-            <!-- Botones de autenticación -->
-            <div class="auth-buttons">
-              <a class="btn-login" [routerLink]="['/login']">
-                <mat-icon>login</mat-icon>
-                <span>Iniciar Sesión</span>
-              </a>
-              <a class="btn-register" [routerLink]="['/register']">
-                <mat-icon>person_add</mat-icon>
-                <span>Registrarse</span>
-              </a>
-            </div>
-          </ng-template>
-        </div>
-
-        <!-- Botón de menú móvil -->
-        <button class="menu-toggle" (click)="toggleMenu()" *ngIf="isLoggedIn">
+        <!-- Mobile Menu Toggle -->
+        <button class="menu-toggle-btn" (click)="toggleMenu()" *ngIf="isLoggedIn">
           <mat-icon>{{ isMenuOpen ? 'close' : 'menu' }}</mat-icon>
         </button>
       </div>
-    </div>
-  </nav>
 
-  <!-- Indicador de estado del sistema -->
-  <div class="system-status">
-    <div class="container">
-      <div class="status-indicators">
-        <div class="status-item online">
-          <div class="status-dot"></div>
-          <span>Sistema Online</span>
-        </div>
-        <div class="status-item" *ngIf="isLoggedIn">
-          <div class="status-dot connected"></div>
-          <span>Conectado</span>
-        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" [class.open]="isMenuOpen">
+      <div class="mobile-nav-links">
+        <a class="mobile-link" [routerLink]="['/dashboard']" routerLinkActive="active" (click)="isMenuOpen = false">
+          <mat-icon>dashboard</mat-icon> Dashboard
+        </a>
+        <a class="mobile-link" [routerLink]="['/reservas']" routerLinkActive="active" (click)="isMenuOpen = false">
+          <mat-icon>calendar_month</mat-icon> Reservas
+        </a>
+        <a class="mobile-link" [routerLink]="['/habitaciones']" routerLinkActive="active"
+          *ngIf="isEncargado || isLimpieza" (click)="isMenuOpen = false">
+          <mat-icon>bedroom_parent</mat-icon> Habitaciones
+        </a>
+        <a class="mobile-link" [routerLink]="['/auditoria-reservas']" routerLinkActive="active" *ngIf="isEncargado"
+          (click)="isMenuOpen = false">
+          <mat-icon>fact_check</mat-icon> Audit. Reservas
+        </a>
+        <a class="mobile-link" [routerLink]="['/auditoria-cancelaciones']" routerLinkActive="active" *ngIf="isEncargado"
+          (click)="isMenuOpen = false">
+          <mat-icon>rule_folder</mat-icon> Audit. Cancelaciones
+        </a>
       </div>
     </div>
-  </div>
+  </nav>
 </header>

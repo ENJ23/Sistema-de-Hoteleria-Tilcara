@@ -19,7 +19,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Models y servicios
-import { Habitacion, HabitacionCreate, HabitacionUpdate, TipoHabitacion, EstadoHabitacion } from '../../../models/habitacion.model';
+import { Habitacion, HabitacionCreate, HabitacionUpdate, TipoHabitacion } from '../../../models/habitacion.model';
 import { HabitacionService } from '../../../services/habitacion.service';
 
 // Componentes (removidos ya que no se usan en el template)
@@ -57,7 +57,6 @@ export class FormularioHabitacionComponent implements OnInit {
   private destroy$ = new Subject<void>();
   
   // Opciones para los selects
-  estados: EstadoHabitacion[] = [];
   tiposHabitacion: TipoHabitacion[] = [];
   
   // Servicios disponibles para selección múltiple
@@ -124,7 +123,6 @@ export class FormularioHabitacionComponent implements OnInit {
         Validators.min(0), 
         Validators.max(500000)
       ]],
-      estado: ['Disponible', Validators.required],
       descripcion: ['', [
         Validators.maxLength(this.MAX_LONGITUD_DESCRIPCION)
       ]],
@@ -146,9 +144,8 @@ export class FormularioHabitacionComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Obtener los tipos de habitación y estados disponibles
+    // Obtener los tipos de habitación disponibles
     this.tiposHabitacion = this.habitacionService.getTiposHabitacion();
-    this.estados = this.habitacionService.getEstadosHabitacion();
     
     // Verificar si estamos en modo edición
     this.route.paramMap
@@ -516,20 +513,6 @@ export class FormularioHabitacionComponent implements OnInit {
       'Familiar': 'group'
     };
     return iconos[tipo] || 'room';
-  }
-
-  /**
-   * Obtiene el icono correspondiente al estado de la habitación
-   */
-  getEstadoIcon(estado: EstadoHabitacion): string {
-    const iconos: Record<EstadoHabitacion, string> = {
-      'Disponible': 'check_circle',
-      'Ocupada': 'event_busy',
-      'Mantenimiento': 'build',
-      'Reservada': 'event_available',
-      'Fuera de servicio': 'block'
-    };
-    return iconos[estado] || 'help';
   }
 
   /**

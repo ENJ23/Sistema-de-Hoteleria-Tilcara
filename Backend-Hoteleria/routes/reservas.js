@@ -2261,4 +2261,175 @@ router.get('/cancelaciones/estadisticas', [
     }
 });
 
+// ============================================================================
+// NUEVO: Endpoint para obtener ingresos agrupados por mes (usando historialPagos)
+// ============================================================================
+router.get('/ingresos/por-mes', [
+    verifyToken,
+    isUsuarioValido,
+    query('fechaInicio')
+        .notEmpty()
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage('Formato de fechaInicio inválido (YYYY-MM-DD)'),
+    query('fechaFin')
+        .notEmpty()
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage('Formato de fechaFin inválido (YYYY-MM-DD)'),
+    manejarErroresValidacion
+], async (req, res) => {
+    try {
+        const { fechaInicio, fechaFin } = req.query;
+
+        console.log('📊 Backend - GET /ingresos/por-mes:', { fechaInicio, fechaFin });
+
+        // Parsear fechas
+        const fechaInicioParsed = new Date(`${fechaInicio}T00:00:00Z`);
+        const fechaFinParsed = new Date(`${fechaFin}T23:59:59Z`);
+
+        // Agregación: obtener ingresos por mes según fechaPago
+        const ingresosPorMes = await Reserva.aggregate([
+            {
+                $match: {
+                    estado: { $nin: ['Cancelada', 'No Show'] },
+                    'historialPagos': { $exists: true, $ne: [] }
+                }
+            },
+            {
+                // Descomprimir historialPagos
+                $unwind: '$historialPagos'
+            },
+            {
+                // Filtrar por rango de fechas de pago
+                $match: {
+                    'historialPagos.fechaPago': {
+                        $gte: fechaInicioParsed,
+                        $lte: fechaFinParsed
+                    }
+                }
+            },
+            {
+                // Agrupar por mes
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: '%Y-%m',
+                            date: '$historialPagos.fechaPago'
+                        }
+                    },
+                    totalIngresos: { $sum: '$historialPagos.monto' },
+                    cantidad: { $sum: 1 }
+                }
+            },
+            {
+                // Ordenar por mes ascendente
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        console.log('✅ Ingresos por mes obtenidos:', ingresosPorMes.length, 'meses');
+
+        res.json({
+            ingresosPorMes: ingresosPorMes,
+            totalIngresos: ingresosPorMes.reduce((sum, item) => sum + item.totalIngresos, 0),
+            totalPagos: ingresosPorMes.reduce((sum, item) => sum + item.cantidad, 0)
+        });
+    } catch (error) {
+        console.error('❌ Error al obtener ingresos por mes:', error);
+        res.status(500).json({
+            message: 'Error al obtener ingresos por mes',
+            error: error.message
+        });
+    }
+});
+
+// ============================================================================
+// NUEVO: Endpoint para obtener resumen anual de ingresos
+// ============================================================================
+router.get('/ingresos/anual', [
+    verifyToken,
+    isUsuarioValido,
+    query('year')
+        .notEmpty()
+        .isInt({ min: 1900, max: 2100 })
+        .withMessage('Año inválido'),
+    manejarErroresValidacion
+], async (req, res) => {
+    try {
+        const { year } = req.query;
+        const yearInt = parseInt(year, 10);
+
+        console.log('📊 Backend - GET /ingresos/anual:', { year: yearInt });
+
+        // Crear rango para todo el año
+        const fechaInicio = new Date(`${yearInt}-01-01T00:00:00Z`);
+        const fechaFin = new Date(`${yearInt}-12-31T23:59:59Z`);
+
+        // Agregación: obtener ingresos por mes para el año completo
+        const ingresosPorMes = await Reserva.aggregate([
+            {
+                $match: {
+                    estado: { $nin: ['Cancelada', 'No Show'] },
+                    'historialPagos': { $exists: true, $ne: [] }
+                }
+            },
+            {
+                // Descomprimir historialPagos
+                $unwind: '$historialPagos'
+            },
+            {
+                // Filtrar por año
+                $match: {
+                    'historialPagos.fechaPago': {
+                        $gte: fechaInicio,
+                        $lte: fechaFin
+                    }
+                }
+            },
+            {
+                // Agrupar por mes
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: '%Y-%m',
+                            date: '$historialPagos.fechaPago'
+                        }
+                    },
+                    totalIngresos: { $sum: '$historialPagos.monto' },
+                    cantidad: { $sum: 1 }
+                }
+            },
+            {
+                // Ordenar por mes ascendente
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        // Calcular totales anuales
+        const totalIngresos = ingresosPorMes.reduce((sum, item) => sum + item.totalIngresos, 0);
+        const totalReservas = ingresosPorMes.reduce((sum, item) => sum + item.cantidad, 0);
+        const promedioMensual = ingresosPorMes.length > 0 ? totalIngresos / 12 : 0;
+
+        console.log('✅ Resumen anual obtenido:', {
+            year: yearInt,
+            meses: ingresosPorMes.length,
+            totalIngresos,
+            totalReservas
+        });
+
+        res.json({
+            year: yearInt,
+            totalIngresos,
+            totalReservas,
+            promedioMensual,
+            ingresosPorMes: ingresosPorMes
+        });
+    } catch (error) {
+        console.error('❌ Error al obtener resumen anual:', error);
+        res.status(500).json({
+            message: 'Error al obtener resumen anual',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router; 

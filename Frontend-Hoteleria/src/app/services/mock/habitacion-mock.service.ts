@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { Habitacion, HabitacionCreate, HabitacionUpdate, HabitacionFilters, TipoHabitacion, EstadoHabitacion } from '../../models/habitacion.model';
+import { Habitacion, HabitacionCreate, HabitacionUpdate, HabitacionFilters, TipoHabitacion } from '../../models/habitacion.model';
 
 @Injectable({
   providedIn: 'root'
@@ -88,15 +88,15 @@ export class HabitacionMockService {
   getHabitaciones(
     page: number = 1, 
     limit: number = 10, 
-    estado?: EstadoHabitacion, 
+    activa?: boolean, 
     tipo?: TipoHabitacion,
     busqueda?: string
   ): Observable<any> {
     let habitacionesFiltradas = [...this.habitaciones];
 
     // Aplicar filtros
-    if (estado) {
-      habitacionesFiltradas = habitacionesFiltradas.filter(h => h.estado === estado);
+    if (activa !== undefined) {
+      habitacionesFiltradas = habitacionesFiltradas.filter(h => h.activa === activa);
     }
     if (tipo) {
       habitacionesFiltradas = habitacionesFiltradas.filter(h => h.tipo === tipo);
@@ -105,13 +105,11 @@ export class HabitacionMockService {
       const termino = busqueda.toLowerCase();
       habitacionesFiltradas = habitacionesFiltradas.filter(h => 
         h.numero.toLowerCase().includes(termino) ||
-        h.tipo.toLowerCase().includes(termino) ||
-        h.estado.toLowerCase().includes(termino)
+        h.tipo.toLowerCase().includes(termino)
       );
     }
 
-    // CORREGIDO: No filtrar por activa por defecto para mostrar todas las habitaciones
-    // Solo filtrar si se especifica explícitamente
+    // Filtrar por habitaciones activas por defecto para listados
 
     // Paginación
     const total = habitacionesFiltradas.length;
@@ -182,11 +180,11 @@ export class HabitacionMockService {
     }
   }
 
-  // Actualizar el estado de una habitación
-  updateEstado(id: string, estado: EstadoHabitacion): Observable<Habitacion> {
+  // Cambiar disponibilidad de una habitación
+  updateDisponibilidad(id: string, activa: boolean): Observable<Habitacion> {
     const index = this.habitaciones.findIndex(h => h._id === id);
     if (index !== -1) {
-      this.habitaciones[index].estado = estado;
+      this.habitaciones[index].activa = activa;
       this.habitaciones[index].updatedAt = new Date();
       return of(this.habitaciones[index]);
     } else {
@@ -212,15 +210,9 @@ export class HabitacionMockService {
     return of(habitaciones);
   }
 
-  // Obtener habitaciones por estado
-  getHabitacionesPorEstado(estado: EstadoHabitacion): Observable<Habitacion[]> {
-    const habitaciones = this.habitaciones.filter(h => h.estado === estado && h.activa);
-    return of(habitaciones);
-  }
-
-  // Obtener habitaciones disponibles
+  // Obtener habitaciones disponibles (activas)
   getHabitacionesDisponibles(): Observable<Habitacion[]> {
-    const habitaciones = this.habitaciones.filter(h => h.estado === 'Disponible' && h.activa);
+    const habitaciones = this.habitaciones.filter(h => h.activa);
     return of(habitaciones);
   }
 
@@ -231,7 +223,6 @@ export class HabitacionMockService {
       h.activa && (
         h.numero.toLowerCase().includes(terminoLower) ||
         h.tipo.toLowerCase().includes(terminoLower) ||
-        h.estado.toLowerCase().includes(terminoLower) ||
         (h.descripcion || '').toLowerCase().includes(terminoLower)
       )
     );

@@ -337,6 +337,25 @@ export class ReservaService {
     );
   }
 
+  // 🆕 Obtener ingresos agrupados por mes según fechas de pago
+  getIngresosPorMes(fechaInicio: string, fechaFin: string): Observable<any> {
+    const params = new HttpParams()
+      .set('fechaInicio', fechaInicio)
+      .set('fechaFin', fechaFin);
+
+    console.log('💰 ReservaService.getIngresosPorMes:', { fechaInicio, fechaFin });
+    return this.http.get<any>(`${this.apiUrl}/ingresos/por-mes`, { params });
+  }
+
+  // 🆕 Obtener resumen anual de ingresos
+  getIngresosAnuales(year: number): Observable<any> {
+    const params = new HttpParams()
+      .set('year', year.toString());
+
+    console.log('💰 ReservaService.getIngresosAnuales:', { year });
+    return this.http.get<any>(`${this.apiUrl}/ingresos/anual`, { params });
+  }
+
   // Emitir eventos de cambio de reservas
   private emitReservaEvent(event: ReservaEvent) {
     this.reservaEventsSubject.next(event);

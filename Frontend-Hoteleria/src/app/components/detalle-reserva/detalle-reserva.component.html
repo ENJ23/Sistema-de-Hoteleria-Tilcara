@@ -51,9 +51,9 @@
                 Habitación {{ habitacion?.numero }}
               </mat-card-title>
               <mat-card-subtitle>
-                <mat-chip [ngClass]="'estado-' + (habitacion?.estado?.toLowerCase() || 'disponible')"
+                <mat-chip [ngClass]="habitacion?.activa ? 'estado-disponible' : 'estado-inactivo'"
                   class="estado-habitacion">
-                  {{ habitacion?.estado || 'Disponible' }}
+                  {{ habitacion?.activa ? 'Activa' : 'Inactiva' }}
                 </mat-chip>
               </mat-card-subtitle>
             </mat-card-header>

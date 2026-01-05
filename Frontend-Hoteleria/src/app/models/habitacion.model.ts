@@ -1,9 +1,6 @@
 // Tipos de habitación permitidos
 export type TipoHabitacion = 'Individual' | 'Doble' | 'Triple' | 'Suite' | 'Familiar';
 
-// Estados posibles de una habitación
-export type EstadoHabitacion = 'Disponible' | 'Ocupada' | 'Mantenimiento' | 'Reservada' | 'Fuera de servicio';
-
 export interface Habitacion {
   _id: string;
   numero: string; // Cambiado a string para permitir formatos como '101A'
@@ -11,11 +8,10 @@ export interface Habitacion {
   capacidad: number;
   precioBase: number; // Agregado para coincidir con el backend
   precioActual: number;
-  estado: EstadoHabitacion;
   piso: number; // Hacerlo obligatorio según el modelo del backend
   descripcion?: string;
   servicios: string[]; // Hacerlo obligatorio pero puede ser un array vacío
-  activa: boolean; // Agregado para manejar borrado lógico
+  activa: boolean; // Campo que controla si la habitación es disponible
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,7 +22,6 @@ export interface HabitacionCreate {
   capacidad: number;
   precioBase: number;
   precioActual: number;
-  estado: EstadoHabitacion;
   piso: number;
   descripcion?: string;
   servicios: string[];
@@ -39,7 +34,6 @@ export interface HabitacionUpdate {
   capacidad?: number;
   precioBase?: number;
   precioActual?: number;
-  estado?: EstadoHabitacion;
   piso?: number;
   descripcion?: string;
   servicios?: string[];
@@ -47,7 +41,7 @@ export interface HabitacionUpdate {
 }
 
 export interface HabitacionFilters {
-  estado?: string;
+  activa?: boolean;
   tipo?: string;
   piso?: number;
   precioMin?: number;

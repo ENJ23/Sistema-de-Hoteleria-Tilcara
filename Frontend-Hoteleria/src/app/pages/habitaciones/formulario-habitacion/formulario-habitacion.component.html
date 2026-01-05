@@ -89,11 +89,11 @@
           </div>
         </div>
 
-        <!-- Precios y Estado -->
+        <!-- Precios y Disponibilidad -->
         <div class="form-section">
           <div class="section-header">
             <mat-icon class="section-icon">attach_money</mat-icon>
-            <h3 class="section-title">Precios y Estado</h3>
+            <h3 class="section-title">Precios y Disponibilidad</h3>
           </div>
           
           <div class="form-grid">
@@ -137,22 +137,6 @@
               </mat-form-field>
             </div>
 
-            <!-- Estado -->
-            <div class="form-field-container">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Estado</mat-label>
-                <mat-select formControlName="estado">
-                  <mat-option *ngFor="let estado of estados" [value]="estado">
-                    {{ estado }}
-                  </mat-option>
-                </mat-select>
-                <mat-icon matSuffix>flag</mat-icon>
-                <mat-error *ngIf="habitacionForm.get('estado')?.hasError('required')">
-                  📋 El estado es obligatorio
-                </mat-error>
-              </mat-form-field>
-            </div>
-
             <!-- Activa -->
             <div class="form-field-container checkbox-container">
               <mat-checkbox formControlName="activa" class="status-checkbox">
@@ -161,7 +145,7 @@
                   Habitación activa
                 </span>
               </mat-checkbox>
-              <p class="checkbox-hint">Las habitaciones inactivas no aparecerán en las búsquedas</p>
+              <p class="checkbox-hint">Las habitaciones inactivas no aparecerán en las búsquedas de reservas</p>
             </div>
           </div>
         </div>

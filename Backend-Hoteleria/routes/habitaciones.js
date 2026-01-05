@@ -7,30 +7,26 @@ const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/au
 // GET - Obtener todas las habitaciones (acceso público, pero con datos limitados si no está autenticado)
 router.get('/', async (req, res) => {
     try {
-        const { page = 1, limit = 10, estado = '', tipo = '', activa } = req.query;
+        const { page = 1, limit = 10, tipo = '', activa } = req.query;
 
         let query = {};
 
-        // CORREGIDO: Solo filtrar por activa si se especifica explícitamente
+        // Solo filtrar por activa si se especifica explícitamente
         if (activa !== undefined) {
             query.activa = activa === 'true';
-        }
-
-        if (estado) {
-            query.estado = estado;
         }
 
         if (tipo) {
             query.tipo = tipo;
         }
 
-        // OPTIMIZADO: Usar lean() y campos selectivos para mejor rendimiento
+        // Usar lean() y campos selectivos para mejor rendimiento
         const habitaciones = await Habitacion.find(query)
-            .select('numero tipo capacidad precioActual estado activa')
+            .select('numero tipo capacidad precioActual activa')
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ numero: 1 })
-            .lean(); // Usar lean() para mejor rendimiento
+            .lean();
 
         const total = await Habitacion.countDocuments(query);
 
@@ -253,6 +249,34 @@ router.patch('/:id/estado', [
         res.json(habitacion);
     } catch (error) {
         res.status(500).json({ message: 'Error al cambiar estado', error: error.message });
+    }
+});
+
+// PATCH - Cambiar disponibilidad de una habitación (solo encargado)
+router.patch('/:id/disponibilidad', [
+    verifyToken,
+    isEncargado,
+    body('activa').isBoolean().withMessage('El campo activa debe ser booleano')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const habitacion = await Habitacion.findByIdAndUpdate(
+            req.params.id,
+            { activa: req.body.activa },
+            { new: true, runValidators: true }
+        );
+
+        if (!habitacion) {
+            return res.status(404).json({ message: 'Habitación no encontrada' });
+        }
+
+        res.json(habitacion);
+    } catch (error) {
+        res.status(500).json({ message: 'Error al cambiar disponibilidad', error: error.message });
     }
 });
 

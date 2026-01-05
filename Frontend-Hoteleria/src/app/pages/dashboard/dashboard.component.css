@@ -1,490 +1,630 @@
-/* Contenedor principal */
-.dashboard-container {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+/* === VARIABLES & THEME === */
+:host {
+  --primary-color: #3f51b5;
+  --primary-light: #e8eaf6;
+  --primary-dark: #303f9f;
+
+  --success-color: #2e7d32;
+  --success-bg: #e8f5e9;
+
+  --warning-color: #ed6c02;
+  --warning-bg: #fff3e0;
+
+  --error-color: #d32f2f;
+  --error-bg: #ffebee;
+
+  --info-color: #0288d1;
+  --info-bg: #e1f5fe;
+
+  --text-main: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+
+  --bg-page: #f3f4f6;
+  --bg-card: #ffffff;
+  --border-color: #e5e7eb;
+
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Header del Dashboard */
-.dashboard-header {
+.dashboard-container {
+  padding: 32px;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+/* === HEADER === */
+.dashboard-header-wrapper {
+  margin-bottom: 8px;
+}
+
+.dashboard-header-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--primary-dark);
-  color: white;
-  padding: 32px;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
 }
 
-.dashboard-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03));
-  pointer-events: none;
-}
-
-.header-content h1 {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
+.title-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 20px;
+}
+
+.icon-box {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--primary-light), white);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--primary-light);
+}
+
+.icon-box mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.dashboard-title {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .dashboard-subtitle {
-  margin: 8px 0 0 0;
-  opacity: 0.9;
-  font-size: 1.1rem;
+  margin: 6px 0 0 0;
+  font-size: 1rem;
+  color: var(--text-secondary);
 }
 
-/* Navegación del mes */
-.mes-navegacion {
+.current-date {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+  background-color: white;
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 
-.nav-btn {
-  color: white !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(10px);
-}
-
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-}
-
-.mes-actual h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  text-align: center;
-}
-
-.btn-hoy {
-  margin-top: 8px;
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-  backdrop-filter: blur(10px);
-}
-
-.btn-hoy:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
-}
-
-/* Loading */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px;
-  gap: 16px;
-}
-
-.loading-container p {
-  color: #666;
-  font-size: 1.1rem;
-}
-
-/* Contenido del Dashboard */
-.dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Resumen Principal */
-.resumen-principal {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.ingresos-card {
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  overflow: hidden;
-}
-
-.ingresos-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-.ingresos-card.total {
-  background: var(--bg-primary);
-  border: 1px solid var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.ingresos-card.total .card-value {
+.current-date mat-icon {
   color: var(--primary-color);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
 }
 
-.ingresos-card.completos {
-  background: var(--bg-primary);
-  border: 1px solid var(--bg-tertiary);
-  color: var(--text-primary);
+/* === TOOLBAR === */
+.dashboard-toolbar {
+  background: white;
+  padding: 16px 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  border: 1px solid var(--border-color);
 }
 
-.ingresos-card.completos .card-value {
-  color: var(--success-color);
-}
-
-.ingresos-card.parciales {
-  background: var(--bg-primary);
-  border: 1px solid var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.ingresos-card.parciales .card-value {
-  color: var(--warning-color);
-}
-
-.ingresos-card.promedio {
-  background: var(--bg-primary);
-  border: 1px solid var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.ingresos-card.promedio .card-value {
-  color: var(--info-color);
-}
-
-/* Estilos para el campo de dólar */
-.input-dolar-field .mat-mdc-form-field-subscript-wrapper {
-  display: none;
-}
-
-.input-dolar-field input {
-  text-align: right;
-  padding-right: 10px;
-}
-
-/* Note: Color overrides are often better inline or via component encapsulation ::ng-deep if needed, 
-   but try to avoid ::ng-deep. We mainly relied on inline styles in HTML. */
-
-
-.card-header {
+.month-selector {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  background: var(--bg-page);
+  padding: 6px;
+  border-radius: var(--radius-md);
 }
 
-.card-header mat-icon {
-  font-size: 2rem;
-  width: 2rem;
-  height: 2rem;
+.month-label {
+  min-width: 140px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 1rem;
+  text-transform: capitalize;
 }
 
-.card-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.card-value {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 8px;
-  line-height: 1;
-}
-
-.card-subtitle {
-  font-size: 0.9rem;
-  opacity: 0.8;
-}
-
-/* Estadísticas Detalladas */
-.estadisticas-detalladas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.estadisticas-card,
-.tipo-habitacion-card {
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.estadisticas-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
-.stat-icon.completos {
-  background: rgba(76, 175, 80, 0.1);
-  color: var(--success-color);
-}
-
-.stat-icon.parciales {
-  background: rgba(255, 152, 0, 0.1);
-  color: var(--warning-color);
-}
-
-.stat-icon.sin-pago {
-  background: rgba(244, 67, 54, 0.1);
-  color: var(--error-color);
-}
-
-.stat-icon mat-icon {
-  font-size: 1.5rem;
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #2c3e50;
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: #666;
-  margin: 4px 0;
-}
-
-.stat-percentage {
-  font-size: 0.8rem;
-  color: #28a745;
+.btn-hoy {
+  border-radius: var(--radius-sm) !important;
   font-weight: 600;
 }
 
-/* Ingresos por Tipo de Habitación */
-.tipo-habitacion-list {
+.toolbar-spacer {
+  flex: 1;
+}
+
+.custom-range-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 4px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.range-separator {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.date-field {
+  width: 140px;
+  font-size: 0.9rem;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 32px;
+  background-color: var(--border-color);
+}
+
+.export-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* === KPI CARDS === */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.kpi-card {
+  background: white;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 0;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md) !important;
+  border-color: var(--primary-light) !important;
+}
+
+.kpi-content {
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+/* Icon Wrappers */
+.kpi-icon-wrapper {
+  padding: 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-card.total .kpi-icon-wrapper {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.kpi-card.success .kpi-icon-wrapper {
+  background-color: var(--success-bg);
+  color: var(--success-color);
+}
+
+.kpi-card.warning .kpi-icon-wrapper {
+  background-color: var(--warning-bg);
+  color: var(--warning-color);
+}
+
+.kpi-card.info .kpi-icon-wrapper {
+  background-color: var(--info-bg);
+  color: var(--info-color);
+}
+
+.kpi-card.dolar .kpi-icon-wrapper {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.kpi-icon-wrapper mat-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+/* KPI Data */
+.kpi-data {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.kpi-subtext {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.kpi-footer {
+  padding: 0 24px 24px;
+}
+
+/* Dolar Input */
+.dolar-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #e5e7eb;
+  transition: border-color 0.2s;
+}
+
+.dolar-input-wrapper:focus-within {
+  border-color: var(--primary-color);
+}
+
+.currency-symbol {
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.dolar-input {
+  border: none;
+  font-size: 1.75rem;
+  font-weight: 700;
+  width: 120px;
+  outline: none;
+  color: var(--text-main);
+  background: transparent;
+  padding: 4px 0;
+}
+
+/* === LISTS & BLOCKS === */
+.estadisticas-detalladas {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Stats Blocks */
+.stats-blocks-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.stat-block {
+  padding: 24px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.2s ease;
+  background: white;
+  border: 1px solid var(--border-color);
+}
+
+.stat-block:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-block.success-block .block-icon {
+  background: var(--success-bg);
+  color: var(--success-color);
+}
+
+.stat-block.warning-block .block-icon {
+  background: var(--warning-bg);
+  color: var(--warning-color);
+}
+
+.stat-block.error-block .block-icon {
+  background: var(--error-bg);
+  color: var(--error-color);
+}
+
+.block-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.block-icon mat-icon {
+  font-size: 26px;
+  width: 26px;
+  height: 26px;
+}
+
+.block-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.block-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+.block-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin: 4px 0 2px;
+}
+
+.block-percent {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* === INCOME LISTS === */
+.income-lists-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Override Mat Card inside lists */
+.tipo-habitacion-card {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 0 !important;
+  /* Let header/content handle padding */
+  overflow: hidden;
+}
+
+.tipo-habitacion-card mat-card-header {
+  background: #f9fafb;
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tipo-habitacion-card mat-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-icon-header {
+  color: var(--primary-color);
+}
+
+.tipo-habitacion-list {
+  display: flex;
+  flex-direction: column;
 }
 
 .tipo-item {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  position: relative;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
 }
 
-.tipo-info {
-  flex: 1;
-  min-width: 0;
+.tipo-item:last-child {
+  border-bottom: none;
+}
+
+.tipo-item:hover {
+  background-color: #f9fafb;
+}
+
+.tipo-row-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .tipo-nombre {
   font-weight: 600;
-  color: #2c3e50;
-  font-size: 1.1rem;
+  color: var(--text-main);
+  font-size: 0.95rem;
 }
 
 .tipo-cantidad {
-  font-size: 0.9rem;
-  color: #666;
-  margin-top: 4px;
-}
-
-.tipo-ingresos {
-  text-align: right;
-  min-width: 120px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .tipo-monto {
-  font-weight: bold;
-  color: #2c3e50;
-  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 1rem;
+  text-align: right;
 }
 
 .tipo-porcentaje {
-  font-size: 0.9rem;
-  color: #28a745;
+  font-size: 0.75rem;
   font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 2px;
 }
 
-.tipo-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: #e9ecef;
-  border-radius: 0 0 12px 12px;
+.progress-track {
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--success-color);
+  border-radius: 10px;
+}
+
+.accent-fill {
+  background: var(--primary-color);
+}
+
+/* === RECENT RESERVATIONS TABLE === */
+.reservas-recientes-card {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--border-color) !important;
   overflow: hidden;
 }
 
-.tipo-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #28a745, #20c997);
-  transition: width 0.3s ease;
+.reservas-recientes-card mat-card-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color);
+  background: white;
 }
 
-/* Reservas Recientes */
-.reservas-recientes-card {
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+.reservas-recientes-card mat-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-main);
 }
 
 .reservas-table {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .reserva-item {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1.5fr;
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border-color);
   align-items: center;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  transition: background-color 0.3s ease;
+  gap: 16px;
+  transition: background-color 0.2s;
 }
 
 .reserva-item:hover {
-  background: var(--bg-primary);
-  transform: translateX(4px);
-  box-shadow: var(--shadow-sm);
-  border-color: var(--secondary-light);
+  background-color: #f9fafb;
 }
 
-.reserva-cliente {
-  min-width: 0;
+.reserva-item:last-child {
+  border-bottom: none;
 }
 
 .cliente-nombre {
   font-weight: 600;
-  color: #2c3e50;
-  font-size: 1rem;
+  color: var(--text-main);
 }
 
 .cliente-documento {
   font-size: 0.85rem;
-  color: #666;
-  margin-top: 2px;
-}
-
-.reserva-habitacion {
-  text-align: center;
+  color: var(--text-secondary);
 }
 
 .habitacion-numero {
   font-weight: 600;
-  color: #2c3e50;
-  font-size: 1rem;
-}
-
-.habitacion-tipo {
-  font-size: 0.85rem;
-  color: #666;
-  margin-top: 2px;
-}
-
-.reserva-fechas {
-  text-align: center;
-}
-
-.fecha-entrada,
-.fecha-salida {
+  color: var(--primary-color);
+  background: var(--primary-light);
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-block;
   font-size: 0.9rem;
-  color: #2c3e50;
-}
-
-.fecha-entrada {
-  font-weight: 600;
-}
-
-.fecha-salida {
-  color: #666;
-  margin-top: 2px;
-}
-
-.reserva-estado {
-  text-align: center;
-}
-
-.reserva-ingresos {
-  text-align: right;
 }
 
 .ingresos-monto {
-  font-weight: bold;
-  color: #2c3e50;
-  font-size: 1rem;
+  font-weight: 700;
+  color: var(--success-color);
 }
 
-.ingresos-total {
-  font-size: 0.85rem;
-  color: #666;
-  margin-top: 2px;
-}
-
-/* No Data */
-.no-data {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  color: #666;
-  text-align: center;
-}
-
-.no-data mat-icon {
-  font-size: 3rem;
-  width: 3rem;
-  height: 3rem;
+/* === MATERIAL OVERRIDES === */
+::ng-deep .mat-expansion-panel {
+  border-radius: var(--radius-md) !important;
   margin-bottom: 16px;
-  opacity: 0.5;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--border-color);
 }
 
-.no-data p {
-  margin: 0;
-  font-size: 1.1rem;
+::ng-deep .mat-expansion-panel-header {
+  padding: 0 24px !important;
+  height: 64px !important;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
+::ng-deep .mat-mdc-card-actions {
+  padding: 16px 32px !important;
+  border-top: 1px solid var(--border-color);
+  background: #f9fafb;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1024px) {
   .estadisticas-detalladas {
     grid-template-columns: 1fr;
   }
@@ -493,60 +633,84 @@
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 16px;
-    gap: 16px;
   }
 
-  .dashboard-header {
+  .dashboard-header-card {
     flex-direction: column;
-    gap: 16px;
-    text-align: center;
+    align-items: flex-start;
+    padding: 24px;
+    gap: 20px;
   }
 
-  .mes-navegacion {
-    justify-content: center;
+  .title-group {
+    flex-wrap: wrap;
   }
 
-  .resumen-principal {
-    grid-template-columns: 1fr;
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px;
   }
 
   .reserva-item {
     grid-template-columns: 1fr;
-    gap: 8px;
-    text-align: center;
+    gap: 12px;
   }
 
-  .reserva-cliente,
-  .reserva-habitacion,
-  .reserva-fechas,
-  .reserva-estado,
   .reserva-ingresos {
-    text-align: center;
-  }
-
-  .card-value {
-    font-size: 2rem;
-  }
-
-  .stat-number {
-    font-size: 1.5rem;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 8px;
+    margin-top: 8px;
   }
 }
 
-@media (max-width: 480px) {
-  .dashboard-header {
-    padding: 16px;
-  }
+/* === SECTION HEADERS === */
+.resumen-anual-container {
+  margin: 32px 0;
+}
 
-  .header-content h1 {
-    font-size: 1.5rem;
-  }
+.section-header {
+  margin-bottom: 20px;
+}
 
-  .mes-actual h2 {
-    font-size: 1.2rem;
-  }
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--primary-dark);
+}
 
-  .card-value {
-    font-size: 1.8rem;
+.title-with-icon h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+}
+
+.title-with-icon mat-icon {
+  color: var(--primary-color);
+  background: var(--primary-light);
+  padding: 8px;
+  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+}
+
+.anual-expansion {
+  margin-top: 24px !important;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.text-icon {
+  margin-right: 12px;
+  color: var(--text-secondary);
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+  .title-with-icon h2 {
+    font-size: 1.25rem;
   }
 }

@@ -13,9 +13,9 @@
         <button mat-raised-button color="primary" (click)="editarHabitacion()" class="me-2">
           <mat-icon>edit</mat-icon> Editar
         </button>
-        <button mat-raised-button [color]="getEstadoButtonColor(habitacion.estado)" (click)="cambiarEstado(getNextEstado(habitacion.estado))">
-          <mat-icon>{{ getEstadoIcon(habitacion.estado) }}</mat-icon>
-          {{ getNextEstadoText(habitacion.estado) }}
+        <button mat-raised-button [color]="habitacion.activa ? 'warn' : 'primary'" (click)="cambiarDisponibilidad(!habitacion.activa)">
+          <mat-icon>{{ habitacion.activa ? 'close' : 'check' }}</mat-icon>
+          {{ habitacion.activa ? 'Desactivar' : 'Activar' }}
         </button>
       </div>
     </div>
@@ -24,8 +24,8 @@
       <mat-card-header>
         <mat-card-title>
           Habitación #{{ habitacion.numero }}
-          <span class="badge ms-2" [ngClass]="getBadgeClass(habitacion.estado)">
-            {{ habitacion.estado }}
+          <span class="badge ms-2" [ngClass]="habitacion.activa ? 'status-disponible' : 'status-inactivo'">
+            {{ habitacion.activa ? 'Activa' : 'Inactiva' }}
           </span>
         </mat-card-title>
         <mat-card-subtitle>{{ habitacion.tipo }} - Piso {{ habitacion.piso || 'N/A' }}</mat-card-subtitle>
@@ -55,11 +55,11 @@
           </div>
 
           <div class="col-md-6">
-            <h4>Estado y Servicios</h4>
+            <h4>Disponibilidad y Servicios</h4>
             <div class="info-item">
-              <strong>Estado actual:</strong>
-              <span class="badge ms-2" [ngClass]="getBadgeClass(habitacion.estado)">
-                {{ habitacion.estado }}
+              <strong>Estado:</strong>
+              <span class="badge ms-2" [ngClass]="habitacion.activa ? 'status-disponible' : 'status-inactivo'">
+                {{ habitacion.activa ? 'Activa' : 'Inactiva' }}
               </span>
             </div>
             

@@ -453,7 +453,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
           capacidad: habitacionData.capacidad || 1,
           precioBase: habitacionData.precioBase || reserva.precioPorNoche || 0,
           precioActual: habitacionData.precioActual || reserva.precioPorNoche || 0,
-          estado: habitacionData.estado || 'Disponible',
           piso: habitacionData.piso || 1,
           descripcion: habitacionData.descripcion || '',
           servicios: habitacionData.servicios || [],
@@ -495,8 +494,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     const terminoLower = termino.toLowerCase();
     return this.habitaciones.filter(hab =>
       hab.numero.toLowerCase().includes(terminoLower) ||
-      hab.tipo.toLowerCase().includes(terminoLower) ||
-      hab.estado.toLowerCase().includes(terminoLower)
+      hab.tipo.toLowerCase().includes(terminoLower)
     );
   }
 
@@ -534,7 +532,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   // Método para obtener el texto de la habitación seleccionada
   getHabitacionSeleccionadaTexto(): string {
     if (this.habitacionSeleccionada) {
-      return `${this.habitacionSeleccionada.numero} - ${this.habitacionSeleccionada.tipo} (${this.habitacionSeleccionada.estado})`;
+      return `${this.habitacionSeleccionada.numero} - ${this.habitacionSeleccionada.tipo}`;
     }
     return '';
   }
@@ -550,17 +548,17 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       // Si es un ID, buscar la habitación completa
       const habitacionCompleta = this.habitaciones.find(h => h._id === habitacion);
       if (habitacionCompleta) {
-        return `${habitacionCompleta.numero} - ${habitacionCompleta.tipo} (${habitacionCompleta.estado})`;
+        return `${habitacionCompleta.numero} - ${habitacionCompleta.tipo}`;
       }
       // Si no se encuentra, intentar con la habitación seleccionada
       if (this.habitacionSeleccionada && this.habitacionSeleccionada._id === habitacion) {
-        return `${this.habitacionSeleccionada.numero} - ${this.habitacionSeleccionada.tipo} (${this.habitacionSeleccionada.estado})`;
+        return `${this.habitacionSeleccionada.numero} - ${this.habitacionSeleccionada.tipo}`;
       }
       return ''; // Retornar string vacío si no se encuentra
     }
 
     if (habitacion && habitacion._id) {
-      return `${habitacion.numero} - ${habitacion.tipo} (${habitacion.estado})`;
+      return `${habitacion.numero} - ${habitacion.tipo}`;
     }
 
     return '';

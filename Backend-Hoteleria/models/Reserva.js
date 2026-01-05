@@ -251,6 +251,10 @@ reservaSchema.index({ fechaCreacion: -1 }); // Índice para ordenamiento
 reservaSchema.index({ habitacion: 1, estado: 1 }); // Índice para ocupación
 reservaSchema.index({ fechaEntrada: 1, fechaSalida: 1 }); // Índice para rangos de fechas
 
+// Índices para agregaciones de ingresos por pagos (Plan B Dashboard)
+reservaSchema.index({ 'historialPagos.fechaPago': 1 }); // Índice simple para búsquedas por fecha de pago
+reservaSchema.index({ estado: 1, 'historialPagos.fechaPago': 1 }); // Índice compuesto para filtrar por estado + rango de fechas de pago
+
 // Middleware para calcular el precio total automáticamente
 reservaSchema.pre('save', function (next) {
     try {

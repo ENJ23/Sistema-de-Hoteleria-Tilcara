@@ -53,10 +53,10 @@ export class AuditoriaCancelacionesComponent implements OnInit {
   cancelaciones: CancelacionReserva[] = [];
   loading = false;
   totalCancelaciones = 0;
-  
+
   // Filtros
   filtrosForm: FormGroup;
-  
+
   // Tabla
   displayedColumns: string[] = [
     'fechaCancelacion',
@@ -67,12 +67,12 @@ export class AuditoriaCancelacionesComponent implements OnInit {
     'estadoReembolso',
     'acciones'
   ];
-  
+
   // Paginación
   pageSize = 10;
   pageIndex = 0;
   pageSizeOptions = [5, 10, 25, 50];
-  
+
   // Estadísticas
   estadisticas: any = null;
 
@@ -92,13 +92,13 @@ export class AuditoriaCancelacionesComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('🎯 AuditoriaCancelacionesComponent inicializado');
-    
+
     // Verificar autenticación
     const token = this.authService.getToken();
     const user = this.authService.currentUserValue;
     console.log('🔐 Token disponible:', !!token);
     console.log('👤 Usuario actual:', user);
-    
+
     this.cargarCancelaciones();
     this.cargarEstadisticas();
   }
@@ -106,7 +106,7 @@ export class AuditoriaCancelacionesComponent implements OnInit {
   cargarCancelaciones(): void {
     this.loading = true;
     const filtros = this.filtrosForm.value;
-    
+
     this.cancelacionService.getCancelaciones(filtros).subscribe({
       next: (response) => {
         this.cancelaciones = response.cancelaciones;
@@ -116,7 +116,7 @@ export class AuditoriaCancelacionesComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Error al cargar cancelaciones:', error);
-        
+
         // Manejar diferentes tipos de errores
         if (error.status === 401) {
           this.snackBar.open('🔐 Sesión expirada. Por favor, inicia sesión nuevamente', 'Cerrar', {
@@ -144,7 +144,7 @@ export class AuditoriaCancelacionesComponent implements OnInit {
             panelClass: ['error-snackbar']
           });
         }
-        
+
         this.loading = false;
       }
     });
@@ -158,14 +158,14 @@ export class AuditoriaCancelacionesComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Error al cargar estadísticas:', error);
-        
+
         // Fallback: crear estadísticas básicas
         this.estadisticas = {
           estadisticas: [],
           totalCancelaciones: 0,
           totalMontoReembolsos: 0
         };
-        
+
         // Mostrar mensaje de error solo si no es 404 (endpoint no existe)
         if (error.status !== 404) {
           this.snackBar.open('⚠️ Error al cargar estadísticas. Mostrando datos básicos.', 'Cerrar', {
@@ -175,6 +175,12 @@ export class AuditoriaCancelacionesComponent implements OnInit {
         }
       }
     });
+  }
+
+  getCountByStatus(status: string): number {
+    if (!this.estadisticas || !this.estadisticas.estadisticas) return 0;
+    const stat = this.estadisticas.estadisticas.find((s: any) => s._id === status);
+    return stat ? stat.count : 0;
   }
 
   aplicarFiltros(): void {

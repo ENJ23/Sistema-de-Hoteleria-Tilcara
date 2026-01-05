@@ -50,10 +50,10 @@ export class AuditoriaReservasComponent implements OnInit {
   registros: RegistroAuditoria[] = [];
   loading = false;
   totalRegistros = 0;
-  
+
   // Filtros
   filtrosForm: FormGroup;
-  
+
   // Tabla
   displayedColumns: string[] = [
     'fecha',
@@ -63,7 +63,7 @@ export class AuditoriaReservasComponent implements OnInit {
     'detalles',
     'acciones'
   ];
-  
+
   // Paginación
   pageSize = 20;
   pageIndex = 0;
@@ -100,56 +100,56 @@ export class AuditoriaReservasComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('🎯 AuditoriaReservasComponent inicializado');
-    
+
     // Verificar autenticación
     const token = this.authService.getToken();
     const user = this.authService.currentUserValue;
     console.log('🔐 Token disponible:', !!token);
     console.log('👤 Usuario actual:', user);
-    
+
     // Cargar datos iniciales (últimos 7 días)
     const hoy = new Date();
     const hace7Dias = new Date();
     hace7Dias.setDate(hace7Dias.getDate() - 7);
-    
+
     this.filtrosForm.patchValue({
       fechaInicio: hace7Dias,
       fechaFin: hoy
     });
-    
+
     this.cargarHistorial();
   }
 
   cargarHistorial(): void {
     this.loading = true;
-    
+
     const filtros: FiltrosAuditoria = {
       page: this.pageIndex + 1,
       limit: this.pageSize
     };
 
     const formValue = this.filtrosForm.value;
-    
+
     if (formValue.accion) {
       filtros.accion = formValue.accion;
     }
-    
+
     if (formValue.usuario) {
       filtros.usuario = formValue.usuario;
     }
-    
+
     if (formValue.fechaInicio) {
       const fecha = new Date(formValue.fechaInicio);
       filtros.fechaInicio = fecha.toISOString();
     }
-    
+
     if (formValue.fechaFin) {
       const fecha = new Date(formValue.fechaFin);
       filtros.fechaFin = fecha.toISOString();
     }
-    
+
     console.log('📋 Cargando historial con filtros:', filtros);
-    
+
     this.auditoriaService.getHistorialAuditoria(filtros).subscribe({
       next: (response) => {
         this.registros = response.historial;
@@ -159,7 +159,7 @@ export class AuditoriaReservasComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Error al cargar historial:', error);
-        
+
         if (error.status === 401) {
           this.snackBar.open('🔐 Sesión expirada. Por favor, inicia sesión nuevamente', 'Cerrar', {
             duration: 5000
@@ -177,7 +177,7 @@ export class AuditoriaReservasComponent implements OnInit {
             duration: 3000
           });
         }
-        
+
         this.loading = false;
       }
     });
@@ -191,17 +191,17 @@ export class AuditoriaReservasComponent implements OnInit {
   limpiarFiltros(): void {
     this.filtrosForm.reset();
     this.pageIndex = 0;
-    
+
     // Establecer valores por defecto (últimos 7 días)
     const hoy = new Date();
     const hace7Dias = new Date();
     hace7Dias.setDate(hace7Dias.getDate() - 7);
-    
+
     this.filtrosForm.patchValue({
       fechaInicio: hace7Dias,
       fechaFin: hoy
     });
-    
+
     this.cargarHistorial();
   }
 
@@ -223,6 +223,21 @@ export class AuditoriaReservasComponent implements OnInit {
     if (accion.includes('Cancelación')) return 'accent';
     if (accion.includes('Check-In') || accion.includes('Check-Out')) return 'primary';
     if (accion.includes('Pago')) return 'accent';
+    return '';
+  }
+
+  getClaseAccion(accion: string): string {
+    const accionLower = accion.toLowerCase();
+
+    if (accionLower.includes('creación') || accionLower.includes('check')) {
+      return 'primary'; // Azules (Incluye Check-In, Check-Out, Checkin, etc)
+    }
+    if (accionLower.includes('pago') || accionLower.includes('modificación') || accionLower.includes('reembolso')) {
+      return 'accent'; // Verdes/Frescos
+    }
+    if (accionLower.includes('cancelación') || accionLower.includes('drag') || accionLower.includes('eliminación')) {
+      return 'warn'; // Rojos/Alertas
+    }
     return '';
   }
 
@@ -251,10 +266,10 @@ export class AuditoriaReservasComponent implements OnInit {
 
   exportarCSV(): void {
     this.snackBar.open('⏳ Preparando exportación...', '', { duration: 2000 });
-    
+
     const filtros: FiltrosAuditoria = {};
     const formValue = this.filtrosForm.value;
-    
+
     if (formValue.accion) filtros.accion = formValue.accion;
     if (formValue.usuario) filtros.usuario = formValue.usuario;
     if (formValue.fechaInicio) {
@@ -288,11 +303,11 @@ export class AuditoriaReservasComponent implements OnInit {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', `auditoria_reservas_${Date.now()}.csv`);
     link.style.visibility = 'hidden';
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
