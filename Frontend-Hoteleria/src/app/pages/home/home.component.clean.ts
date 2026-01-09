@@ -498,9 +498,18 @@ export class HomeComponentClean implements OnInit, OnDestroy {
   }
 
   verDetalleReserva(r: ReservaResumen): void {
-    // Need to cast to any because DetalleReservaModal expects full Reserva, but we have Resumen
-    // Usually Resumen has enough data for display or we fetch full details inside modal
-    this.dialog.open(DetalleReservaModalComponent, { data: { reserva: r } });
+    // Obtener datos completos de la reserva antes de mostrar en modal
+    this.reservaService.getReserva((r as any)._id).subscribe({
+      next: (reservaCompleta: any) => {
+        this.dialog.open(DetalleReservaModalComponent, { 
+          data: { reserva: reservaCompleta }
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener reserva completa:', error);
+        this.snack.open('❌ Error al cargar los detalles', 'OK');
+      }
+    });
   }
 
   editarReserva(r: ReservaResumen): void { this.router.navigate(['/reservas', (r as any)._id, 'editar']); }

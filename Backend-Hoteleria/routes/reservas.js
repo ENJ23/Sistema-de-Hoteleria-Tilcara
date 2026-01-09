@@ -84,9 +84,9 @@ const validarReserva = [
         .withMessage('El precio por noche debe ser mayor a 0'),
 
     body('estado')
-        .notEmpty()
-        .withMessage('El estado de la reserva es obligatorio')
-        .isIn(['Pendiente', 'Confirmada', 'Cancelada', 'Completada'])
+        .optional()
+        .default('Pendiente')
+        .isIn(['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'No Show', 'Finalizada'])
         .withMessage('Estado de reserva inválido'),
 
     // Validación de campos obligatorios del cliente
@@ -201,13 +201,35 @@ const validarReserva = [
 
     body('estado', 'Estado inválido')
         .optional()
-        .isIn(['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'])
+        .default('Pendiente')
+        .isIn(['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'No Show', 'Finalizada', 'Completada'])
         .withMessage('Estado de reserva inválido'),
 
     body('metodoPago', 'Método de pago inválido')
         .optional()
-        .isIn(['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'Otro'])
+        .isIn(['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal', 'Otro'])
         .withMessage('Método de pago inválido'),
+
+    // Pago inicial opcional al crear
+    body('pagoInicial')
+        .optional()
+        .isObject()
+        .withMessage('El pago inicial debe enviarse como objeto'),
+
+    body('pagoInicial.monto')
+        .optional()
+        .isFloat({ min: 0.01 })
+        .withMessage('El monto inicial debe ser mayor a 0'),
+
+    body('pagoInicial.metodoPago')
+        .optional()
+        .isIn(['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal', 'Otro'])
+        .withMessage('Método de pago inicial inválido'),
+
+    body('pagoInicial.fechaPago')
+        .optional()
+        .isISO8601()
+        .withMessage('Fecha de pago inicial inválida'),
 
     body('observaciones', 'Las observaciones son muy largas')
         .optional()
@@ -232,10 +254,11 @@ const validarConsultaReservas = [
         .custom((value) => {
             if (!value) return true;
 
+            const estadosValidos = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'No Show', 'Finalizada', 'Completada'];
+
             // Si es un string con múltiples estados separados por comas
             if (typeof value === 'string' && value.includes(',')) {
                 const estados = value.split(',').map(e => e.trim());
-                const estadosValidos = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'];
                 const estadosInvalidos = estados.filter(e => !estadosValidos.includes(e));
                 if (estadosInvalidos.length > 0) {
                     throw new Error(`Estados inválidos: ${estadosInvalidos.join(', ')}`);
@@ -244,7 +267,6 @@ const validarConsultaReservas = [
             }
 
             // Si es un solo estado
-            const estadosValidos = ['Confirmada', 'Pendiente', 'En curso', 'Cancelada', 'Completada', 'No Show'];
             if (!estadosValidos.includes(value)) {
                 throw new Error('Estado de reserva inválido');
             }
@@ -796,7 +818,7 @@ router.post('/', [
         console.log('🔍 DEBUGGING POST - Información de transporte:', req.body.informacionTransporte);
         console.log('🔍 DEBUGGING POST - Necesidades especiales:', req.body.necesidadesEspeciales);
 
-        const { cliente, habitacion, fechaEntrada, fechaSalida, ...otrosDatos } = req.body;
+        const { cliente, habitacion, fechaEntrada, fechaSalida, pagoInicial, ...otrosDatos } = req.body;
 
 
         // Verificar que la habitación existe y está disponible
@@ -846,6 +868,9 @@ router.post('/', [
             fechaEntrada: parseLocalDate(fechaEntrada),
             fechaSalida: parseLocalDate(fechaSalida),
             ...otrosDatos,
+            estado: 'Pendiente',
+            pagado: false,
+            metodoPago: pagoInicial?.metodoPago || 'Efectivo',
             creadoPor: req.userId ? req.userId.nombre : 'Cliente',
             historialCambios: [{
                 usuario: req.userId ? req.userId.nombre : 'Cliente',
@@ -859,6 +884,41 @@ router.post('/', [
             informacionTransporte: req.body.informacionTransporte || undefined,
             necesidadesEspeciales: req.body.necesidadesEspeciales || undefined
         });
+
+        // Calcular precio total antes de registrar pagos
+        const diasReserva = reserva.calcularDias();
+        reserva.precioTotal = diasReserva * reserva.precioPorNoche;
+
+        // Registrar pago inicial si se envió
+        if (pagoInicial && pagoInicial.monto && pagoInicial.monto > 0) {
+            const montoInicial = parseFloat(pagoInicial.monto);
+            if (isNaN(montoInicial) || montoInicial <= 0) {
+                return res.status(400).json({ message: 'El monto inicial debe ser un número mayor a 0' });
+            }
+
+            if (!pagoInicial.metodoPago) {
+                return res.status(400).json({ message: 'Debe especificar un método de pago para el pago inicial' });
+            }
+
+            // Usar parseLocalDate para evitar desfasajes horarios (UTC vs local)
+            const fechaPagoInicial = pagoInicial.fechaPago
+                ? parseLocalDate(pagoInicial.fechaPago)
+                : (() => { const hoy = new Date(); hoy.setHours(0, 0, 0, 0); return hoy; })();
+            const metodoPagoInicial = pagoInicial.metodoPago || 'Efectivo';
+
+            reserva.historialPagos.push({
+                monto: montoInicial,
+                metodoPago: metodoPagoInicial,
+                fechaPago: fechaPagoInicial,
+                observaciones: pagoInicial.observaciones || 'Pago inicial',
+                registradoPor: req.userId ? req.userId.nombre : 'Cliente'
+            });
+
+            reserva.montoPagado = montoInicial;
+            reserva.metodoPago = metodoPagoInicial;
+            reserva.fechaPago = fechaPagoInicial;
+            reserva.pagado = reserva.montoPagado >= reserva.precioTotal;
+        }
 
         console.log('💾 Guardando reserva en transacción...');
         await reserva.save({ session });

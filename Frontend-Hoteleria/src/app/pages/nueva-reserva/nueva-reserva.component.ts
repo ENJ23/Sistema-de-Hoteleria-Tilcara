@@ -170,8 +170,9 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       horaSalida: ['11:00', [Validators.required, this.validarFormatoHora.bind(this)]],
       precioPorNoche: [0, [Validators.required, Validators.min(0.01)]],
       estado: ['Pendiente', Validators.required],
-      pagado: [false],
       metodoPago: [''],
+      pagoInicialMonto: [0, [Validators.min(0)]],
+      pagoInicialFecha: [''],
       observaciones: [''],
 
       // Nuevos campos para configuración específica
@@ -403,7 +404,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       horaSalida: reserva.horaSalida,
       precioPorNoche: reserva.precioPorNoche,
       estado: reserva.estado,
-      pagado: reserva.pagado,
       metodoPago: reserva.metodoPago || '',
       observaciones: reserva.observaciones || '',
       // Nuevos campos
@@ -874,8 +874,11 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     this.guardando = true;
 
     // Crear la reserva con los datos del cliente embebidos
-    const metodoPagoValue = this.reservaForm.get('metodoPago')?.value;
+    const metodoPagoValue = this.reservaForm.get('metodoPago')?.value?.trim() || '';
     const observacionesValue = this.reservaForm.get('observaciones')?.value;
+    const pagoInicialMontoRaw = this.reservaForm.get('pagoInicialMonto')?.value;
+    const pagoInicialMonto = pagoInicialMontoRaw ? parseFloat(pagoInicialMontoRaw) : 0;
+    const pagoInicialFechaRaw = this.reservaForm.get('pagoInicialFecha')?.value;
 
     // Preparar datos con validaciones y formateo
     const fechaEntrada = this.reservaForm.get('fechaEntrada')?.value;
@@ -908,6 +911,16 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
     if (horaSalida && !horaSalidaRegex.test(horaSalida)) {
       this.mostrarMensaje('🕐 Formato de hora de salida inválido. Use formato HH:MM (24 horas)', 'error');
+      return;
+    }
+
+    if (pagoInicialMonto < 0) {
+      this.mostrarMensaje('💵 El pago inicial no puede ser negativo', 'error');
+      return;
+    }
+
+    if (pagoInicialMonto > 0 && metodoPagoValue.trim() === '') {
+      this.mostrarMensaje('💳 Seleccione un método de pago para el pago inicial', 'error');
       return;
     }
 
@@ -948,6 +961,27 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     console.log('🔍 DEBUGGING FRONTEND - Información de transporte preparada:', informacionTransporte);
     console.log('🔍 DEBUGGING FRONTEND - Necesidades especiales:', this.reservaForm.get('necesidadesEspeciales')?.value);
 
+    let pagoInicialFechaFormateada: string | undefined;
+    if (pagoInicialMonto > 0) {
+      const fechaBase = pagoInicialFechaRaw
+        ? (pagoInicialFechaRaw instanceof Date
+          ? pagoInicialFechaRaw
+          : this.dateTimeService.stringToDate(pagoInicialFechaRaw))
+        : this.dateTimeService.getCurrentDate();
+      pagoInicialFechaFormateada = this.dateTimeService.dateToString(fechaBase);
+    }
+
+    const pagoInicial = pagoInicialMonto > 0 ? {
+      monto: pagoInicialMonto,
+      metodoPago: metodoPagoValue,
+      fechaPago: pagoInicialFechaFormateada
+    } : undefined;
+
+    const estadoReserva = this.modoEdicion && this.reservaOriginal
+      ? this.reservaOriginal.estado
+      : 'Pendiente';
+    const pagado = pagoInicial ? (this.precioTotal > 0 ? pagoInicial.monto >= this.precioTotal : false) : false;
+
     const reservaData: ReservaCreate = {
       cliente: {
         nombre: this.reservaForm.get('nombreCliente')?.value?.trim() || undefined,
@@ -964,14 +998,15 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       horaEntrada: horaEntrada || '14:00',
       horaSalida: horaSalida || '11:00',
       precioPorNoche: parseFloat(precioPorNoche),
-      estado: this.reservaForm.get('estado')?.value || 'Pendiente',
-      pagado: this.reservaForm.get('pagado')?.value || false,
-      metodoPago: metodoPagoValue && metodoPagoValue.trim() !== '' ? metodoPagoValue : undefined,
+      estado: estadoReserva,
+      pagado: pagado,
+      metodoPago: pagoInicial?.metodoPago || undefined,
       observaciones: observacionesValue && observacionesValue.trim() !== '' ? observacionesValue : undefined,
       // Nuevos campos - solo enviar si tienen contenido
       configuracionCamas: configuracionCamas.length > 0 ? configuracionCamas : undefined,
       informacionTransporte: informacionTransporte,
-      necesidadesEspeciales: this.reservaForm.get('necesidadesEspeciales')?.value?.trim() || undefined
+      necesidadesEspeciales: this.reservaForm.get('necesidadesEspeciales')?.value?.trim() || undefined,
+      pagoInicial: pagoInicial
     };
 
     // DEBUGGING: Ver el objeto completo que se va a enviar
@@ -1242,7 +1277,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       { control: 'horaEntrada', nombre: 'Hora de Entrada' },
       { control: 'horaSalida', nombre: 'Hora de Salida' },
       { control: 'precioPorNoche', nombre: 'Precio por Noche' },
-      { control: 'estado', nombre: 'Estado de la Reserva' },
       { control: 'nombreCliente', nombre: 'Nombre del Cliente' },
       { control: 'apellidoCliente', nombre: 'Apellido del Cliente' },
       { control: 'telefonoCliente', nombre: 'Teléfono del Cliente' }
@@ -1255,9 +1289,10 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Validar método de pago si está marcado como pagado
-    if (this.reservaForm.get('pagado')?.value && !this.reservaForm.get('metodoPago')?.value) {
-      camposFaltantes.push('Método de Pago');
+    // Validar método de pago si hay pago inicial
+    const pagoInicialMonto = this.reservaForm.get('pagoInicialMonto')?.value;
+    if (pagoInicialMonto && parseFloat(pagoInicialMonto) > 0 && !this.reservaForm.get('metodoPago')?.value) {
+      camposFaltantes.push('Método de Pago Inicial');
     }
 
     return camposFaltantes;
@@ -1308,6 +1343,8 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       switch (controlName) {
         case 'precioPorNoche':
           return '💰 El precio debe ser mayor a $0';
+        case 'pagoInicialMonto':
+          return '💵 El pago inicial no puede ser negativo';
         default:
           return 'El valor debe ser mayor a 0';
       }

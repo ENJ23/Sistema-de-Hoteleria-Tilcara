@@ -18,6 +18,12 @@ export interface PagoHistorial {
   registradoPor: string;
 }
 
+export interface PagoInicial {
+  monto: number;
+  metodoPago: 'Efectivo' | 'Tarjeta de Crédito' | 'Tarjeta de Débito' | 'Transferencia' | 'PayPal';
+  fechaPago?: string;
+}
+
 export interface HistorialCambio {
   fecha: Date;
   usuario: string;
@@ -92,6 +98,7 @@ export interface ReservaCreate {
   configuracionCamas?: CamaInfo[];
   informacionTransporte?: TransporteInfo;
   necesidadesEspeciales?: string;
+  pagoInicial?: PagoInicial;
 }
 
 export interface ReservaUpdate {

@@ -139,6 +139,11 @@ export class DetalleReservaComponent implements OnInit {
   cargarDatosReserva() {
     if (!this.reserva) return;
 
+    console.log('🔍 Cargando datos de reserva:', this.reserva);
+    console.log('🛏️ Configuración de camas:', this.reserva.configuracionCamas);
+    console.log('🚗 Información de transporte:', this.reserva.informacionTransporte);
+    console.log('♿ Necesidades especiales:', this.reserva.necesidadesEspeciales);
+
     this.form.patchValue({
       cliente: this.reserva.cliente,
       habitacion: this.reserva.habitacion,
@@ -183,6 +188,27 @@ export class DetalleReservaComponent implements OnInit {
       return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(total);
     }
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(0);
+  }
+
+  getTipoCamaLabel(tipo: string): string {
+    const tipos: { [key: string]: string } = {
+      matrimonial: 'Matrimonial',
+      single: 'Single',
+      doble: 'Doble',
+      queen: 'Queen',
+      king: 'King'
+    };
+    return tipos[tipo] || tipo;
+  }
+
+  getTransporteLabel(tipo?: string): string {
+    const tipos: { [key: string]: string } = {
+      vehiculo_propio: 'Vehículo propio',
+      colectivo: 'Colectivo',
+      taxi: 'Taxi',
+      otro: 'Otro'
+    };
+    return tipo ? (tipos[tipo] || tipo) : 'No especificado';
   }
 
   mostrarExito(mensaje: string) {
@@ -461,27 +487,6 @@ export class DetalleReservaComponent implements OnInit {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
-  }
-
-  getTipoCamaLabel(tipo: string): string {
-    const tipos: { [key: string]: string } = {
-      'matrimonial': 'Matrimonial',
-      'single': 'Single',
-      'doble': 'Doble',
-      'queen': 'Queen',
-      'king': 'King'
-    };
-    return tipos[tipo] || tipo;
-  }
-
-  getTransporteLabel(tipo: string): string {
-    const tipos: { [key: string]: string } = {
-      'vehiculo_propio': 'Vehículo Propio',
-      'colectivo': 'Colectivo',
-      'taxi': 'Taxi',
-      'otro': 'Otro'
-    };
-    return tipos[tipo] || tipo;
   }
 
   getIconoAccion(accion: string): string {

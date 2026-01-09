@@ -139,6 +139,75 @@
             </mat-card-content>
           </mat-card>
 
+          <!-- Configuración de Camas -->
+          <mat-card class="info-card camas-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">bed</mat-icon>
+                Distribución de camas
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="camas-list" *ngIf="(reserva?.configuracionCamas?.length ?? 0) > 0">
+                <div class="cama-item" *ngFor="let cama of reserva?.configuracionCamas; let i = index">
+                  <strong>Cama {{ i + 1 }}:</strong>
+                  <span>{{ getTipoCamaLabel(cama.tipo) }} · {{ cama.cantidad }} unidad(es)</span>
+                </div>
+              </div>
+              <p *ngIf="(reserva?.configuracionCamas?.length ?? 0) === 0" style="color: #666; font-style: italic;">
+                <mat-icon style="vertical-align: middle;">info</mat-icon>
+                No se especificó configuración de camas para esta reserva.
+              </p>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Transporte -->
+          <mat-card class="info-card transporte-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">directions_car</mat-icon>
+                Transporte
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="info-grid" *ngIf="reserva?.informacionTransporte && reserva?.informacionTransporte?.tipo">
+                <div class="info-item">
+                  <strong>Tipo:</strong> {{ getTransporteLabel(reserva?.informacionTransporte?.tipo) }}
+                </div>
+                <div class="info-item" *ngIf="reserva?.informacionTransporte?.numeroPlaca">
+                  <strong>Placa:</strong> {{ reserva?.informacionTransporte?.numeroPlaca }}
+                </div>
+                <div class="info-item" *ngIf="reserva?.informacionTransporte?.empresa">
+                  <strong>Empresa:</strong> {{ reserva?.informacionTransporte?.empresa }}
+                </div>
+                <div class="info-item" *ngIf="reserva?.informacionTransporte?.detalles">
+                  <strong>Detalles:</strong> {{ reserva?.informacionTransporte?.detalles }}
+                </div>
+              </div>
+              <p *ngIf="!reserva?.informacionTransporte || !reserva?.informacionTransporte?.tipo" style="color: #666; font-style: italic;">
+                <mat-icon style="vertical-align: middle;">info</mat-icon>
+                No se especificó información de transporte para esta reserva.
+              </p>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Necesidades Especiales -->
+          <mat-card class="info-card necesidades-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon class="card-icon">accessible</mat-icon>
+                Necesidades especiales
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <p class="texto-necesidades" *ngIf="reserva?.necesidadesEspeciales && reserva?.necesidadesEspeciales?.trim()">{{ reserva?.necesidadesEspeciales }}</p>
+              <p *ngIf="!reserva?.necesidadesEspeciales || !reserva?.necesidadesEspeciales?.trim()" style="color: #666; font-style: italic;">
+                <mat-icon style="vertical-align: middle;">info</mat-icon>
+                No se especificaron necesidades especiales para esta reserva.
+              </p>
+            </mat-card-content>
+          </mat-card>
+
           <!-- Acciones Rápidas para Hostal -->
           <mat-card class="info-card acciones-card">
             <mat-card-header>

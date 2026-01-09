@@ -344,15 +344,25 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Métodos públicos
   verDetalle(reserva: ReservaConDetalles): void {
-    const dialogRef = this.dialog.open(DetalleReservaModalComponent, {
-      width: '90vw',
-      maxWidth: '800px',
-      data: { reserva }
-    });
+    // Obtener los datos completos de la reserva antes de abrir el modal
+    this.reservaService.getReserva(reserva._id).subscribe({
+      next: (reservaCompleta: any) => {
+        console.log('📊 Reserva completa obtenida:', reservaCompleta);
+        const dialogRef = this.dialog.open(DetalleReservaModalComponent, {
+          width: '90vw',
+          maxWidth: '800px',
+          data: { reserva: reservaCompleta }
+        });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result && result.action === 'updated') {
-        this.cargarReservas();
+        dialogRef.afterClosed().subscribe(result => {
+          if (result && result.action === 'updated') {
+            this.cargarReservas();
+          }
+        });
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener reserva completa:', error);
+        this.snackBar.open('❌ Error al cargar los detalles de la reserva', 'Cerrar', { duration: 3000 });
       }
     });
   }

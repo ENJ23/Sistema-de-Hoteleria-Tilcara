@@ -68,6 +68,12 @@ export interface DetalleReservaData {
       </div>
 
       <mat-dialog-content class="modal-content">
+        <!-- DEBUG INFO -->
+        <div style="background-color: #fffde7; border: 1px solid #fbc02d; padding: 12px; border-radius: 4px; margin-bottom: 16px; display: none;">
+          <strong>🐛 DEBUG:</strong>
+          <pre style="font-size: 10px; margin: 8px 0 0 0;">{{ data.reserva | json }}</pre>
+        </div>
+        
         <div class="reserva-info">
           <!-- Información del Cliente -->
           <mat-card class="info-card">
@@ -81,16 +87,8 @@ export interface DetalleReservaData {
                 <span class="value">{{ data.reserva.cliente?.nombre }} {{ data.reserva.cliente?.apellido }}</span>
               </div>
               <div class="info-row">
-                <span class="label">Email:</span>
-                <span class="value">{{ data.reserva.cliente?.email }}</span>
-              </div>
-              <div class="info-row">
                 <span class="label">Teléfono:</span>
                 <span class="value">{{ data.reserva.cliente?.telefono }}</span>
-              </div>
-              <div class="info-row" *ngIf="data.reserva.cliente?.documento">
-                <span class="label">Documento:</span>
-                <span class="value">{{ data.reserva.cliente?.documento }}</span>
               </div>
             </mat-card-content>
           </mat-card>
@@ -106,13 +104,21 @@ export interface DetalleReservaData {
                 <span class="label">Número:</span>
                 <span class="value">{{ data.reserva.habitacion?.numero }}</span>
               </div>
-              <div class="info-row">
-                <span class="label">Tipo:</span>
-                <span class="value">{{ data.reserva.habitacion?.tipo }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Capacidad:</span>
-                <span class="value">{{ data.reserva.habitacion?.capacidad }} personas</span>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Configuración de Camas -->
+          <mat-card class="info-card" *ngIf="(data.reserva.configuracionCamas?.length ?? 0) > 0">
+            <mat-card-header>
+              <mat-icon mat-card-avatar>bed</mat-icon>
+              <mat-card-title>Distribución de Camas</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="camas-chips">
+                <mat-chip *ngFor="let cama of data.reserva.configuracionCamas">
+                  <mat-icon>bed</mat-icon>
+                  {{ cama.cantidad }}x {{ getTipoCamaLabel(cama.tipo) }}
+                </mat-chip>
               </div>
             </mat-card-content>
           </mat-card>
@@ -249,46 +255,30 @@ export interface DetalleReservaData {
           </mat-card>
 
           <!-- Configuración Específica -->
-          <mat-card class="info-card" *ngIf="data.reserva.configuracionCamas?.length || data.reserva.informacionTransporte || data.reserva.necesidadesEspeciales">
+          <mat-card class="info-card" *ngIf="data.reserva.informacionTransporte || data.reserva.necesidadesEspeciales">
             <mat-card-header>
               <mat-icon mat-card-avatar>settings</mat-icon>
               <mat-card-title>Configuración Específica</mat-card-title>
             </mat-card-header>
             <mat-card-content>
-              <!-- Configuración de Camas -->
-              <div class="config-section" *ngIf="data.reserva.configuracionCamas?.length">
-                <h4>
-                  <mat-icon>bed</mat-icon>
-                  Configuración de Camas
-                </h4>
-                <div class="camas-list">
-                  <div class="camas-chips">
-                    <mat-chip *ngFor="let cama of data.reserva.configuracionCamas">
-                      <mat-icon>bed</mat-icon>
-                      {{ cama.cantidad }}x {{ getTipoCamaLabel(cama.tipo) }}
-                    </mat-chip>
-                  </div>
-                </div>
-              </div>
-              
               <!-- Información de Transporte -->
-              <div class="config-section" *ngIf="data.reserva.informacionTransporte">
+              <div class="config-section" *ngIf="data.reserva.informacionTransporte?.tipo">
                 <h4>
                   <mat-icon>directions_car</mat-icon>
                   Información de Transporte
                 </h4>
                 <div class="transporte-details">
                   <div class="transporte-item">
-                    <strong>Tipo:</strong> {{ getTransporteLabel(data.reserva.informacionTransporte.tipo) }}
+                    <strong>Tipo:</strong> {{ getTransporteLabel(data.reserva.informacionTransporte?.tipo) }}
                   </div>
-                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte.numeroPlaca">
-                    <strong>Placa:</strong> {{ data.reserva.informacionTransporte.numeroPlaca }}
+                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte?.numeroPlaca">
+                    <strong>Placa:</strong> {{ data.reserva.informacionTransporte?.numeroPlaca }}
                   </div>
-                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte.empresa">
-                    <strong>Empresa:</strong> {{ data.reserva.informacionTransporte.empresa }}
+                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte?.empresa">
+                    <strong>Empresa:</strong> {{ data.reserva.informacionTransporte?.empresa }}
                   </div>
-                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte.detalles">
-                    <strong>Detalles:</strong> {{ data.reserva.informacionTransporte.detalles }}
+                  <div class="transporte-item" *ngIf="data.reserva.informacionTransporte?.detalles">
+                    <strong>Detalles:</strong> {{ data.reserva.informacionTransporte?.detalles }}
                   </div>
                 </div>
               </div>

@@ -229,49 +229,50 @@
       </mat-card-content>
     </mat-card>
 
-    <!-- Estado y Pagos -->
+    <!-- Pago inicial -->
     <mat-card class="form-section">
       <mat-card-header>
         <mat-card-title>
-          <mat-icon>settings</mat-icon>
-          Estado y Pagos
+          <mat-icon>payments</mat-icon>
+          Pago inicial
         </mat-card-title>
-        <mat-card-subtitle>Configuración del estado de la reserva y método de pago</mat-card-subtitle>
+        <mat-card-subtitle>Registre un pago al crear la reserva (opcional)</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
+        <p class="hint-text">Si no ingresa un monto, la reserva quedará pendiente de pago.</p>
         <div class="form-row">
           <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Estado de la Reserva</mat-label>
-            <mat-select formControlName="estado">
-              <mat-option *ngFor="let estado of estadosReserva" [value]="estado">
-                {{ estado }}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="isFieldInvalid('estado')">
-              {{ getErrorMessage('estado') }}
+            <mat-label>Monto inicial</mat-label>
+            <input type="number" matInput formControlName="pagoInicialMonto"
+                   placeholder="0.00">
+            <span matPrefix>$&nbsp;</span>
+            <mat-error *ngIf="isFieldInvalid('pagoInicialMonto')">
+              {{ getErrorMessage('pagoInicialMonto') }}
             </mat-error>
+            <mat-hint>Ingrese 0 si no hay pago inicial</mat-hint>
           </mat-form-field>
 
-          <div class="checkbox-field form-field-half">
-            <mat-checkbox formControlName="pagado" color="primary">
-              Reserva Pagada
-            </mat-checkbox>
-            <mat-hint>Marque si la reserva ya está pagada</mat-hint>
-          </div>
-        </div>
-
-        <div class="form-row" *ngIf="reservaForm.get('pagado')?.value">
-          <mat-form-field appearance="outline" class="form-field-full">
-            <mat-label>Método de Pago</mat-label>
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Método de pago inicial</mat-label>
             <mat-select formControlName="metodoPago">
+              <mat-option value="">Seleccionar...</mat-option>
               <mat-option *ngFor="let metodo of metodosPago" [value]="metodo">
                 {{ metodo }}
               </mat-option>
             </mat-select>
-            <mat-error *ngIf="isFieldInvalid('metodoPago')">
-              {{ getErrorMessage('metodoPago') }}
-            </mat-error>
-            <mat-hint>Seleccione el método de pago utilizado</mat-hint>
+            <mat-hint>Requerido solo si registra un pago inicial</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Fecha de pago (opcional)</mat-label>
+            <input matInput [matDatepicker]="pickerPagoInicial" 
+                   formControlName="pagoInicialFecha"
+                   placeholder="Seleccione fecha de pago">
+            <mat-datepicker-toggle matSuffix [for]="pickerPagoInicial"></mat-datepicker-toggle>
+            <mat-datepicker #pickerPagoInicial></mat-datepicker>
+            <mat-hint>Si se deja vacío, se usará la fecha de hoy</mat-hint>
           </mat-form-field>
         </div>
       </mat-card-content>

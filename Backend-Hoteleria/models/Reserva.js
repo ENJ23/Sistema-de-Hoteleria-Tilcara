@@ -88,7 +88,7 @@ const reservaSchema = new mongoose.Schema({
     },
     metodoPago: {
         type: String,
-        enum: ['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'Otro'],
+        enum: ['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal', 'Otro'],
         default: 'Efectivo'
     },
     pagado: {
