@@ -93,10 +93,23 @@
           <input matInput formControlName="habitacion" placeholder="N°">
         </mat-form-field>
 
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="small-field">
+          <mat-label>Rango por Estadía</mat-label>
+          <mat-date-range-input [rangePicker]="pickerRango">
+            <input matStartDate formControlName="fechaInicio" placeholder="Inicio">
+            <input matEndDate formControlName="fechaFin" placeholder="Fin">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matSuffix [for]="pickerRango"></mat-datepicker-toggle>
+          <mat-date-range-picker #pickerRango></mat-date-range-picker>
+        </mat-form-field>
+
         <button mat-icon-button class="refresh-btn" (click)="cargarTodasLasReservas()" matTooltip="Recargar datos">
           <mat-icon>refresh</mat-icon>
         </button>
 
+        <button mat-flat-button color="primary" (click)="aplicarFiltros()" class="btn-search">
+          Buscar
+        </button>
         <button mat-button color="warn" (click)="limpiarFiltros()" *ngIf="filtrosForm.dirty" class="btn-clear">
           Limpiar
         </button>

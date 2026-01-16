@@ -181,42 +181,97 @@
     </div>
 
     <!-- Detalle de pagos del rango (lista desplegable) -->
-    <mat-accordion class="pagos-card" multi="true" style="padding-top: 20px;">
-      <mat-expansion-panel [expanded]="false">
+    <mat-accordion class="pagos-card-container" multi="true">
+      <mat-expansion-panel [expanded]="false" class="pagos-main-panel">
         <mat-expansion-panel-header>
           <mat-panel-title>
-            <mat-icon>receipt_long</mat-icon>
-            <span>Pagos en el rango ({{ pagosPeriodo.length }})</span>
+            <div class="panel-title-content">
+              <div class="icon-badge">
+                <mat-icon>payments</mat-icon>
+              </div>
+              <span class="panel-label">Pagos en el rango</span>
+              <span class="panel-count">{{ pagosPeriodo.length }}</span>
+            </div>
           </mat-panel-title>
           <mat-panel-description>
-            Click para desplegar
+            Ver desglose detallado
           </mat-panel-description>
         </mat-expansion-panel-header>
 
-        <div *ngIf="pagosPeriodo.length; else sinPagos">
-          <mat-accordion multi="true">
-            <mat-expansion-panel *ngFor="let pago of pagosPeriodo">
+        <div class="pagos-list-container" *ngIf="pagosPeriodo.length; else sinPagos">
+          <mat-accordion multi="true" class="inner-payments-accordion">
+            <mat-expansion-panel *ngFor="let pago of pagosPeriodo" class="payment-panel">
               <mat-expansion-panel-header>
                 <mat-panel-title>
-                  {{ formatearFecha(pago.fechaPago) }} — {{ formatearPrecio(pago.monto) }}
+                  <div class="payment-header-title">
+                    <mat-icon class="text-primary">calendar_today</mat-icon>
+                    <span>{{ formatearFecha(pago.fechaPago) }}</span>
+                  </div>
                 </mat-panel-title>
                 <mat-panel-description>
-                  Hab {{ pago.habitacionNumero || 'N/A' }} · {{ pago.habitacionTipo || 'Desconocido' }}
+                  <div class="payment-header-desc">
+                    <span class="room-chip">Hab {{ pago.habitacionNumero || '?' }}</span>
+                    <span class="amount-highlight">{{ formatearPrecio(pago.monto) }}</span>
+                  </div>
                 </mat-panel-description>
               </mat-expansion-panel-header>
-              <div class="pago-detail">
-                <div><strong>Fecha:</strong> {{ formatearFecha(pago.fechaPago) }}</div>
-                <div><strong>Monto:</strong> {{ formatearPrecio(pago.monto) }}</div>
-                <div><strong>Habitación:</strong> {{ pago.habitacionNumero || 'N/A' }}</div>
-                <div><strong>Tipo:</strong> {{ pago.habitacionTipo || 'Desconocido' }}</div>
+
+              <div class="payment-detail-grid">
+                <!-- Info Cliente -->
+                <div class="detail-item">
+                  <div class="detail-icon"><mat-icon>person</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Cliente</span>
+                    <span class="value">{{ (pago.clienteNombre || '') + ' ' + (pago.clienteApellido || 'Desconocido')
+                      }}</span>
+                  </div>
+                </div>
+
+                <!-- Info Habitación -->
+                <div class="detail-item">
+                  <div class="detail-icon"><mat-icon>hotel</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Habitación</span>
+                    <span class="value">{{ pago.habitacionNumero || 'N/A' }} <span class="sub-value">({{
+                        pago.habitacionTipo }})</span></span>
+                  </div>
+                </div>
+
+                <!-- Info Reserva -->
+                <div class="detail-item">
+                  <div class="detail-icon"><mat-icon>event</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Fecha Reserva</span>
+                    <span class="value">{{ pago.fechaReserva ? formatearFecha(pago.fechaReserva) : 'N/A' }}</span>
+                  </div>
+                </div>
+
+                <!-- Estado -->
+                <div class="detail-item">
+                  <div class="detail-icon"><mat-icon>info</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Estado Reserva</span>
+                    <span class="value badge-status">{{ pago.estadoReserva || 'Desconocido' }}</span>
+                  </div>
+                </div>
+
+                <!-- Monto (Grande) -->
+                <div class="detail-item full-width highlight-box">
+                  <div class="detail-icon"><mat-icon>payments</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Monto Abonado</span>
+                    <span class="value large-amount">{{ formatearPrecio(pago.monto) }}</span>
+                  </div>
+                </div>
               </div>
             </mat-expansion-panel>
           </mat-accordion>
         </div>
+
         <ng-template #sinPagos>
           <div class="no-data">
-            <mat-icon>info</mat-icon>
-            <p>No hay pagos en el rango seleccionado</p>
+            <mat-icon>receipt_long</mat-icon>
+            <p>No se registraron pagos en este período</p>
           </div>
         </ng-template>
       </mat-expansion-panel>

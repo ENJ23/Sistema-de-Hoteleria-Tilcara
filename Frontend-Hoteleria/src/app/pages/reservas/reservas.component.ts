@@ -159,10 +159,6 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private configurarFiltros(): void {
-    this.filtrosForm.valueChanges.subscribe(() => {
-      this.aplicarFiltros();
-    });
-
     // Refresco automático: suscribirse a eventos de cambios en reservas
     this.reservaService.reservaEvents$.subscribe(() => {
       // Reaplicar filtros actuales y recargar
@@ -320,7 +316,7 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
     this.reservasHoy = reservas.filter(r => r.fechaEntrada === hoyStr).length;
   }
 
-  private aplicarFiltros(): void {
+  aplicarFiltros(): void {
     const filtros = this.filtrosForm.value;
     
     console.log('🔍 Aplicando filtros:', filtros);
@@ -336,7 +332,33 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
       const matchCliente = !filtros.cliente || 
         `${data.cliente.nombre} ${data.cliente.apellido}`.toLowerCase().includes(filtros.cliente.toLowerCase());
       
-      return Boolean(matchEstado && matchHabitacion && matchCliente);
+      // Filtro por Rango por Estadía (cualquier solapamiento entre [entrada, salida] y [inicio, fin])
+      const fechaInicio: Date | null = filtros.fechaInicio || null;
+      const fechaFin: Date | null = filtros.fechaFin || null;
+      let matchFecha = true;
+      if (fechaInicio || fechaFin) {
+        const entrada = this.dateTimeService.stringToDate(data.fechaEntrada);
+        const salida = this.dateTimeService.stringToDate(data.fechaSalida);
+        const entradaOnly = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
+        const salidaOnly = new Date(salida.getFullYear(), salida.getMonth(), salida.getDate());
+
+        if (fechaInicio && fechaFin) {
+          const inicioOnly = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
+          const finOnly = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
+          // Solapa si entrada <= fin y salida >= inicio
+          matchFecha = (entradaOnly.getTime() <= finOnly.getTime()) && (salidaOnly.getTime() >= inicioOnly.getTime());
+        } else if (fechaInicio && !fechaFin) {
+          const inicioOnly = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
+          // Sin fin: reservas cuya salida >= inicio
+          matchFecha = salidaOnly.getTime() >= inicioOnly.getTime();
+        } else if (!fechaInicio && fechaFin) {
+          const finOnly = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
+          // Sin inicio: reservas cuya entrada <= fin
+          matchFecha = entradaOnly.getTime() <= finOnly.getTime();
+        }
+      }
+      
+      return Boolean(matchEstado && matchHabitacion && matchCliente && matchFecha);
     };
     
     this.dataSource.filter = 'trigger';

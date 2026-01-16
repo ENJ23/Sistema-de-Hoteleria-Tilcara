@@ -72,6 +72,11 @@ interface PagoNormalizado {
   habitacionId?: string;
   habitacionNumero?: string;
   habitacionTipo?: string;
+  // Datos adicionales de la reserva
+  fechaReserva?: string;
+  clienteNombre?: string;
+  clienteApellido?: string;
+  estadoReserva?: string;
 }
 
 interface ResumenAnual {
@@ -508,7 +513,12 @@ export class DashboardComponent implements OnInit {
             fechaPago: pago.fechaPago,
             habitacionId: habObj?._id || undefined,
             habitacionNumero: habNumero,
-            habitacionTipo: habTipo
+            habitacionTipo: habTipo,
+            // Campos extra para mostrar detalles en el panel
+            fechaReserva: reserva.fechaEntrada,
+            clienteNombre: (reserva as any).cliente?.nombre || undefined,
+            clienteApellido: (reserva as any).cliente?.apellido || undefined,
+            estadoReserva: (reserva as any).estado || undefined
           });
         }
       });

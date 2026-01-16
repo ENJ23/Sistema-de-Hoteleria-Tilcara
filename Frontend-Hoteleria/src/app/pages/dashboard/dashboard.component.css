@@ -745,3 +745,220 @@
     font-size: 1.25rem;
   }
 }
+
+/* === PAYMENTS SECTION STYLES (NEW) === */
+.pagos-card-container {
+  margin-top: 32px;
+  display: block;
+}
+
+.pagos-main-panel {
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  background: white;
+}
+
+.panel-title-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-badge {
+  background: var(--primary-light);
+  color: var(--primary-color);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-badge mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.panel-label {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.panel-count {
+  background: var(--bg-page);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+/* Inner Accordion Styling */
+.inner-payments-accordion .mat-expansion-panel {
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  border-radius: 0 !important;
+  background: white;
+  margin: 0 !important;
+}
+
+.inner-payments-accordion .mat-expansion-panel:last-child {
+  border-bottom: none !important;
+}
+
+.inner-payments-accordion .mat-expansion-panel-header {
+  height: 64px;
+  padding: 0 24px;
+}
+
+.inner-payments-accordion .mat-expansion-panel-header:hover {
+  background-color: #f9fafb !important;
+}
+
+.payment-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.payment-header-title mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--primary-color);
+}
+
+.payment-header-desc {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  /* Increased gap slightly for better separation without being across the screen */
+  flex-grow: 1;
+  /* Allow it to take space but content aligns based on inner flex */
+  justify-content: flex-start;
+  /* Align content to the left, next to the title */
+  padding-left: 32px;
+  /* Add some spacing from the date */
+}
+
+.room-chip {
+  background: var(--bg-page);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.amount-highlight {
+  color: var(--success-color);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Detailed Grid */
+.payment-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 24px;
+  background: #fafafa;
+}
+
+.detail-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--success-color);
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.highlight-box .detail-icon {
+  background: var(--success-bg);
+  color: var(--success-color);
+}
+
+.detail-icon {
+  background: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.detail-icon mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.value {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.sub-value {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.large-amount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--success-color);
+}
+
+.badge-status {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--info-bg);
+  color: var(--info-color);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .payment-header-desc {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+}

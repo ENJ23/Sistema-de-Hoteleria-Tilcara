@@ -59,7 +59,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 })
 export class ListaHabitacionesComponent implements OnInit {
   // Columnas a mostrar en la tabla
-  displayedColumns: string[] = ['numero', 'tipo', 'piso', 'capacidad', 'precioActual', 'estado', 'acciones'];
+  displayedColumns = ['numero', 'capacidad', 'precioActual', 'estado', 'acciones'];
 
   // Fuente de datos para la tabla
   dataSource: MatTableDataSource<Habitacion>;
