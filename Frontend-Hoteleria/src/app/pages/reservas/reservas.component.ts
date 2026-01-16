@@ -174,6 +174,14 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
     const filtrosReserva = filtros || {
       estado: '' // Cargar todos los estados
     };
+
+    // Convertir fechas Date a strings en formato ISO (YYYY-MM-DD) para el backend
+    if (filtrosReserva.fechaInicio instanceof Date) {
+      filtrosReserva.fechaInicio = filtrosReserva.fechaInicio.toISOString().split('T')[0];
+    }
+    if (filtrosReserva.fechaFin instanceof Date) {
+      filtrosReserva.fechaFin = filtrosReserva.fechaFin.toISOString().split('T')[0];
+    }
     
     console.log('🔍 Cargando reservas con filtros:', filtrosReserva);
     
@@ -321,47 +329,8 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
     
     console.log('🔍 Aplicando filtros:', filtros);
     
-    // ✅ RECARGAR DATOS CON FILTROS APLICADOS
+    // ✅ RECARGAR DATOS CON FILTROS APLICADOS (el backend ya filtra por fechas)
     this.cargarReservas(filtros);
-    
-    // ✅ MANTENER FILTRO LOCAL PARA BÚSQUEDA RÁPIDA ADICIONAL
-    this.dataSource.filterPredicate = (data: ReservaConDetalles, filter: string): boolean => {
-      const matchEstado = !filtros.estado || data.estado === filtros.estado;
-      const matchHabitacion = !filtros.habitacion || 
-        (data.habitacionDetalle && data.habitacionDetalle.numero.includes(filtros.habitacion));
-      const matchCliente = !filtros.cliente || 
-        `${data.cliente.nombre} ${data.cliente.apellido}`.toLowerCase().includes(filtros.cliente.toLowerCase());
-      
-      // Filtro por Rango por Estadía (cualquier solapamiento entre [entrada, salida] y [inicio, fin])
-      const fechaInicio: Date | null = filtros.fechaInicio || null;
-      const fechaFin: Date | null = filtros.fechaFin || null;
-      let matchFecha = true;
-      if (fechaInicio || fechaFin) {
-        const entrada = this.dateTimeService.stringToDate(data.fechaEntrada);
-        const salida = this.dateTimeService.stringToDate(data.fechaSalida);
-        const entradaOnly = new Date(entrada.getFullYear(), entrada.getMonth(), entrada.getDate());
-        const salidaOnly = new Date(salida.getFullYear(), salida.getMonth(), salida.getDate());
-
-        if (fechaInicio && fechaFin) {
-          const inicioOnly = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
-          const finOnly = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
-          // Solapa si entrada <= fin y salida >= inicio
-          matchFecha = (entradaOnly.getTime() <= finOnly.getTime()) && (salidaOnly.getTime() >= inicioOnly.getTime());
-        } else if (fechaInicio && !fechaFin) {
-          const inicioOnly = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth(), fechaInicio.getDate());
-          // Sin fin: reservas cuya salida >= inicio
-          matchFecha = salidaOnly.getTime() >= inicioOnly.getTime();
-        } else if (!fechaInicio && fechaFin) {
-          const finOnly = new Date(fechaFin.getFullYear(), fechaFin.getMonth(), fechaFin.getDate());
-          // Sin inicio: reservas cuya entrada <= fin
-          matchFecha = entradaOnly.getTime() <= finOnly.getTime();
-        }
-      }
-      
-      return Boolean(matchEstado && matchHabitacion && matchCliente && matchFecha);
-    };
-    
-    this.dataSource.filter = 'trigger';
   }
 
   // Métodos públicos
