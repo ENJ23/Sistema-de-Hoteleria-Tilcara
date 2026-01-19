@@ -154,14 +154,15 @@ export class HomeCalendarComponent implements OnInit {
         return `${y}-${m < 10 ? '0' + m : m}-${d < 10 ? '0' + d : d}`;
     }
 
-    // Helpers para vista de lista
+    // Helpers para vista de agenda
     obtenerReservasDelDia(dia: DiaCalendario): { habitacion: HabitacionResumen, estado: EstadoDiaReserva }[] {
         const fechaStr = this.formatearFecha(dia.fecha);
         const reservas: { habitacion: HabitacionResumen, estado: EstadoDiaReserva }[] = [];
 
         this.ocupacionHabitaciones.forEach(oc => {
             const estado = oc.ocupacionPorDia[fechaStr];
-            if (estado && (estado.tipo === 'ocupada' || estado.tipo === 'reservada' || estado.tipo === 'transicion')) {
+            // ✅ Mostrar TODAS las reservas que tengan una reservaPrincipal, sin filtrar por tipo
+            if (estado && estado.reservaPrincipal) {
                 reservas.push({ habitacion: oc.habitacion, estado });
             }
         });
@@ -201,7 +202,14 @@ export class HomeCalendarComponent implements OnInit {
 
         switch (estado.tipo) {
             case 'ocupada': clases.push('ocupacion-ocupada'); break;
-            case 'reservada': clases.push('ocupacion-reservada'); break;
+            case 'reservada':
+                // Check if it is specifically 'Pendiente' to use the new class
+                if (estado.reservaPrincipal?.estado === 'Pendiente') {
+                    clases.push('ocupacion-pendiente');
+                } else {
+                    clases.push('ocupacion-reservada');
+                }
+                break;
             case 'finalizada': clases.push('ocupacion-finalizada'); break;
             default: clases.push('ocupacion-disponible'); return clases.join(' ');
         }
@@ -222,8 +230,8 @@ export class HomeCalendarComponent implements OnInit {
 
         switch (r.estado) {
             case 'En curso': return completamente ? '#28a745' : (parcial ? '#ffc107' : '#dc3545');
-            case 'Confirmada':
-            case 'Pendiente': return completamente ? '#17a2b8' : (parcial ? '#fd7e14' : '#e83e8c');
+            case 'Confirmada': return completamente ? '#17a2b8' : (parcial ? '#fd7e14' : '#e83e8c');
+            case 'Pendiente': return completamente ? '#17a2b8' : (parcial ? '#9575cd' : '#673AB7'); /* Purple for pending */
             case 'Finalizada': return completamente ? '#007bff' : (parcial ? '#6f42c1' : '#6c757d');
             default: return '#d4edda';
         }

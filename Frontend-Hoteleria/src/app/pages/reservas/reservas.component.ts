@@ -170,20 +170,27 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('🚀 INICIANDO cargarReservas con filtros:', filtros);
     this.loading = true;
     
-    // ✅ CARGAR TODAS LAS RESERVAS SIN FILTRO DE FECHA INICIAL
-    const filtrosReserva = filtros || {
-      estado: '' // Cargar todos los estados
-    };
-
-    // Convertir fechas Date a strings en formato ISO (YYYY-MM-DD) para el backend
-    if (filtrosReserva.fechaInicio instanceof Date) {
-      filtrosReserva.fechaInicio = filtrosReserva.fechaInicio.toISOString().split('T')[0];
-    }
-    if (filtrosReserva.fechaFin instanceof Date) {
-      filtrosReserva.fechaFin = filtrosReserva.fechaFin.toISOString().split('T')[0];
+    // ✅ Construir objeto con solo los filtros que tienen valor
+    const filtrosReserva: any = {};
+    
+    if (filtros) {
+      // Solo incluir filtros que tienen valor (no vacíos, no null, no undefined)
+      if (filtros.estado) filtrosReserva.estado = filtros.estado;
+      if (filtros.cliente) filtrosReserva.cliente = filtros.cliente;
+      if (filtros.habitacion) filtrosReserva.habitacion = filtros.habitacion;
+      
+      // Convertir fechas Date a strings en formato ISO (YYYY-MM-DD) usando fecha local
+      if (filtros.fechaInicio instanceof Date) {
+        const f = filtros.fechaInicio;
+        filtrosReserva.fechaInicio = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
+      }
+      if (filtros.fechaFin instanceof Date) {
+        const f = filtros.fechaFin;
+        filtrosReserva.fechaFin = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
+      }
     }
     
-    console.log('🔍 Cargando reservas con filtros:', filtrosReserva);
+    console.log('🔍 Cargando reservas con filtros limpios:', filtrosReserva);
     
     this.reservaService.getReservasAll(filtrosReserva, 100).pipe(
       map((response: ReservaResponse) => {
@@ -263,9 +270,16 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
           };
         });
 
-        console.log('Reservas con detalles:', reservasConDetalles);
-        this.dataSource.data = reservasConDetalles;
-        this.calcularEstadisticas(reservasConDetalles);
+        // Ordenar por fecha de entrada (más reciente primero)
+        const reservasOrdenadas = reservasConDetalles.sort((a, b) => {
+          const fechaA = this.dateTimeService.stringToDate(a.fechaEntrada);
+          const fechaB = this.dateTimeService.stringToDate(b.fechaEntrada);
+          return fechaB.getTime() - fechaA.getTime();
+        });
+
+        console.log('Reservas con detalles:', reservasOrdenadas);
+        this.dataSource.data = reservasOrdenadas;
+        this.calcularEstadisticas(reservasOrdenadas);
       });
     }
   }
@@ -290,9 +304,16 @@ export class ReservasComponent implements OnInit, AfterViewInit, OnDestroy {
       };
     });
 
-    console.log('Reservas procesadas directamente:', reservasConDetalles);
-    this.dataSource.data = reservasConDetalles;
-    this.calcularEstadisticas(reservasConDetalles);
+    // Ordenar por fecha de entrada (más reciente primero)
+    const reservasOrdenadas = reservasConDetalles.sort((a, b) => {
+      const fechaA = this.dateTimeService.stringToDate(a.fechaEntrada);
+      const fechaB = this.dateTimeService.stringToDate(b.fechaEntrada);
+      return fechaB.getTime() - fechaA.getTime();
+    });
+
+    console.log('Reservas procesadas directamente:', reservasOrdenadas);
+    this.dataSource.data = reservasOrdenadas;
+    this.calcularEstadisticas(reservasOrdenadas);
   }
 
   private calcularDiasEstancia(fechaEntrada: string, fechaSalida: string): number {

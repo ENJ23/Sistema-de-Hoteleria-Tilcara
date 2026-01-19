@@ -339,23 +339,54 @@ router.get('/', [
             estado = '',
             fechaInicio = '',
             fechaFin = '',
-            cliente = ''
+            cliente = '',
+            habitacion = ''
         } = req.query;
 
         let query = {};
+        let conditions = [];
 
+        // Filtro por estado
         if (estado) {
             // Si el estado contiene comas, es una lista de estados
             if (typeof estado === 'string' && estado.includes(',')) {
                 const estados = estado.split(',').map(e => e.trim());
-                query.estado = { $in: estados };
+                conditions.push({ estado: { $in: estados } });
                 console.log('🔍 Backend - Estados filtrados:', estados);
             } else {
-                query.estado = estado;
+                conditions.push({ estado: estado });
                 console.log('🔍 Backend - Estado único:', estado);
             }
         }
 
+        // Filtro por nombre o apellido del cliente
+        if (cliente) {
+            const clienteRegex = new RegExp(cliente, 'i'); // 'i' para case-insensitive
+            conditions.push({
+                $or: [
+                    { 'cliente.nombre': clienteRegex },
+                    { 'cliente.apellido': clienteRegex }
+                ]
+            });
+            console.log('🔍 Backend - Filtro cliente aplicado:', cliente);
+        }
+
+        // Filtro por número de habitación
+        if (habitacion) {
+            // Buscar la habitación por número
+            const habitacionNumero = isNaN(habitacion) ? habitacion : parseInt(habitacion);
+            const habitacionEncontrada = await Habitacion.findOne({ numero: habitacionNumero });
+            if (habitacionEncontrada) {
+                conditions.push({ habitacion: habitacionEncontrada._id });
+                console.log('🔍 Backend - Filtro habitación aplicado:', habitacionNumero, '(ID:', habitacionEncontrada._id, ')');
+            } else {
+                // Si no existe la habitación, devolver resultados vacíos
+                console.log('🔍 Backend - Habitación no encontrada:', habitacionNumero);
+                conditions.push({ habitacion: null }); // Garantiza que no habrá resultados
+            }
+        }
+
+        // Filtro por rango de fechas
         if (fechaInicio && fechaFin) {
             // CORREGIDO: Buscar reservas que se solapan con el rango de fechas
             // Esto incluye reservas que:
@@ -366,28 +397,35 @@ router.get('/', [
             const fechaInicioParsed = parseLocalDate(fechaInicio);
             const fechaFinParsed = parseLocalDate(fechaFin);
 
-            query.$or = [
-                // Reservas que comienzan dentro del rango
-                {
-                    fechaEntrada: {
-                        $gte: fechaInicioParsed,
-                        $lte: fechaFinParsed
+            conditions.push({
+                $or: [
+                    // Reservas que comienzan dentro del rango
+                    {
+                        fechaEntrada: {
+                            $gte: fechaInicioParsed,
+                            $lte: fechaFinParsed
+                        }
+                    },
+                    // Reservas que terminan dentro del rango
+                    {
+                        fechaSalida: {
+                            $gte: fechaInicioParsed,
+                            $lte: fechaFinParsed
+                        }
+                    },
+                    // Reservas que abarcan todo el rango (comienzan antes y terminan después)
+                    {
+                        fechaEntrada: { $lte: fechaInicioParsed },
+                        fechaSalida: { $gte: fechaFinParsed }
                     }
-                },
-                // Reservas que terminan dentro del rango
-                {
-                    fechaSalida: {
-                        $gte: fechaInicioParsed,
-                        $lte: fechaFinParsed
-                    }
-                },
-                // Reservas que abarcan todo el rango (comienzan antes y terminan después)
-                {
-                    fechaEntrada: { $lte: fechaInicioParsed },
-                    fechaSalida: { $gte: fechaFinParsed }
-                }
-            ];
+                ]
+            });
             console.log('🔍 Backend - Filtro de fechas aplicado (solapamiento):', { fechaInicio, fechaFin });
+        }
+
+        // Combinar todas las condiciones con $and
+        if (conditions.length > 0) {
+            query = { $and: conditions };
         }
 
         console.log('🔍 Backend - Query final:', JSON.stringify(query, null, 2));
@@ -2453,9 +2491,20 @@ router.get('/ingresos/por-mes', [
 
         console.log('📊 Backend - GET /ingresos/por-mes:', { fechaInicio, fechaFin });
 
-        // Parsear fechas
-        const fechaInicioParsed = new Date(`${fechaInicio}T00:00:00Z`);
-        const fechaFinParsed = new Date(`${fechaFin}T23:59:59Z`);
+        // Parsear fechas: el frontend envía YYYY-MM-DD en hora local
+        // Necesitamos crear el rango considerando que las fechas en BD tienen offset UTC
+        const [añoInicio, mesInicio, diaInicio] = fechaInicio.split('-').map(Number);
+        const [añoFin, mesFin, diaFin] = fechaFin.split('-').map(Number);
+        
+        // Crear fechas en UTC para el rango (inicio del día y fin del día)
+        const fechaInicioParsed = new Date(Date.UTC(añoInicio, mesInicio - 1, diaInicio, 0, 0, 0, 0));
+        const fechaFinParsed = new Date(Date.UTC(añoFin, mesFin - 1, diaFin, 23, 59, 59, 999));
+
+        console.log('📊 Backend - Fechas parseadas (UTC):', {
+            fechaInicioParsed: fechaInicioParsed.toISOString(),
+            fechaFinParsed: fechaFinParsed.toISOString(),
+            rangoLocal: `${fechaInicioParsed.toLocaleString('es-AR')} - ${fechaFinParsed.toLocaleString('es-AR')}`
+        });
 
         // Agregación: obtener ingresos por mes según fechaPago
         const ingresosPorMes = await Reserva.aggregate([
@@ -2478,6 +2527,17 @@ router.get('/ingresos/por-mes', [
                     }
                 }
             },
+            // DEBUG: Ver qué pagos se están incluyendo
+            {
+                $addFields: {
+                    'historialPagos.fechaPagoStr': {
+                        $dateToString: {
+                            format: '%Y-%m-%d',
+                            date: '$historialPagos.fechaPago'
+                        }
+                    }
+                }
+            },
             {
                 // Agrupar por mes
                 $group: {
@@ -2488,7 +2548,14 @@ router.get('/ingresos/por-mes', [
                         }
                     },
                     totalIngresos: { $sum: '$historialPagos.monto' },
-                    cantidad: { $sum: 1 }
+                    cantidad: { $sum: 1 },
+                    // DEBUG: Incluir fechas de ejemplo
+                    pagosMuestra: {
+                        $push: {
+                            fecha: '$historialPagos.fechaPagoStr',
+                            monto: '$historialPagos.monto'
+                        }
+                    }
                 }
             },
             {
@@ -2498,6 +2565,7 @@ router.get('/ingresos/por-mes', [
         ]);
 
         console.log('✅ Ingresos por mes obtenidos:', ingresosPorMes.length, 'meses');
+        console.log('📊 DEBUG - Detalle de ingresos:', JSON.stringify(ingresosPorMes, null, 2));
 
         res.json({
             ingresosPorMes: ingresosPorMes,
@@ -2531,9 +2599,14 @@ router.get('/ingresos/anual', [
 
         console.log('📊 Backend - GET /ingresos/anual:', { year: yearInt });
 
-        // Crear rango para todo el año
-        const fechaInicio = new Date(`${yearInt}-01-01T00:00:00Z`);
-        const fechaFin = new Date(`${yearInt}-12-31T23:59:59Z`);
+        // Crear rango para todo el año en UTC
+        const fechaInicio = new Date(Date.UTC(yearInt, 0, 1, 0, 0, 0, 0));
+        const fechaFin = new Date(Date.UTC(yearInt, 11, 31, 23, 59, 59, 999));
+
+        console.log('📊 Backend - Fechas parseadas (UTC):', {
+            fechaInicio: fechaInicio.toISOString(),
+            fechaFin: fechaFin.toISOString()
+        });
 
         // Agregación: obtener ingresos por mes para el año completo
         const ingresosPorMes = await Reserva.aggregate([

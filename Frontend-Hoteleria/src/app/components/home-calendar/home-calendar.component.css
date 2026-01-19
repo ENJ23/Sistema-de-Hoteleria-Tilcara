@@ -319,8 +319,27 @@
     font-weight: bold;
 }
 
-.ocupacion-finalizada.sin-pago {
-    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+.ocupacion-pendiente {
+    background: linear-gradient(135deg, #1b112c 0%, #1b004e 100%);
+    color: #e943ff;
+}
+
+.ocupacion-pendiente.completamente-pagado {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    /* Same as verified/confirmed paid */
+    color: white;
+    font-weight: bold;
+}
+
+.ocupacion-pendiente.parcialmente-pagado {
+    background: linear-gradient(135deg, #ceb154 0%, #c24c2f 100%);
+    color: white;
+    font-weight: bold;
+}
+
+.ocupacion-pendiente.sin-pago {
+    background: linear-gradient(135deg, #ffe600 0%, #ffe600 100%);
+    /* Purple requested */
     color: white;
     font-weight: bold;
 }

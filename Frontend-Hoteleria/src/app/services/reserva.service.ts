@@ -42,12 +42,17 @@ export class ReservaService {
       if (filtros.fechaFin) params = params.set('fechaFin', filtros.fechaFin);
       if (filtros.estado) params = params.set('estado', filtros.estado);
       if (filtros.cliente) {
-        // Los clientes ahora están embebidos, no hay ID
-        params = params.set('clienteEmail', filtros.cliente.email);
+        // Cliente es un string de búsqueda (nombre o apellido)
+        params = params.set('cliente', filtros.cliente);
       }
       if (filtros.habitacion) {
-        const habitacionId = typeof filtros.habitacion === 'string' ? filtros.habitacion : filtros.habitacion._id;
-        params = params.set('habitacion', habitacionId);
+        // Habitación puede ser un string (número) o un objeto con _id
+        const habitacionValue = typeof filtros.habitacion === 'string' 
+          ? filtros.habitacion 
+          : (filtros.habitacion as any)?._id || '';
+        if (habitacionValue) {
+          params = params.set('habitacion', habitacionValue);
+        }
       }
       if (filtros.pagado !== undefined) params = params.set('pagado', filtros.pagado.toString());
     }

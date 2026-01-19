@@ -74,6 +74,8 @@ interface PagoNormalizado {
   habitacionTipo?: string;
   // Datos adicionales de la reserva
   fechaReserva?: string;
+  fechaEntrada?: string;
+  fechaSalida?: string;
   clienteNombre?: string;
   clienteApellido?: string;
   estadoReserva?: string;
@@ -145,6 +147,7 @@ export class DashboardComponent implements OnInit {
   ingresosPorHabitacion: IngresosPorHabitacion[] = []; // Mensual
   ingresosPorHabitacionAnual: IngresosPorHabitacion[] = []; // Anual
   pagosPeriodo: PagoNormalizado[] = [];
+  searchPagosText: string = ''; // Texto de búsqueda para pagos
 
   // Estados
   loading = false;
@@ -157,6 +160,26 @@ export class DashboardComponent implements OnInit {
 
   // Columnas para la tabla de reservas recientes
   displayedColumns: string[] = ['cliente', 'habitacion', 'fechas', 'estado', 'pago', 'ingresos'];
+
+  // Getter para pagos filtrados
+  get pagosFiltrados(): PagoNormalizado[] {
+    if (!this.searchPagosText || this.searchPagosText.trim() === '') {
+      return this.pagosPeriodo;
+    }
+
+    const searchLower = this.searchPagosText.toLowerCase().trim();
+    return this.pagosPeriodo.filter(pago => {
+      // Buscar por nombre del cliente
+      const nombreCliente = `${pago.clienteNombre || ''} ${pago.clienteApellido || ''}`.toLowerCase();
+      if (nombreCliente.includes(searchLower)) return true;
+
+      // Buscar por monto (convertir monto a string y buscar coincidencia)
+      const montoStr = pago.monto.toString();
+      if (montoStr.includes(searchLower)) return true;
+
+      return false;
+    });
+  }
 
   constructor(
     private reservaService: ReservaService,
@@ -235,11 +258,9 @@ export class DashboardComponent implements OnInit {
       next: (ingresosPorMesResponse: any) => {
         console.log('✅ Ingresos por mes recibidos:', ingresosPorMesResponse);
 
-        // 2. Obtener todas las reservas del mes (para mapear pagos a habitación/tipo)
-        this.reservaService.getReservasAll({
-          fechaInicio: fechaInicioStr,
-          fechaFin: fechaFinStr
-        }, 100, true).subscribe({
+        // 2. Obtener TODAS las reservas sin filtro de fecha (máx 100 por página)
+        // Así incluimos todas las reservas que puedan tener pagos en el rango
+        this.reservaService.getReservasAll(undefined, 100, true).subscribe({
           next: (response: ReservaResponse) => {
             const reservas = response.reservas || [];
 
@@ -495,8 +516,21 @@ export class DashboardComponent implements OnInit {
 
   // Normaliza pagos de reservas en un rango
   private extraerPagosEnRango(reservas: Reserva[], fechaInicio: string, fechaFin: string): PagoNormalizado[] {
-    const inicio = new Date(`${fechaInicio}T00:00:00Z`).getTime();
-    const fin = new Date(`${fechaFin}T23:59:59Z`).getTime();
+    // Parsear fechas en UTC para coincidir con el backend
+    const [añoInicio, mesInicio, diaInicio] = fechaInicio.split('-').map(Number);
+    const [añoFin, mesFin, diaFin] = fechaFin.split('-').map(Number);
+    
+    // Usar Date.UTC para crear timestamps en UTC
+    const inicio = Date.UTC(añoInicio, mesInicio - 1, diaInicio, 0, 0, 0, 0);
+    const fin = Date.UTC(añoFin, mesFin - 1, diaFin, 23, 59, 59, 999);
+
+    console.log('📅 Frontend - extraerPagosEnRango:', {
+      fechaInicio,
+      fechaFin,
+      inicioUTC: new Date(inicio).toISOString(),
+      finUTC: new Date(fin).toISOString(),
+      totalReservas: reservas.length
+    });
 
     const pagos: PagoNormalizado[] = [];
 
@@ -506,7 +540,10 @@ export class DashboardComponent implements OnInit {
       const habTipo = habObj?.tipo || 'Desconocido';
 
       (reserva as any).historialPagos?.forEach((pago: any) => {
-        const ts = pago.fechaPago ? new Date(pago.fechaPago).getTime() : 0;
+        const fechaPagoStr = pago.fechaPago;
+        const ts = fechaPagoStr ? new Date(fechaPagoStr).getTime() : 0;
+        
+        // Debug: mostrar cada pago y si está en rango
         if (ts >= inicio && ts <= fin) {
           pagos.push({
             monto: pago.monto || 0,
@@ -516,6 +553,8 @@ export class DashboardComponent implements OnInit {
             habitacionTipo: habTipo,
             // Campos extra para mostrar detalles en el panel
             fechaReserva: reserva.fechaEntrada,
+            fechaEntrada: reserva.fechaEntrada,
+            fechaSalida: reserva.fechaSalida,
             clienteNombre: (reserva as any).cliente?.nombre || undefined,
             clienteApellido: (reserva as any).cliente?.apellido || undefined,
             estadoReserva: (reserva as any).estado || undefined
@@ -523,6 +562,9 @@ export class DashboardComponent implements OnInit {
         }
       });
     });
+
+    console.log('📅 Frontend - Pagos filtrados:', pagos.length, 'de', 
+      reservas.reduce((sum, r) => sum + ((r as any).historialPagos?.length || 0), 0), 'totales');
 
     return pagos;
   }

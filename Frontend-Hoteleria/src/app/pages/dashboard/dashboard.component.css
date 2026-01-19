@@ -46,6 +46,13 @@
   box-sizing: border-box;
 }
 
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+}
+
 /* === HEADER === */
 .dashboard-header-wrapper {
   margin-bottom: 8px;
@@ -766,6 +773,20 @@
   gap: 12px;
 }
 
+.description-text {
+  flex: 1;
+}
+
+.info-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+  cursor: help;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
 .icon-badge {
   background: var(--primary-light);
   color: var(--primary-color);
@@ -797,6 +818,22 @@
   font-weight: 600;
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
+}
+
+/* Search Pagos Container */
+.search-pagos-container {
+  padding: 16px 24px;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.search-pagos-field {
+  width: 100%;
+  max-width: 500px;
+}
+
+.search-pagos-field mat-icon {
+  color: var(--text-secondary);
 }
 
 /* Inner Accordion Styling */

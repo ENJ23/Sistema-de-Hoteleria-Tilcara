@@ -664,10 +664,11 @@ export {};
   // DEBUG reducido: desactivar trazas verbosas en producción
     
     // Buscar TODAS las reservas activas sin filtro de fechas
-    this.reservaService.getReservas({
+    // ✅ Usar getReservasAll para obtener todas sin límite de 100
+    this.reservaService.getReservasAll({
       estado: 'Pendiente,Confirmada,En curso'
       // NO enviar fechaInicio ni fechaFin para evitar filtros del backend
-    }, 1, 100).subscribe({
+    }, 100, forceFresh).subscribe({
       next: (response) => {
         // console.log('Reservas cargadas hoy:', response.reservas?.length || 0);
           _id: r._id,

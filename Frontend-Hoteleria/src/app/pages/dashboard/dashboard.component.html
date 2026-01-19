@@ -164,20 +164,6 @@
             [value]="resumen.totalReservas > 0 ? (resumen.reservasParciales / resumen.totalReservas) * 100 : 0"></mat-progress-bar>
         </div>
       </mat-card>
-
-      <!-- Promedio -->
-      <mat-card class="kpi-card info">
-        <div class="kpi-content">
-          <div class="kpi-icon-wrapper">
-            <mat-icon>trending_up</mat-icon>
-          </div>
-          <div class="kpi-data">
-            <span class="kpi-label">Promedio / Reserva</span>
-            <span class="kpi-value">{{ formatearPrecio(resumen.promedioPorReserva) }}</span>
-            <span class="kpi-subtext" *ngIf="valorDolar > 0">≈ {{ formatearDolar(resumen.promedioPorReserva) }}</span>
-          </div>
-        </div>
-      </mat-card>
     </div>
 
     <!-- Detalle de pagos del rango (lista desplegable) -->
@@ -190,17 +176,34 @@
                 <mat-icon>payments</mat-icon>
               </div>
               <span class="panel-label">Pagos en el rango</span>
-              <span class="panel-count">{{ pagosPeriodo.length }}</span>
+              <span class="panel-count">{{ pagosFiltrados.length }}</span>
             </div>
           </mat-panel-title>
           <mat-panel-description>
-            Ver desglose detallado
+            <span class="description-text">Ver desglose detallado</span>
+            <mat-icon class="info-icon" 
+                      matTooltip="Los pagos se muestran según su fecha de pago, no la fecha de creación de la reserva"
+                      matTooltipPosition="above">
+              info_outline
+            </mat-icon>
           </mat-panel-description>
         </mat-expansion-panel-header>
 
-        <div class="pagos-list-container" *ngIf="pagosPeriodo.length; else sinPagos">
+        <!-- Campo de búsqueda -->
+        <div class="search-pagos-container">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-pagos-field">
+            <mat-label>Buscar en pagos</mat-label>
+            <input matInput [(ngModel)]="searchPagosText" placeholder="Nombre, apellido o monto...">
+            <mat-icon matPrefix>search</mat-icon>
+            <button mat-icon-button matSuffix *ngIf="searchPagosText" (click)="searchPagosText = ''" aria-label="Limpiar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+        </div>
+
+        <div class="pagos-list-container" *ngIf="pagosFiltrados.length; else sinPagos">
           <mat-accordion multi="true" class="inner-payments-accordion">
-            <mat-expansion-panel *ngFor="let pago of pagosPeriodo" class="payment-panel">
+            <mat-expansion-panel *ngFor="let pago of pagosFiltrados" class="payment-panel">
               <mat-expansion-panel-header>
                 <mat-panel-title>
                   <div class="payment-header-title">
@@ -237,12 +240,21 @@
                   </div>
                 </div>
 
-                <!-- Info Reserva -->
+                <!-- Fecha Entrada -->
                 <div class="detail-item">
-                  <div class="detail-icon"><mat-icon>event</mat-icon></div>
+                  <div class="detail-icon"><mat-icon>login</mat-icon></div>
                   <div class="detail-content">
-                    <span class="label">Fecha Reserva</span>
-                    <span class="value">{{ pago.fechaReserva ? formatearFecha(pago.fechaReserva) : 'N/A' }}</span>
+                    <span class="label">Fecha Entrada</span>
+                    <span class="value">{{ pago.fechaEntrada ? formatearFecha(pago.fechaEntrada) : 'N/A' }}</span>
+                  </div>
+                </div>
+
+                <!-- Fecha Salida -->
+                <div class="detail-item">
+                  <div class="detail-icon"><mat-icon>logout</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Fecha Salida</span>
+                    <span class="value">{{ pago.fechaSalida ? formatearFecha(pago.fechaSalida) : 'N/A' }}</span>
                   </div>
                 </div>
 
@@ -271,7 +283,8 @@
         <ng-template #sinPagos>
           <div class="no-data">
             <mat-icon>receipt_long</mat-icon>
-            <p>No se registraron pagos en este período</p>
+            <p *ngIf="!searchPagosText">No se registraron pagos en este período</p>
+            <p *ngIf="searchPagosText">No se encontraron pagos que coincidan con "{{ searchPagosText }}"</p>
           </div>
         </ng-template>
       </mat-expansion-panel>

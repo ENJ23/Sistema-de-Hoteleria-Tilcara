@@ -3,7 +3,7 @@ import { Habitacion } from './habitacion.model';
 export interface ClienteEmbedded {
   nombre: string;
   apellido: string;
-  email: string;
+  email?: string;
   telefono: string;
   documento: string;
   direccion?: string;
@@ -124,7 +124,7 @@ export interface ReservaFilters {
   fechaInicio?: string;
   fechaFin?: string;
   estado?: string;
-  cliente?: ClienteEmbedded;
+  cliente?: string;
   habitacion?: string | { _id: string };
   pagado?: boolean;
 }

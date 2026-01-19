@@ -156,7 +156,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       // Información del cliente (campos obligatorios)
       nombreCliente: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)]],
       apellidoCliente: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/)]],
-      emailCliente: ['', [Validators.email]],
       telefonoCliente: ['', [Validators.required, Validators.minLength(7), Validators.maxLength(20), Validators.pattern(/^[0-9+\-\s()]*$/)]],
       documentoCliente: ['', [Validators.minLength(5), Validators.maxLength(20)]],
       direccionCliente: [''],
@@ -389,7 +388,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     this.reservaForm.patchValue({
       nombreCliente: reserva.cliente.nombre,
       apellidoCliente: reserva.cliente.apellido,
-      emailCliente: reserva.cliente.email,
       telefonoCliente: reserva.cliente.telefono,
       documentoCliente: reserva.cliente.documento,
       direccionCliente: reserva.cliente.direccion || '',
@@ -986,7 +984,6 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       cliente: {
         nombre: this.reservaForm.get('nombreCliente')?.value?.trim() || undefined,
         apellido: this.reservaForm.get('apellidoCliente')?.value?.trim() || undefined,
-        email: this.reservaForm.get('emailCliente')?.value?.trim() || undefined,
         telefono: this.reservaForm.get('telefonoCliente')?.value?.trim() || undefined,
         documento: this.reservaForm.get('documentoCliente')?.value?.trim() || undefined,
         direccion: this.reservaForm.get('direccionCliente')?.value?.trim() || undefined,
@@ -1423,7 +1420,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     const control = this.reservaForm.get(controlName);
 
     // Los campos del cliente son opcionales, no considerarlos inválidos
-    const camposCliente = ['nombreCliente', 'apellidoCliente', 'emailCliente', 'telefonoCliente', 'documentoCliente', 'direccionCliente', 'nacionalidadCliente'];
+    const camposCliente = ['nombreCliente', 'apellidoCliente', 'telefonoCliente', 'documentoCliente', 'direccionCliente', 'nacionalidadCliente'];
     if (camposCliente.includes(controlName)) {
       return false;
     }
