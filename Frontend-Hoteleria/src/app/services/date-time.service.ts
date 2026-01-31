@@ -333,8 +333,23 @@ export class DateTimeService {
 
   // ====== Métodos de compatibilidad (wrappers) para API anterior ======
   addMonths(date: Date, delta: number): Date {
-    const d = new Date(date.getFullYear(), date.getMonth() + delta, date.getDate());
-    return d;
+    // Detectar si estamos en el último día del mes actual
+    const ultimoDiaDelMesActual = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    const esUltimoDia = date.getDate() === ultimoDiaDelMesActual;
+    
+    // Calcular mes y año nuevos
+    const newMonth = date.getMonth() + delta;
+    const newYear = date.getFullYear() + Math.floor(newMonth / 12);
+    const normalizedMonth = newMonth % 12;
+    
+    // Obtener el último día del mes destino
+    const ultimoDiaDelMesNuevo = new Date(newYear, normalizedMonth + 1, 0).getDate();
+    
+    // Si estábamos en el último día del mes actual, ir al último día del mes destino
+    // De lo contrario, ir al mismo día (o al último si el mes destino tiene menos días)
+    const dia = esUltimoDia ? ultimoDiaDelMesNuevo : Math.min(date.getDate(), ultimoDiaDelMesNuevo);
+    
+    return new Date(newYear, normalizedMonth, dia);
   }
 
   nombreMes(date: Date): string { return this.getMonthName(date.getMonth()); }

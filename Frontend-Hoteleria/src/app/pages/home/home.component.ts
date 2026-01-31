@@ -876,7 +876,7 @@ export {};
 
   mesAnterior(): void {
     // Crear una nueva fecha para forzar la detección de cambios
-    this.mesActual = this.dateTimeService.createArgentinaDate(this.mesActual.getFullYear(), this.mesActual.getMonth(), 1);
+    this.mesActual = this.dateTimeService.createArgentinaDate(this.mesActual.getFullYear(), this.mesActual.getMonth() - 1, 1);
     console.log('📅 Mes anterior:', this.mesActual);
     this.generarCalendario();
     this.generarOcupacion();
@@ -884,7 +884,7 @@ export {};
 
   mesSiguiente(): void {
     // Crear una nueva fecha para forzar la detección de cambios
-    this.mesActual = this.dateTimeService.createArgentinaDate(this.mesActual.getFullYear(), this.mesActual.getMonth() + 2, 1);
+    this.mesActual = this.dateTimeService.createArgentinaDate(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 1);
     console.log('📅 Mes siguiente:', this.mesActual);
     this.generarCalendario();
     this.generarOcupacion();
