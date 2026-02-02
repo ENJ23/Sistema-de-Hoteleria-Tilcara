@@ -23,9 +23,9 @@
         <div class="reserva-info">
           <h3>Información de la Reserva</h3>
           <p><strong>Estado:</strong> {{ data.reserva.estado }}</p>
-          <p><strong>Precio Total:</strong> ${{ data.reserva.precioTotal }}</p>
-          <p><strong>Monto Pagado:</strong> ${{ data.reserva.montoPagado }}</p>
-          <p><strong>Monto Restante:</strong> ${{ data.reserva.montoRestante }}</p>
+          <p><strong>Precio Total:</strong> ${{ data.reserva.precioTotal | number:'1.2-2' }}</p>
+          <p><strong>Monto Pagado:</strong> ${{ data.reserva.montoPagado | number:'1.2-2' }}</p>
+          <p><strong>Monto Restante:</strong> ${{ data.reserva.montoRestante | number:'1.2-2' }}</p>
         </div>
 
         <!-- Formulario de Edición -->
@@ -48,7 +48,7 @@
             <mat-label>Monto</mat-label>
             <input matInput type="number" formControlName="monto" required>
             <span matPrefix>$&nbsp;</span>
-            <mat-hint>Monto actual: ${{ data.pago.monto }}</mat-hint>
+            <mat-hint>Monto actual: ${{ data.pago.monto | number:'1.2-2' }}</mat-hint>
             <mat-error *ngIf="editarPagoForm.get('monto')?.hasError('required')">
               El monto es requerido
             </mat-error>

@@ -16,9 +16,9 @@
            <h3>Información de la Reserva</h3>
            <p><strong>Cliente:</strong> {{ data.reserva.cliente?.nombre }} {{ data.reserva.cliente?.apellido }}</p>
            <p><strong>Habitación:</strong> {{ data.reserva.habitacion?.numero }}</p>
-           <p><strong>Monto Total:</strong> ${{ data.montoTotal }}</p>
-           <p *ngIf="data.reserva.montoPagado > 0"><strong>Monto Pagado:</strong> ${{ data.reserva.montoPagado }}</p>
-           <p *ngIf="data.reserva.montoRestante !== undefined"><strong>Monto Restante:</strong> <span class="restante">${{ data.reserva.montoRestante }}</span></p>
+           <p><strong>Monto Total:</strong> ${{ data.montoTotal | number:'1.2-2' }}</p>
+           <p *ngIf="data.reserva.montoPagado > 0"><strong>Monto Pagado:</strong> ${{ data.reserva.montoPagado | number:'1.2-2' }}</p>
+           <p *ngIf="data.reserva.montoRestante !== undefined"><strong>Monto Restante:</strong> <span class="restante">${{ data.reserva.montoRestante | number:'1.2-2' }}</span></p>
          </div>
 
         <form [formGroup]="pagoForm" class="pago-form">
@@ -39,7 +39,7 @@
                      <mat-form-field appearance="outline" class="full-width">
             <mat-label>Monto Pagado</mat-label>
             <input matInput type="number" formControlName="monto" min="0" step="0.01" required>
-            <mat-hint *ngIf="data.reserva.montoRestante !== undefined">Monto restante: ${{ data.reserva.montoRestante }}</mat-hint>
+            <mat-hint *ngIf="data.reserva.montoRestante !== undefined">Monto restante: ${{ data.reserva.montoRestante | number:'1.2-2' }}</mat-hint>
             <mat-error *ngIf="pagoForm.get('monto')?.hasError('required')">
               El monto es requerido
             </mat-error>

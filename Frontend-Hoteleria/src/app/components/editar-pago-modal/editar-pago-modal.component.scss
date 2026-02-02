@@ -206,3 +206,12 @@ mat-dialog-actions button:focus {
     color: #b0b0b0;
   }
 }
+
+/* Asegurar que el datepicker overlay sea visible */
+::ng-deep .cdk-overlay-pane {
+  z-index: 10000 !important;
+}
+
+::ng-deep .mat-datepicker-content {
+  z-index: 10000 !important;
+}

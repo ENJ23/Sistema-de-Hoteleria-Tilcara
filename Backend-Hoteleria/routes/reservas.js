@@ -18,6 +18,11 @@ const { requireLock, autoReleaseLock } = require('../middlewares/concurrency.mid
 const mongoose = require('mongoose'); // Importar mongoose para transacciones
 const pdfService = require('../services/pdf.service'); // Importar servicio de PDF
 
+// Función auxiliar para redondear a 2 decimales (evitar problemas de punto flotante)
+function redondearMonto(monto) {
+    return Math.round(monto * 100) / 100;
+}
+
 // ESTÁNDAR: Función helper para parsear fechas de forma consistente
 function parseLocalDate(dateString) {
     if (!dateString || typeof dateString !== 'string') {
@@ -458,9 +463,9 @@ router.get('/', [
 
             return {
                 ...reserva,
-                estaCompletamentePagado: totalPagos >= reserva.precioTotal,
-                montoRestante: Math.max(0, reserva.precioTotal - totalPagos),
-                totalPagos
+                estaCompletamentePagado: redondearMonto(totalPagos) >= reserva.precioTotal,
+                montoRestante: redondearMonto(Math.max(0, reserva.precioTotal - totalPagos)),
+                totalPagos: redondearMonto(totalPagos)
             };
         });
 

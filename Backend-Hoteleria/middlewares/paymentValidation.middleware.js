@@ -1,5 +1,10 @@
 const { body, validationResult } = require('express-validator');
 
+// Función auxiliar para redondear a 2 decimales (evitar problemas de punto flotante)
+function redondearMonto(monto) {
+    return Math.round(monto * 100) / 100;
+}
+
 // Middleware para validar operaciones de pago
 const validatePaymentOperation = (req, res, next) => {
     const errors = validationResult(req);
@@ -144,8 +149,8 @@ const validatePaymentLimits = async (req, res, next) => {
         if (montoSolicitado > montoMaximo) {
             return res.status(400).json({
                 message: `El monto solicitado ($${montoSolicitado}) excede el máximo permitido ($${montoMaximo})`,
-                montoMaximo: montoMaximo,
-                montoRestante: reserva.precioTotal - reserva.montoPagado
+                montoMaximo: redondearMonto(montoMaximo),
+                montoRestante: redondearMonto(reserva.precioTotal - reserva.montoPagado)
             });
         }
 

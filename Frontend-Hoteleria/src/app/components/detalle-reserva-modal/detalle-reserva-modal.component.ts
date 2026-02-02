@@ -162,11 +162,11 @@ export interface DetalleReservaData {
               </div>
                <div class="info-row" *ngIf="data.reserva.montoPagado !== undefined">
                  <span class="label">Monto Pagado:</span>
-                 <span class="value precio">{{ data.reserva.montoPagado }}$</span>
+                 <span class="value precio">{{ data.reserva.montoPagado | number:'1.2-2' }}$</span>
                </div>
                <div class="info-row" *ngIf="data.reserva.montoRestante !== undefined">
                  <span class="label">Monto Restante:</span>
-                 <span class="value precio restante">{{ data.reserva.montoRestante }}$</span>
+                 <span class="value precio restante">{{ data.reserva.montoRestante | number:'1.2-2' }}$</span>
                </div>
                <div class="info-row" *ngIf="data.reserva.totalPagos > 0">
                  <span class="label">Total de Pagos:</span>
@@ -1792,13 +1792,13 @@ export class DetalleReservaModalComponent {
           ${reserva.montoPagado !== undefined ? `
           <div class="info-row">
             <span class="info-label">Monto Pagado:</span>
-            <span class="info-value precio">$${reserva.montoPagado}</span>
+            <span class="info-value precio">$${(Math.round(reserva.montoPagado * 100) / 100).toFixed(2)}</span>
           </div>
           ` : ''}
           ${reserva.montoRestante !== undefined ? `
           <div class="info-row">
             <span class="info-label">Monto Restante:</span>
-            <span class="info-value precio">$${reserva.montoRestante}</span>
+            <span class="info-value precio">$${(Math.round(reserva.montoRestante * 100) / 100).toFixed(2)}</span>
           </div>
           ` : ''}
           ${reserva.metodoPago ? `

@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatMenuModule } from '@angular/material/menu';
 
 export interface PagoDialogData {
   reserva: any;
@@ -30,7 +31,8 @@ export interface PagoDialogData {
     MatSelectModule,
     MatCardModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatMenuModule
   ],
   templateUrl: './pago-dialog.component.html',
   styleUrls: ['./pago-dialog.component.scss']

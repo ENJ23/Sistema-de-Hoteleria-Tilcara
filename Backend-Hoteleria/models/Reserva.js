@@ -298,9 +298,14 @@ reservaSchema.methods.tieneConflicto = function (fechaEntrada, fechaSalida) {
     return (this.fechaEntrada < fechaSalida && this.fechaSalida > fechaEntrada);
 };
 
+// Método auxiliar para redondear a 2 decimales (evitar problemas de punto flotante)
+function redondearMonto(monto) {
+    return Math.round(monto * 100) / 100;
+}
+
 // Método para calcular el monto restante
 reservaSchema.methods.calcularMontoRestante = function () {
-    return Math.max(0, this.precioTotal - this.montoPagado);
+    return redondearMonto(Math.max(0, this.precioTotal - this.montoPagado));
 };
 
 // Método para verificar si está completamente pagado

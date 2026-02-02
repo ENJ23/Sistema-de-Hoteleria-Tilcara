@@ -65,3 +65,12 @@ mat-dialog-actions {
     min-width: 90vw;
   }
 }
+
+/* Asegurar que el datepicker overlay sea visible */
+::ng-deep .cdk-overlay-pane {
+  z-index: 10000 !important;
+}
+
+::ng-deep .mat-datepicker-content {
+  z-index: 10000 !important;
+}

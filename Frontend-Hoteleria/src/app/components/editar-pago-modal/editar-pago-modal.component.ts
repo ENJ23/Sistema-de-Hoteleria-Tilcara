@@ -10,7 +10,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatMenuModule } from '@angular/material/menu';
 
 export interface EditarPagoDialogData {
   pago: {
@@ -44,7 +45,8 @@ export interface EditarPagoDialogData {
     MatSelectModule,
     MatCardModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatMenuModule
   ],
   templateUrl: './editar-pago-modal.component.html',
   styleUrls: ['./editar-pago-modal.component.scss']
@@ -62,6 +64,12 @@ export class EditarPagoModalComponent {
     // Calcular el monto máximo permitido
     const montoMaximo = this.calcularMontoMaximo();
 
+    // Convertir fechaPago a Date si viene como string
+    let fechaPagoDate = data.pago.fechaPago;
+    if (typeof fechaPagoDate === 'string') {
+      fechaPagoDate = new Date(fechaPagoDate);
+    }
+
     this.editarPagoForm = this.fb.group({
       metodoPago: [data.pago.metodoPago, Validators.required],
       monto: [data.pago.monto, [
@@ -69,7 +77,7 @@ export class EditarPagoModalComponent {
         Validators.min(0.01),
         Validators.max(montoMaximo)
       ]],
-      fechaPago: [data.pago.fechaPago, Validators.required],
+      fechaPago: [fechaPagoDate, Validators.required],
       observaciones: [data.pago.observaciones || '']
     });
   }
