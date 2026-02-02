@@ -309,11 +309,11 @@ reservaSchema.methods.estaCompletamentePagado = function () {
 };
 
 // Método para agregar un pago al historial
-reservaSchema.methods.agregarPago = function (monto, metodoPago, observaciones = '', registradoPor = 'Encargado') {
+reservaSchema.methods.agregarPago = function (monto, metodoPago, observaciones = '', registradoPor = 'Encargado', fechaPago = null) {
     this.historialPagos.push({
         monto: monto,
         metodoPago: metodoPago,
-        fechaPago: new Date(),
+        fechaPago: fechaPago || new Date(),
         observaciones: observaciones,
         registradoPor: registradoPor
     });
@@ -353,6 +353,13 @@ reservaSchema.methods.editarPago = function (pagoId, nuevosDatos, modificadoPor 
     this.historialPagos[pagoIndex].monto = nuevoMonto;
     this.historialPagos[pagoIndex].metodoPago = nuevosDatos.metodoPago || pagoOriginal.metodoPago;
     this.historialPagos[pagoIndex].observaciones = nuevosDatos.observaciones || pagoOriginal.observaciones;
+    
+    // ✅ NUEVO: Permitir editar la fecha de pago
+    if (nuevosDatos.fechaPago) {
+        const [año, mes, día] = nuevosDatos.fechaPago.split('-');
+        this.historialPagos[pagoIndex].fechaPago = new Date(parseInt(año), parseInt(mes) - 1, parseInt(día));
+    }
+    
     this.historialPagos[pagoIndex].modificadoPor = modificadoPor;
     this.historialPagos[pagoIndex].fechaModificacion = new Date();
     this.historialPagos[pagoIndex].motivoModificacion = motivoModificacion || 'Edición de pago por usuario autorizado';

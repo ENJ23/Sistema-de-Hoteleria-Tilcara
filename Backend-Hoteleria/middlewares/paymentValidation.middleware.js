@@ -30,6 +30,11 @@ const validateEditPayment = [
         .isLength({ max: 500 })
         .withMessage('Las observaciones no pueden exceder 500 caracteres'),
     
+    body('fechaPago')
+        .optional()
+        .matches(/^\d{4}-\d{2}-\d{2}$/)
+        .withMessage('La fecha debe tener formato YYYY-MM-DD'),
+    
     body('motivo')
         .optional()
         .isString()

@@ -1336,14 +1336,25 @@ export class DetalleReservaModalComponent {
           reservaId: this.data.reserva._id,
           metodoPago: result.metodoPago,
           monto: result.monto,
+          fechaPago: result.fechaPago,
           observaciones: result.observaciones
         });
+
+        // Formatear la fecha a YYYY-MM-DD
+        let fechaPagoStr = '';
+        if (result.fechaPago) {
+          const fecha = new Date(result.fechaPago);
+          fechaPagoStr = fecha.getFullYear() + '-' + 
+                        (fecha.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                        fecha.getDate().toString().padStart(2, '0');
+        }
 
         this.reservaService.registrarPago(
           this.data.reserva._id,
           result.metodoPago,
           result.monto,
-          result.observaciones
+          result.observaciones,
+          fechaPagoStr
         ).subscribe({
           next: (reservaActualizada: any) => {
             const mensaje = reservaActualizada.estaCompletamentePagado ?

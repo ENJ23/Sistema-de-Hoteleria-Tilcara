@@ -9,6 +9,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 export interface EditarPagoDialogData {
   pago: {
@@ -40,7 +42,9 @@ export interface EditarPagoDialogData {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatCardModule
+    MatCardModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   templateUrl: './editar-pago-modal.component.html',
   styleUrls: ['./editar-pago-modal.component.scss']
@@ -65,6 +69,7 @@ export class EditarPagoModalComponent {
         Validators.min(0.01),
         Validators.max(montoMaximo)
       ]],
+      fechaPago: [data.pago.fechaPago, Validators.required],
       observaciones: [data.pago.observaciones || '']
     });
   }
@@ -81,9 +86,21 @@ export class EditarPagoModalComponent {
       this.procesando = true;
       const datosEdicion = this.editarPagoForm.value;
       
+      // Formatear la fecha a YYYY-MM-DD
+      let fechaPagoStr = '';
+      if (datosEdicion.fechaPago) {
+        const fecha = new Date(datosEdicion.fechaPago);
+        fechaPagoStr = fecha.getFullYear() + '-' + 
+                      (fecha.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                      fecha.getDate().toString().padStart(2, '0');
+      }
+      
       // Agregar información de auditoría
       const datosCompletos = {
-        ...datosEdicion,
+        metodoPago: datosEdicion.metodoPago,
+        monto: datosEdicion.monto,
+        fechaPago: fechaPagoStr,
+        observaciones: datosEdicion.observaciones,
         motivo: 'Edición de pago por usuario autorizado'
       };
       

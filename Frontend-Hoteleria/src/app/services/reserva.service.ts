@@ -281,10 +281,11 @@ export class ReservaService {
   }
 
   // Registrar pago de una reserva
-  registrarPago(id: string, metodoPago: string, monto?: number, observaciones?: string): Observable<Reserva> {
+  registrarPago(id: string, metodoPago: string, monto?: number, observaciones?: string, fechaPago?: string): Observable<Reserva> {
     const data: any = { metodoPago };
     if (monto) data.monto = monto;
     if (observaciones) data.observaciones = observaciones;
+    if (fechaPago) data.fechaPago = fechaPago;
     return this.http.patch<Reserva>(`${this.apiUrl}/${id}/pago`, data).pipe(
       tap(res => this.emitReservaEvent({ type: 'pago', id, reserva: res }))
     );
@@ -321,6 +322,7 @@ export class ReservaService {
   editarPago(reservaId: string, pagoId: string, datosPago: {
     monto?: number;
     metodoPago?: string;
+    fechaPago?: string;
     observaciones?: string;
   }): Observable<any> {
     return this.http.put(`${this.apiUrl}/${reservaId}/pagos/${pagoId}`, datosPago).pipe(

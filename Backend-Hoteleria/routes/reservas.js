@@ -1376,6 +1376,7 @@ router.patch('/:id/pago', [
     body('pagado').optional().isBoolean().withMessage('El valor de pago debe ser true o false'),
     body('metodoPago').optional().isIn(['Efectivo', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Transferencia', 'PayPal']).withMessage('Método de pago inválido'),
     body('monto').optional().isFloat({ min: 0 }).withMessage('El monto debe ser mayor a 0'),
+    body('fechaPago').optional().matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Formato de fecha inválido. Use YYYY-MM-DD'),
     body('observaciones').optional().isString().withMessage('Las observaciones deben ser texto')
 ], async (req, res) => {
     try {
@@ -1395,6 +1396,14 @@ router.patch('/:id/pago', [
             const metodoPago = req.body.metodoPago;
             const observaciones = req.body.observaciones || '';
             const registradoPor = req.userId ? req.userId.nombre : 'Encargado';
+            
+            // ✅ NUEVO: Usar la fecha de pago especificada, o la fecha actual si no se proporciona
+            let fechaPago = new Date();
+            if (req.body.fechaPago) {
+                // Parsear la fecha en formato YYYY-MM-DD como fecha local
+                const [año, mes, día] = req.body.fechaPago.split('-');
+                fechaPago = new Date(parseInt(año), parseInt(mes) - 1, parseInt(día));
+            }
 
             // Verificar que el monto no exceda el total restante
             const montoRestante = reserva.calcularMontoRestante();
@@ -1405,13 +1414,14 @@ router.patch('/:id/pago', [
                 });
             }
 
-            // Agregar pago al historial
-            await reserva.agregarPago(monto, metodoPago, observaciones, registradoPor);
+            // Agregar pago al historial con la fecha especificada
+            await reserva.agregarPago(monto, metodoPago, observaciones, registradoPor, fechaPago);
 
             console.log('💰 Pago registrado:', {
                 reservaId: reserva._id,
                 monto: monto,
                 metodoPago: metodoPago,
+                fechaPago: fechaPago.toISOString().split('T')[0],
                 montoPagado: reserva.montoPagado,
                 montoRestante: reserva.calcularMontoRestante(),
                 pagado: reserva.pagado
