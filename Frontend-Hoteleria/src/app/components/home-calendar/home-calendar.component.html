@@ -5,7 +5,7 @@
                 <mat-icon>chevron_left</mat-icon>
             </button>
 
-            <h2 class="mes-actual">{{ fechaReferencia | date:'MMMM yyyy':'':'es-AR' | titlecase }}</h2>
+            <h2 class="mes-actual">{{ obtenerRangoMeses() }}</h2>
 
             <button mat-icon-button (click)="emitMesSiguiente()" class="nav-btn">
                 <mat-icon>chevron_right</mat-icon>
@@ -13,6 +13,14 @@
         </div>
 
         <div class="view-toggle">
+            <button mat-stroked-button class="toggle-btn month-toggle" [color]="mesesMostrados === 1 ? 'primary' : ''"
+                (click)="cambiarMesesMostrados(1)" matTooltip="Mostrar 1 mes">
+                1M
+            </button>
+            <button mat-stroked-button class="toggle-btn month-toggle" [color]="mesesMostrados === 2 ? 'primary' : ''"
+                (click)="cambiarMesesMostrados(2)" matTooltip="Mostrar 2 meses">
+                2M
+            </button>
             <button mat-flat-button [color]="vista === 'grid' ? 'primary' : ''" (click)="cambiarVista('grid')"
                 class="toggle-btn start" matTooltip="Vista Cuadrícula">
                 <mat-icon>grid_view</mat-icon>
@@ -201,7 +209,13 @@
             <div class="leyenda-item">
                 <!-- Updated Transition Legend -->
                 <div class="leyenda-color"
-                    style="background: linear-gradient(135deg, #dc3545 0%, #dc3545 calc(50% - 1px), #ffffff calc(50% - 1px), #ffffff calc(50% + 1px), #28a745 calc(50% + 1px), #28a745 100%); width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ccc;">
+                    style="background: linear-gradient(135deg, white calc(50% - 1px), white calc(50% + 1px), #6c757d calc(50% + 1px)); width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ccc;">
+                </div>
+                <span>Inicio/Fin (Diagonal)</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-color"
+                    style="background: linear-gradient(135deg, #6c757d calc(50% - 1px), white calc(50% - 1px), white calc(50% + 1px), #28a745 calc(50% + 1px)); width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ccc;">
                 </div>
                 <span>Transición (Salida/Entrada)</span>
             </div>

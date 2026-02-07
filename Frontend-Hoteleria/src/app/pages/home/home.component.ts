@@ -1,6 +1,6 @@
 // Archivo legacy: contenido deshabilitado para evitar compilación.
 // Mantener solo para referencia histórica.
-export {};
+export { };
 /*
     
     console.log('🔍 Procesando ocupación para mes:', this.mesActual.getMonth() + 1, this.mesActual.getFullYear());
@@ -80,7 +80,11 @@ export {};
                 return fechaEntrada === fechaStr;
               });
               
-                let estado: EstadoOcupacion = { 
+                // Calcular colores para transición
+              const colorEntrada = this.obtenerColorReserva(reservaQueComienza);
+              const colorSalida = this.obtenerColorReserva(reservaQueTermina);
+
+              let estado: EstadoOcupacion = { 
                 tipo: 'transicion',
                 checkIn: true,
                 checkOut: true,
@@ -88,6 +92,9 @@ export {};
                 esDiaEntrada: true,
                 esDiaSalida: true,
                 esDiaTransicion: true,
+                // Colores para diagonales
+                colorEntrada: colorEntrada,
+                colorSalida: colorSalida,
                 // Información de múltiples reservas
                 reservas: reservasHabitacion,
                 reservaPrincipal: reservasHabitacion[0], // Para compatibilidad
@@ -109,6 +116,19 @@ export {};
               const esDiaEntrada = fechaStr === fechaEntradaStr;
               const esDiaSalida = fechaStr === fechaSalidaStr;
               
+              // Calcular colores para visualización diagonales
+              const colorReserva = this.obtenerColorReserva(reservaPrincipal);
+              let colorEntrada = colorReserva;
+              let colorSalida = colorReserva;
+
+              if (esDiaEntrada && !esDiaSalida) {
+                colorEntrada = colorReserva;
+                colorSalida = 'white';
+              } else if (esDiaSalida && !esDiaEntrada) {
+                colorEntrada = 'white';
+                colorSalida = colorReserva;
+              }
+
               let estado: EstadoOcupacion = { 
                 tipo: this.mapearEstadoReserva(reservaPrincipal.estado),
                 checkIn: esDiaEntrada,
@@ -117,6 +137,9 @@ export {};
                 esDiaEntrada: esDiaEntrada,
                 esDiaSalida: esDiaSalida,
                 esDiaTransicion: false,
+                // Colores para diagonales
+                colorEntrada: colorEntrada,
+                colorSalida: colorSalida,
                 // Agregar información del estado de pago de la reserva principal
                 estaCompletamentePagado: reservaPrincipal.estaCompletamentePagado || reservaPrincipal.pagado || false,
                 montoPagado: reservaPrincipal.montoPagado || 0,
@@ -497,31 +520,33 @@ export {};
     
     // Generar estilos dinámicos para días de transición
     if (estado.esDiaTransicion && estado.reservaEntrada && estado.reservaSalida) {
-      this.generarEstilosTransicionDinamica(estado);
+      // YA NO SE USA: Reemplazado por CSS variables y gradiente diagonal
+      // this.generarEstilosTransicionDinamica(estado);
     }
     
     // Aplicar colores dinámicos según el tipo de transición
     if (estado.esDiaEntrada || estado.esDiaSalida) {
       if (estado.esDiaTransicion) {
         clases.push('transicion-multiple');
-        if (fecha && habitacionNumero) {
-          this.aplicarColoresTransicionMultiple(estado, fecha, habitacionNumero);
-        }
+        // YA NO SE USA: Reemplazado por binding HTML
+        // if (fecha && habitacionNumero) {
+        //   this.aplicarColoresTransicionMultiple(estado, fecha, habitacionNumero);
+        // }
       } else if (estado.esDiaEntrada && !estado.esDiaSalida) {
         clases.push('solo-entrada');
-        if (fecha && habitacionNumero) {
-          this.aplicarColorTransicionEntrada(estado, fecha, habitacionNumero);
-        }
+        // if (fecha && habitacionNumero) {
+        //   this.aplicarColorTransicionEntrada(estado, fecha, habitacionNumero);
+        // }
       } else if (estado.esDiaSalida && !estado.esDiaEntrada) {
         clases.push('solo-salida');
-        if (fecha && habitacionNumero) {
-          this.aplicarColorTransicionSalida(estado, fecha, habitacionNumero);
-        }
+        // if (fecha && habitacionNumero) {
+        //   this.aplicarColorTransicionSalida(estado, fecha, habitacionNumero);
+        // }
       } else if (estado.esDiaEntrada && estado.esDiaSalida) {
         clases.push('entrada-salida');
-        if (fecha && habitacionNumero) {
-          this.aplicarColorTransicionMismaReserva(estado, fecha, habitacionNumero);
-        }
+        // if (fecha && habitacionNumero) {
+        //   this.aplicarColorTransicionMismaReserva(estado, fecha, habitacionNumero);
+        // }
       }
     }
     

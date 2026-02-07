@@ -257,16 +257,30 @@
 }
 
 .ocupacion-transicion {
-    background: linear-gradient(135deg,
+    background: linear-gradient(to bottom right,
             var(--color-salida, #6c757d) 0%,
             var(--color-salida, #6c757d) calc(50% - 1px),
-            rgba(255, 255, 255, 0.8) calc(50% - 1px),
-            rgba(255, 255, 255, 0.8) calc(50% + 1px),
+            white calc(50% - 1px),
+            white calc(50% + 1px),
             var(--color-entrada, #6c757d) calc(50% + 1px),
             var(--color-entrada, #6c757d) 100%);
     color: white;
     font-weight: bold;
     animation: pulse-transition 2s infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.solo-entrada,
+.solo-salida,
+.entrada-salida {
+    background: linear-gradient(to bottom right,
+            var(--color-salida, white) 0%,
+            var(--color-salida, white) calc(50% - 1px),
+            white calc(50% - 1px),
+            white calc(50% + 1px),
+            var(--color-entrada, white) calc(50% + 1px),
+            var(--color-entrada, white) 100%) !important;
     position: relative;
     overflow: hidden;
 }
@@ -302,7 +316,7 @@
 }
 
 .ocupacion-reservada.sin-pago {
-    background: linear-gradient(135deg, #e83e8c 0%, #d63384 100%);
+    background: linear-gradient(135deg, #ffed4b 0%, #ffed4b 100%);
     color: white;
     font-weight: bold;
 }
@@ -554,6 +568,14 @@
     align-items: center;
     justify-content: center;
     color: #5f6368;
+}
+
+.toggle-btn.month-toggle {
+    width: auto;
+    min-width: 48px;
+    padding: 0 10px;
+    font-weight: 600;
+    font-size: 0.85rem;
 }
 
 .toggle-btn.mat-primary {

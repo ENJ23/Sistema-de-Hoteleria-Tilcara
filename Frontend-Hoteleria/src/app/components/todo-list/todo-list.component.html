@@ -8,6 +8,42 @@
     </mat-card-header>
 
     <mat-card-content class="todo-content">
+      <!-- Crear tarea manual -->
+      <form class="crear-tarea-form" [formGroup]="tareaForm">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Tipo</mat-label>
+            <mat-select formControlName="tipo">
+              <mat-option value="limpieza">Limpieza</mat-option>
+              <mat-option value="mantenimiento">Mantenimiento</mat-option>
+              <mat-option value="otro">Otro</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Habitación</mat-label>
+            <mat-select formControlName="habitacion">
+              <mat-option *ngFor="let hab of habitaciones" [value]="hab._id">
+                Hab. - {{ hab.numero }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field full">
+            <mat-label>Descripción</mat-label>
+            <input matInput formControlName="descripcion" maxlength="200" placeholder="Descripción de la tarea">
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" class="btn-crear"
+            [disabled]="tareaForm.invalid || creando" (click)="crearTareaManual()">
+            <mat-icon>add_task</mat-icon>
+            {{ creando ? 'Creando...' : 'Crear' }}
+          </button>
+        </div>
+      </form>
+
       <!-- Loading spinner -->
       <div *ngIf="cargando" class="loading-container">
         <mat-spinner diameter="40"></mat-spinner>

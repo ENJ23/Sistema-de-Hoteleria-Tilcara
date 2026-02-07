@@ -117,7 +117,7 @@
             <mat-icon>payments</mat-icon>
           </div>
           <div class="kpi-data">
-            <span class="kpi-label">Ingresos Totales</span>
+            <span class="kpi-label">Ingresos Por Período</span>
             <span class="kpi-value">{{ formatearPrecio(resumen.totalIngresos) }}</span>
             <span class="kpi-subtext" *ngIf="valorDolar > 0">≈ {{ formatearDolar(resumen.totalIngresos) }}</span>
           </div>
@@ -154,8 +154,8 @@
             <mat-icon>pending_actions</mat-icon>
           </div>
           <div class="kpi-data">
-            <span class="kpi-label">Pendiente</span>
-            <span class="kpi-value">{{ formatearPrecio(resumen.ingresosParciales) }}</span>
+            <span class="kpi-label">Pendiente por Período</span>
+            <span class="kpi-value">{{ formatearPrecio(resumen.pendientePeriodo) }}</span>
             <span class="kpi-subtext">{{ resumen.reservasParciales }} reservas</span>
           </div>
         </div>
@@ -288,6 +288,50 @@
           </div>
         </ng-template>
       </mat-expansion-panel>
+
+      <mat-expansion-panel [expanded]="false" class="pagos-main-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <div class="panel-title-content">
+              <div class="icon-badge">
+                <mat-icon>meeting_room</mat-icon>
+              </div>
+              <span class="panel-label">Ingresos por Habitación (rango)</span>
+              <span class="panel-count">{{ ingresosPorHabitacion.length }}</span>
+            </div>
+          </mat-panel-title>
+          <mat-panel-description>
+            <span class="description-text">Ver desglose por habitación</span>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="pagos-list-container" *ngIf="ingresosPorHabitacion.length; else sinHab">
+          <div class="tipo-habitacion-list scrollable-list">
+            <div class="tipo-item" *ngFor="let hab of ingresosPorHabitacion">
+              <div class="tipo-row-main">
+                <div class="tipo-info">
+                  <div class="tipo-nombre">Habitación {{ hab.numero }}</div>
+                  <div class="tipo-cantidad">{{ hab.cantidad }} pagos</div>
+                </div>
+                <div class="tipo-ingresos">
+                  <div class="tipo-monto">{{ formatearPrecio(hab.ingresos) }}</div>
+                  <div class="tipo-porcentaje">{{ hab.porcentaje.toFixed(1) }}%</div>
+                </div>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill accent-fill" [style.width.%]="hab.porcentaje"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #sinHab>
+          <div class="no-data">
+            <mat-icon>meeting_room</mat-icon>
+            <p>No hay ingresos por habitación en este período</p>
+          </div>
+        </ng-template>
+      </mat-expansion-panel>
     </mat-accordion>
 
     <!-- Resumen Anual -->
@@ -321,22 +365,6 @@
           </div>
         </mat-card>
 
-        <mat-card class="kpi-card info">
-          <div class="kpi-content">
-            <div class="kpi-icon-wrapper">
-              <mat-icon>timeline</mat-icon>
-            </div>
-            <div class="kpi-data">
-              <span class="kpi-label">Promedio Mensual</span>
-              <span class="kpi-value">{{ formatearPrecio(resumenAnual.promedioMensual) }}</span>
-              <span class="kpi-subtext" *ngIf="valorDolar > 0">≈ {{ formatearDolar(resumenAnual.promedioMensual)
-                }}</span>
-            </div>
-          </div>
-          <div class="kpi-footer">
-            <span class="trend neutral">Ingreso promedio / mes</span>
-          </div>
-        </mat-card>
       </div>
 
       <!-- Desglose por Habitación Anual -->
@@ -428,82 +456,6 @@
           </div>
         </mat-card-content>
       </mat-card>
-
-      <!-- Columna Derecha: Listas de Ingresos -->
-      <div class="income-lists-column">
-
-        <!-- Ingresos por Tipo -->
-        <mat-card class="tipo-habitacion-card">
-          <mat-card-header>
-            <mat-card-title>
-              <mat-icon class="card-icon-header">hotel</mat-icon>
-              Por Tipo de Habitación
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="compact-content">
-            <div class="tipo-habitacion-list" *ngIf="ingresosPorTipo.length > 0; else noData">
-              <div class="tipo-item" *ngFor="let tipo of ingresosPorTipo">
-                <div class="tipo-row-main">
-                  <div class="tipo-info">
-                    <div class="tipo-nombre">{{ tipo.tipo }}</div>
-                    <div class="tipo-cantidad">{{ tipo.cantidad }} reservas</div>
-                  </div>
-                  <div class="tipo-ingresos">
-                    <div class="tipo-monto">{{ formatearPrecio(tipo.ingresos) }}</div>
-                    <div class="tipo-porcentaje">{{ tipo.porcentaje.toFixed(1) }}%</div>
-                  </div>
-                </div>
-                <div class="progress-track">
-                  <div class="progress-fill" [style.width.%]="tipo.porcentaje"></div>
-                </div>
-              </div>
-            </div>
-            <ng-template #noData>
-              <div class="no-data-compact">
-                <mat-icon>info</mat-icon>
-                <span>Sin datos</span>
-              </div>
-            </ng-template>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- Ingresos por Habitación -->
-        <mat-card class="tipo-habitacion-card">
-          <mat-card-header>
-            <mat-card-title>
-              <mat-icon class="card-icon-header">meeting_room</mat-icon>
-              Por Habitación
-            </mat-card-title>
-          </mat-card-header>
-          <mat-card-content class="compact-content">
-            <div class="tipo-habitacion-list scrollable-list" *ngIf="ingresosPorHabitacion.length > 0; else noDataHab">
-              <div class="tipo-item" *ngFor="let hab of ingresosPorHabitacion">
-                <div class="tipo-row-main">
-                  <div class="tipo-info">
-                    <div class="tipo-nombre">Habitacion {{ hab.numero }}</div>
-                    <div class="tipo-cantidad">{{ hab.cantidad }} reservas</div>
-                  </div>
-                  <div class="tipo-ingresos">
-                    <div class="tipo-monto">{{ formatearPrecio(hab.ingresos) }}</div>
-                    <div class="tipo-porcentaje">{{ hab.porcentaje.toFixed(1) }}%</div>
-                  </div>
-                </div>
-                <div class="progress-track">
-                  <div class="progress-fill accent-fill" [style.width.%]="hab.porcentaje"></div>
-                </div>
-              </div>
-            </div>
-            <ng-template #noDataHab>
-              <div class="no-data-compact">
-                <mat-icon>info</mat-icon>
-                <span>Sin datos</span>
-              </div>
-            </ng-template>
-          </mat-card-content>
-        </mat-card>
-
-      </div>
-    </div>
 
     <!-- Reservas Recientes -->
     <mat-card class="reservas-recientes-card">

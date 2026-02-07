@@ -6,13 +6,8 @@
         <mat-icon>hotel</mat-icon>
         Dashboard del Hostal
       </h1>
-      <p class="dashboard-subtitle">Panel de control para gestión diaria</p>
     </div>
     <div class="header-actions">
-      <button mat-raised-button color="primary" class="btn-nueva-reserva" (click)="abrirNuevaReserva()">
-        <mat-icon>add</mat-icon>
-        NUEVA RESERVA
-      </button>
       <button mat-raised-button color="accent" class="btn-gestionar-habitaciones" (click)="gestionarHabitaciones()">
         <mat-icon>bed</mat-icon>
         HABITACIONES
@@ -87,7 +82,8 @@
         </mat-card-header>
         <mat-card-content>
           <app-home-calendar [diasCalendario]="diasCalendario" [ocupacionHabitaciones]="ocupacionHabitaciones"
-            [cargando]="cargandoOcupacion" [fechaReferencia]="fechaReferencia" (mesAnterior)="onMesAnterior()"
+            [cargando]="cargandoOcupacion" [fechaReferencia]="fechaReferencia" [mesesMostrados]="mesesMostrados"
+            (mesesMostradosChange)="onCambiarMesesMostrados($event)" (mesAnterior)="onMesAnterior()"
             (mesSiguiente)="onMesSiguiente()" (celdaClick)="onCeldaClick($event)"
             (moverReserva)="onMoverReserva($event)">
           </app-home-calendar>
@@ -95,55 +91,6 @@
       </mat-card>
     </div> <!-- Cierre del desktop-layout -->
 
-    <!-- Acciones Rápidas -->
-    <mat-card class="content-card acciones-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>build</mat-icon>
-          Acciones Rápidas
-        </mat-card-title>
-        <mat-card-subtitle>Gestión diaria del hostal</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="acciones-grid">
-          <button mat-raised-button class="accion-btn checkin" (click)="realizarCheckIn()">
-            <mat-icon>login</mat-icon>
-            <span>CHECK-IN</span>
-            <small>Registrar llegada</small>
-          </button>
-
-          <button mat-raised-button class="accion-btn checkout" (click)="realizarCheckOut()">
-            <mat-icon>logout</mat-icon>
-            <span>CHECK-OUT</span>
-            <small>Registrar salida</small>
-          </button>
-
-          <button mat-raised-button class="accion-btn limpieza" (click)="gestionarLimpieza()">
-            <mat-icon>cleaning_services</mat-icon>
-            <span>LIMPIEZA</span>
-            <small>Estado habitaciones</small>
-          </button>
-
-          <button mat-raised-button class="accion-btn pagos" (click)="gestionarPagos()">
-            <mat-icon>payment</mat-icon>
-            <span>PAGOS</span>
-            <small>Control financiero</small>
-          </button>
-
-          <button mat-raised-button class="accion-btn reportes" (click)="generarReportes()">
-            <mat-icon>assessment</mat-icon>
-            <span>REPORTES</span>
-            <small>Estadísticas</small>
-          </button>
-
-          <button mat-raised-button class="accion-btn mantenimiento" (click)="gestionarMantenimiento()">
-            <mat-icon>handyman</mat-icon>
-            <span>MANTENIMIENTO</span>
-            <small>Reparaciones</small>
-          </button>
-        </div>
-      </mat-card-content>
-    </mat-card>
   </div>
 
   <!-- Lista de Reservas del Día -->

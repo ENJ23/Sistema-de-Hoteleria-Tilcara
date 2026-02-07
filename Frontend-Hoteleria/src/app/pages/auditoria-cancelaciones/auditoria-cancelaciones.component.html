@@ -77,6 +77,19 @@
         </div>
       </div>
     </mat-card>
+
+    <!-- Rechazados -->
+    <mat-card class="stat-card rejected">
+      <div class="stat-content">
+        <div class="stat-icon-wrapper">
+          <mat-icon>block</mat-icon>
+        </div>
+        <div class="stat-data">
+          <span class="stat-label">Reemos. Rechazados</span>
+          <span class="stat-value">{{ getCountByStatus('Rechazado') }}</span>
+        </div>
+      </div>
+    </mat-card>
   </div>
 
   <!-- Filtros y Toolbar -->

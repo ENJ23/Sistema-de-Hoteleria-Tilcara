@@ -485,7 +485,7 @@
 
 /* To-Do List compacta */
 .todo-card-compact {
-  max-height: 500px;
+  max-height: 650px;
   border: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
@@ -495,7 +495,7 @@
   padding: 0;
   overflow-y: auto;
   flex: 1;
-  max-height: 400px;
+  max-height: 550px;
 }
 
 .todo-card-compact mat-card-header {
@@ -1023,7 +1023,7 @@
   }
 
   .todo-card-compact {
-    max-height: 250px;
+    max-height: 350px;
   }
 
   .calendario-card {

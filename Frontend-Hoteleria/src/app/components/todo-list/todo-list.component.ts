@@ -1,26 +1,36 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { Subject, takeUntil } from 'rxjs';
 
 import { TareaService } from '../../services/tarea.service';
 import { Tarea } from '../../models/tarea.model';
+import { HabitacionService } from '../../services/habitacion.service';
+import { Habitacion } from '../../models/habitacion.model';
 
 @Component({
   selector: 'app-todo-list',
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatChipsModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule
   ],
   templateUrl: './todo-list.component.html',
   styleUrls: ['./todo-list.component.scss']
@@ -30,14 +40,27 @@ export class TodoListComponent implements OnInit, OnDestroy {
   
   tareas: Tarea[] = [];
   cargando = false;
+  creando = false;
   completando = new Set<string>(); // IDs de tareas que se están completando
+
+  tareaForm: FormGroup;
+  habitaciones: Habitacion[] = [];
 
   constructor(
     private tareaService: TareaService,
-    private snackBar: MatSnackBar
-  ) { }
+    private habitacionService: HabitacionService,
+    private snackBar: MatSnackBar,
+    private fb: FormBuilder
+  ) {
+    this.tareaForm = this.fb.group({
+      tipo: ['otro', Validators.required],
+      habitacion: ['', Validators.required],
+      descripcion: ['', [Validators.required, Validators.maxLength(200)]]
+    });
+  }
 
   ngOnInit(): void {
+    this.cargarHabitaciones();
     this.cargarTareasPendientes();
   }
 
@@ -63,6 +86,52 @@ export class TodoListComponent implements OnInit, OnDestroy {
           console.error('❌ TodoListComponent - Error al cargar tareas pendientes:', error);
           this.mostrarMensaje('Error al cargar tareas pendientes', 'error');
           this.cargando = false;
+        }
+      });
+  }
+
+  private cargarHabitaciones(): void {
+    this.habitacionService.getHabitaciones(1, 200).subscribe({
+      next: (response) => {
+        this.habitaciones = response.habitaciones || [];
+      },
+      error: (error) => {
+        console.error('❌ TodoListComponent - Error al cargar habitaciones:', error);
+        this.mostrarMensaje('Error al cargar habitaciones para tareas', 'error');
+      }
+    });
+  }
+
+  crearTareaManual(): void {
+    if (this.tareaForm.invalid || this.creando) {
+      return;
+    }
+
+    this.creando = true;
+    const { tipo, habitacion, descripcion } = this.tareaForm.value;
+
+    this.tareaService.crearTarea({
+      tipo,
+      habitacion,
+      descripcion,
+      creadoPor: 'Usuario'
+    }).pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.mostrarMensaje('Tarea creada exitosamente', 'success');
+          const nuevaTarea = (response as any).data as Tarea;
+          if (nuevaTarea) {
+            this.tareas = [nuevaTarea, ...this.tareas];
+          } else {
+            this.cargarTareasPendientes();
+          }
+          this.tareaForm.reset({ tipo: 'otro', habitacion: '', descripcion: '' });
+          this.creando = false;
+        },
+        error: (error) => {
+          console.error('❌ TodoListComponent - Error al crear tarea:', error);
+          this.mostrarMensaje('Error al crear la tarea', 'error');
+          this.creando = false;
         }
       });
   }

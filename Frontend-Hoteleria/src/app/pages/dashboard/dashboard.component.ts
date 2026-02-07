@@ -43,6 +43,7 @@ interface IngresosResumen {
   totalIngresos: number;
   ingresosCompletos: number;
   ingresosParciales: number;
+  pendientePeriodo: number;
   totalReservas: number;
   reservasCompletas: number;
   reservasParciales: number;
@@ -126,6 +127,7 @@ export class DashboardComponent implements OnInit {
     totalIngresos: 0,
     ingresosCompletos: 0,
     ingresosParciales: 0,
+    pendientePeriodo: 0,
     totalReservas: 0,
     reservasCompletas: 0,
     reservasParciales: 0,
@@ -164,11 +166,15 @@ export class DashboardComponent implements OnInit {
   // Getter para pagos filtrados
   get pagosFiltrados(): PagoNormalizado[] {
     if (!this.searchPagosText || this.searchPagosText.trim() === '') {
-      return this.pagosPeriodo;
+      return [...this.pagosPeriodo].sort((a, b) => {
+        const fechaA = this.dateTimeService.stringToDate(a.fechaPago).getTime();
+        const fechaB = this.dateTimeService.stringToDate(b.fechaPago).getTime();
+        return fechaA - fechaB;
+      });
     }
 
     const searchLower = this.searchPagosText.toLowerCase().trim();
-    return this.pagosPeriodo.filter(pago => {
+    const filtrados = this.pagosPeriodo.filter(pago => {
       // Buscar por nombre del cliente
       const nombreCliente = `${pago.clienteNombre || ''} ${pago.clienteApellido || ''}`.toLowerCase();
       if (nombreCliente.includes(searchLower)) return true;
@@ -178,6 +184,11 @@ export class DashboardComponent implements OnInit {
       if (montoStr.includes(searchLower)) return true;
 
       return false;
+    });
+    return filtrados.sort((a, b) => {
+      const fechaA = this.dateTimeService.stringToDate(a.fechaPago).getTime();
+      const fechaB = this.dateTimeService.stringToDate(b.fechaPago).getTime();
+      return fechaA - fechaB;
     });
   }
 
@@ -365,6 +376,15 @@ export class DashboardComponent implements OnInit {
     const pagosPeriodo = this.extraerPagosEnRango(reservas, fechaInicio, fechaFin);
     this.pagosPeriodo = pagosPeriodo;
 
+    // Reservas del período (según fecha de inicio de reserva)
+    const fechaInicioDate = this.dateTimeService.stringToDate(fechaInicio);
+    const fechaFinDate = this.dateTimeService.stringToDate(fechaFin);
+    const reservasPeriodo = reservas.filter(r => {
+      if (!r.fechaEntrada) return false;
+      const fechaReserva = this.dateTimeService.stringToDate(r.fechaEntrada);
+      return fechaReserva >= fechaInicioDate && fechaReserva <= fechaFinDate;
+    });
+
     // Para el resumen mensual, usamos los datos de ingresos del endpoint
     const ingresosPorMes = ingresosPorMesResponse.ingresosPorMes || [];
 
@@ -378,7 +398,7 @@ export class DashboardComponent implements OnInit {
     this.resumen.ingresosPorDia = this.calcularIngresosPorDiaDesdePagos(pagosPeriodo);
 
     // Obtener reservas recientes (últimas 5)
-    const reservasRecientes = [...reservas]
+    const reservasRecientes = [...reservasPeriodo]
       .sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -391,11 +411,12 @@ export class DashboardComponent implements OnInit {
       totalIngresos: totalIngresos,
       ingresosCompletos: 0, // Se calculará de reservas
       ingresosParciales: 0, // Se calculará de reservas
-      totalReservas: reservas.length,
+      pendientePeriodo: 0,
+      totalReservas: reservasPeriodo.length,
       reservasCompletas: 0,
       reservasParciales: 0,
       reservasSinPago: 0,
-      promedioPorReserva: reservas.length > 0 ? totalIngresos / reservas.length : 0,
+      promedioPorReserva: reservasPeriodo.length > 0 ? totalIngresos / reservasPeriodo.length : 0,
       ingresosPorDia: [],
       reservasRecientes: reservasRecientes
     };
@@ -406,10 +427,14 @@ export class DashboardComponent implements OnInit {
     let reservasSinPago = 0;
     let ingresosCompletos = 0;
     let ingresosParciales = 0;
+    let pendientePeriodo = 0;
 
-    reservas.forEach(r => {
+    reservasPeriodo.forEach(r => {
       const montoPagado = r.montoPagado || 0;
       const precioTotal = r.precioTotal || 0;
+
+      const pendiente = Math.max(0, precioTotal - montoPagado);
+      pendientePeriodo += pendiente;
 
       if (r.estaCompletamentePagado) {
         reservasCompletas++;
@@ -429,7 +454,8 @@ export class DashboardComponent implements OnInit {
       ingresosParciales,
       reservasCompletas,
       reservasParciales,
-      reservasSinPago
+      reservasSinPago,
+      pendientePeriodo
     };
 
     console.log('✅ Resumen procesado:', this.resumen);
@@ -603,7 +629,6 @@ export class DashboardComponent implements OnInit {
       ['Concepto', 'Valor'],
       ['Total Ingresos Anuales', this.resumenAnual.totalIngresos],
       ['Total Reservas Anuales', this.resumenAnual.totalReservas],
-      ['Promedio Mensual', this.resumenAnual.promedioMensual],
       [''],
       ['Mes', 'Ingresos', 'Reservas'],
       ...this.resumenAnual.ingresosPorMes.map(m => [m.mes, m.ingresos, m.cantidad])

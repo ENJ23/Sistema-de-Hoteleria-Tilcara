@@ -35,6 +35,7 @@ interface EstadisticasDia { total: number; activas: number; checkInsHoy: number;
 export class HomeComponentClean implements OnInit, OnDestroy {
   fechaActual = new Date();
   fechaReferencia = new Date();
+  mesesMostrados: number = 1;
   diasCalendario: DiaCalendario[] = [];
   ocupacionHabitaciones: OcupacionHabitacionMes[] = [];
   private cacheOcupacion = new Map<string, { timestamp: number; data: OcupacionHabitacionMes[] }>();
@@ -106,6 +107,12 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     this.cargarOcupacion(true);
   }
 
+  onCambiarMesesMostrados(valor: number): void {
+    this.mesesMostrados = valor;
+    this.generarCalendario();
+    this.cargarOcupacion(true);
+  }
+
   onCeldaClick(event: { habitacion: HabitacionResumen, dia: DiaCalendario, estado?: EstadoDiaReserva }): void {
     this.seleccionarCelda(event.habitacion as Habitacion, event.dia);
   }
@@ -118,19 +125,19 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     const fechaEntradaOriginal = this.dateTime.formatYMD(this.dateTime.parseYMD(event.reserva.fechaEntrada));
     const fechaSalidaOriginal = this.dateTime.formatYMD(this.dateTime.parseYMD(event.reserva.fechaSalida));
     const habitacionOriginal = typeof event.reserva.habitacion === 'string' ? event.reserva.habitacion : event.reserva.habitacion?.numero || 'N/A';
-    
+
     // Buscar nueva habitación
-    const nuevaHab = this.ocupacionHabitaciones.find(oh => 
+    const nuevaHab = this.ocupacionHabitaciones.find(oh =>
       oh.habitacion.id === event.nuevaHabitacionId || oh.habitacion._id === event.nuevaHabitacionId
     );
     const habitacionNueva = nuevaHab?.habitacion.numero || 'N/A';
-    
+
     const mensaje = `⚠️ CONFIRMACIÓN DE CAMBIO\n\n` +
       `Reserva: ${clienteNombre}\n` +
       `Habitación: ${habitacionOriginal} → ${habitacionNueva}\n` +
       `Fechas: ${fechaEntradaOriginal} / ${fechaSalidaOriginal} → ${event.nuevaFechaEntrada} / ${event.nuevaFechaSalida}\n\n` +
       `¿Confirma este cambio? Esta acción quedará registrada en el historial de auditoría.`;
-    
+
     if (!confirm(mensaje)) {
       this.snack.open('❌ Cambio cancelado', 'Cerrar', { duration: 2000 });
       // Forzar recarga para restaurar posición visual
@@ -218,7 +225,8 @@ export class HomeComponentClean implements OnInit, OnDestroy {
   // ... (Rest of data loading logic remains mostly same but using defined interfaces) ...
   private generarCalendario(): void {
     const inicio = this.dateTime.inicioMes(this.fechaReferencia);
-    const fin = this.dateTime.finMes(this.fechaReferencia);
+    const fechaFin = this.dateTime.addMonths(this.fechaReferencia, this.mesesMostrados - 1);
+    const fin = this.dateTime.finMes(fechaFin);
     const dias: DiaCalendario[] = [];
     let c = new Date(inicio);
     while (c <= fin) {
@@ -231,7 +239,7 @@ export class HomeComponentClean implements OnInit, OnDestroy {
 
   private cargarOcupacion(forceFresh: boolean): void {
     // (Esta logica es critica y se mantiene aqui para proveer datos al hijo)
-    const clave = this.dateTime.claveMes(this.fechaReferencia);
+    const clave = `${this.dateTime.claveMes(this.fechaReferencia)}-${this.mesesMostrados}`;
     if (!forceFresh) {
       const cached = this.cacheOcupacion.get(clave);
       if (cached && Date.now() - cached.timestamp < this.TTL_OCUPACION_MS) {
@@ -242,7 +250,8 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     }
     this.cargandoOcupacion = true;
     const inicio = this.dateTime.inicioMes(this.fechaReferencia);
-    const finExcl = this.dateTime.addDays(this.dateTime.finMes(this.fechaReferencia), 1);
+    const fechaFin = this.dateTime.addMonths(this.fechaReferencia, this.mesesMostrados - 1);
+    const finExcl = this.dateTime.addDays(this.dateTime.finMes(fechaFin), 1);
     const filtros = { fechaInicio: this.dateTime.formatYMD(inicio), fechaFin: this.dateTime.formatYMD(finExcl) };
 
     // Solo cargar habitaciones activas para el calendario
@@ -332,6 +341,24 @@ export class HomeComponentClean implements OnInit, OnDestroy {
             estado.esDiaSalida = clave === this.formatearFecha(this.dateTime.parseYMD(r.fechaSalida));
             estado.estaCompletamentePagado = (r.montoPagado || 0) >= (r.precioTotal || 0);
             estado.montoPagado = r.montoPagado || 0;
+
+            // Calcular colores para split cells (Check-in/Check-out/Transición)
+            const colorReserva = this.obtenerColorReserva(r);
+
+            if (esDiaTransicionMultiple && reservaQueComienza && reservaQueTermina) {
+              estado.colorEntrada = this.obtenerColorReserva(reservaQueComienza);
+              estado.colorSalida = this.obtenerColorReserva(reservaQueTermina);
+            } else if (estado.esDiaEntrada && !estado.esDiaSalida) {
+              estado.colorEntrada = colorReserva;
+              estado.colorSalida = '#d4edda'; // Color disponible (verde claro)
+            } else if (estado.esDiaSalida && !estado.esDiaEntrada) {
+              estado.colorEntrada = '#d4edda'; // Color disponible (verde claro)
+              estado.colorSalida = colorReserva;
+            } else {
+              // Día intermedio o entrada/salida mismo día (si no es transición múltiple)
+              estado.colorEntrada = colorReserva;
+              estado.colorSalida = colorReserva;
+            }
           }
           cur = this.dateTime.addDays(cur, 1);
         }
@@ -388,8 +415,8 @@ export class HomeComponentClean implements OnInit, OnDestroy {
 
     switch (r.estado) {
       case 'En curso': return estaCompletamentePagado ? '#28a745' : (tienePagoParcial ? '#ffc107' : '#dc3545');
-      case 'Confirmada':
-      case 'Pendiente': return estaCompletamentePagado ? '#17a2b8' : (tienePagoParcial ? '#fd7e14' : '#e83e8c');
+      case 'Confirmada': return estaCompletamentePagado ? '#17a2b8' : (tienePagoParcial ? '#fd7e14' : '#e83e8c');
+      case 'Pendiente': return estaCompletamentePagado ? '#17a2b8' : (tienePagoParcial ? '#fd7e14' : '#ffe600');
       case 'Finalizada': return estaCompletamentePagado ? '#007bff' : (tienePagoParcial ? '#6f42c1' : '#6c757d');
       default: return '#d4edda';
     }
@@ -471,13 +498,14 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     // Calculamos habitaciones ocupadas reales: Reservas activas hoy (Start <= Hoy <= End)
     const habitacionesOcupadasSet = new Set<string>();
     reservas.forEach(r => {
-      if (r.estado === 'Cancelada' || r.estado === 'No Show') return;
+      if (r.estado === 'Cancelada' || r.estado === 'No Show' || r.estado === 'Finalizada') return;
 
       const entrada = r.fechaEntrada.split('T')[0];
       const salida = r.fechaSalida.split('T')[0];
 
       // Si hoy está dentro del rango inclusivo [entrada, salida]
       if (entrada <= hoy && salida >= hoy) {
+        if (r.estado !== 'Confirmada' && r.estado !== 'En curso') return;
         const hid = typeof r.habitacion === 'string' ? r.habitacion : (r.habitacion as any)?._id || (r.habitacion as any)?.id;
         if (hid) habitacionesOcupadasSet.add(hid);
       }
@@ -485,8 +513,14 @@ export class HomeComponentClean implements OnInit, OnDestroy {
 
     const ocupadasHoy = habitacionesOcupadasSet.size;
 
-    const reservasPend = reservas.filter(r => r.estado === 'Pendiente').length;
-    const pagosPend = reservas.filter(r => (r.montoPagado || 0) < (r.precioTotal || 0)).length;
+    const reservasPend = reservas.filter(r => r.estado === 'Pendiente' && r.fechaEntrada.split('T')[0] === hoy).length;
+    const pagosPend = reservas.filter(r => {
+      const entrada = r.fechaEntrada.split('T')[0];
+      const salida = r.fechaSalida.split('T')[0];
+      const enRangoHoy = entrada <= hoy && salida >= hoy;
+      const estadoValido = r.estado === 'Confirmada' || r.estado === 'En curso' || r.estado === 'Pendiente';
+      return enRangoHoy && estadoValido && (r.montoPagado || 0) < (r.precioTotal || 0);
+    }).length;
 
     (this as any).estadisticas = {
       ocupacionActual: ocupadasHoy,
@@ -501,7 +535,7 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     // Obtener datos completos de la reserva antes de mostrar en modal
     this.reservaService.getReserva((r as any)._id).subscribe({
       next: (reservaCompleta: any) => {
-        this.dialog.open(DetalleReservaModalComponent, { 
+        this.dialog.open(DetalleReservaModalComponent, {
           data: { reserva: reservaCompleta }
         });
       },

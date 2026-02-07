@@ -51,6 +51,7 @@ export class HomeCalendarComponent implements OnInit {
     @Input() ocupacionHabitaciones: OcupacionHabitacionMes[] = [];
     @Input() fechaReferencia: Date = new Date();
     @Input() cargando: boolean = false;
+    @Input() mesesMostrados: number = 1;
 
     // Configuración de vista
     vista: 'grid' | 'lista' = 'grid';
@@ -58,6 +59,7 @@ export class HomeCalendarComponent implements OnInit {
 
     @Output() mesAnterior = new EventEmitter<void>();
     @Output() mesSiguiente = new EventEmitter<void>();
+    @Output() mesesMostradosChange = new EventEmitter<number>();
     @Output() celdaClick = new EventEmitter<{ habitacion: HabitacionResumen, dia: DiaCalendario, estado?: EstadoDiaReserva }>();
     @Output() moverReserva = new EventEmitter<{ reserva: ReservaResumen, nuevaFechaEntrada: string, nuevaFechaSalida: string, nuevaHabitacionId: string }>();
 
@@ -85,6 +87,29 @@ export class HomeCalendarComponent implements OnInit {
 
     cambiarVista(v: 'grid' | 'lista'): void {
         this.vista = v;
+    }
+
+    cambiarMesesMostrados(valor: number): void {
+        if (valor !== this.mesesMostrados) {
+            this.mesesMostrados = valor;
+            this.mesesMostradosChange.emit(valor);
+        }
+    }
+
+    obtenerRangoMeses(): string {
+        if (!this.fechaReferencia) return '';
+        const inicio = new Date(this.fechaReferencia);
+        if (this.mesesMostrados <= 1) {
+            return this.formatearMes(inicio);
+        }
+        const fin = new Date(inicio);
+        fin.setMonth(fin.getMonth() + (this.mesesMostrados - 1));
+        return `${this.formatearMes(inicio)} - ${this.formatearMes(fin)}`;
+    }
+
+    private formatearMes(fecha: Date): string {
+        const texto = fecha.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+        return texto.charAt(0).toUpperCase() + texto.slice(1);
     }
 
     private chequearResolucion(): void {
@@ -212,6 +237,15 @@ export class HomeCalendarComponent implements OnInit {
                 break;
             case 'finalizada': clases.push('ocupacion-finalizada'); break;
             default: clases.push('ocupacion-disponible'); return clases.join(' ');
+        }
+
+        // Aplicar clases de entrada/salida para visualización diagonal
+        if (estado.esDiaEntrada && estado.esDiaSalida) {
+            clases.push('entrada-salida');
+        } else if (estado.esDiaEntrada) {
+            clases.push('solo-entrada');
+        } else if (estado.esDiaSalida) {
+            clases.push('solo-salida');
         }
 
         if (estado.estaCompletamentePagado) clases.push('completamente-pagado');

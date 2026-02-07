@@ -111,6 +111,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
   // Propiedades para modo de edición
   modoEdicion = false;
+  precargandoReserva = false;
   reservaId?: string;
   reservaOriginal?: Reserva;
 
@@ -283,6 +284,9 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((habitacionId) => {
         if (habitacionId) {
+          if (this.modoEdicion && this.precargandoReserva) {
+            return;
+          }
           this.actualizarPrecioHabitacion(habitacionId);
         }
       });
@@ -384,6 +388,7 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
   }
 
   private precargarDatosReserva(reserva: Reserva): void {
+    this.precargandoReserva = true;
     // Precargar datos del cliente
     this.reservaForm.patchValue({
       nombreCliente: reserva.cliente.nombre,
@@ -434,8 +439,10 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
     this.habitacionSeleccionada = this.habitaciones.find(h => h._id === habitacionId);
     if (this.habitacionSeleccionada) {
       console.log('🏨 Habitación encontrada para edición:', this.habitacionSeleccionada);
-      // Actualizar el precio de la habitación seleccionada
-      this.actualizarPrecioHabitacion(habitacionId);
+      // En edición no sobrescribir el precio por noche
+      this.reservaForm.patchValue({
+        precioPorNoche: reserva.precioPorNoche
+      }, { emitEvent: false });
     } else {
       console.warn('⚠️ Habitación no encontrada en la lista cargada. ID:', habitacionId);
       console.warn('⚠️ Habitaciones disponibles:', this.habitaciones.length);
@@ -470,6 +477,8 @@ export class NuevaReservaComponent implements OnInit, OnDestroy {
 
     // Calcular precios (esto actualizará el cálculo local)
     this.calcularPrecio();
+
+    this.precargandoReserva = false;
 
     console.log('✅ Datos precargados correctamente');
   }

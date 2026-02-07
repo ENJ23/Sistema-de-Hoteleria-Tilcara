@@ -130,7 +130,7 @@ const cancelacionReservaSchema = new mongoose.Schema({
         },
         metodoReembolso: {
             type: String,
-            enum: ['Efectivo', 'Transferencia', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Cheque']
+            enum: ['Efectivo', 'Transferencia', 'Tarjeta de Crédito', 'Tarjeta de Débito', 'Cheque', 'N/A']
         },
         fechaReembolso: {
             type: Date

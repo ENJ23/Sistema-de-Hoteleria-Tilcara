@@ -148,6 +148,10 @@
   &.success::before {
     background: var(--primary-color);
   }
+
+  &.rejected::before {
+    background: var(--error-color);
+  }
 }
 
 .stat-content {
@@ -190,6 +194,11 @@
   .success & {
     background: var(--primary-light);
     color: var(--primary-color);
+  }
+
+  .rejected & {
+    background: var(--error-bg);
+    color: var(--error-color);
   }
 }
 
