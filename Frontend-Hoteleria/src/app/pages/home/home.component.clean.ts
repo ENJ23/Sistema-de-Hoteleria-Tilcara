@@ -1,6 +1,7 @@
 // Versión limpia del componente Home (copia de referencia)
 import { Component, OnInit, OnDestroy, HostListener, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, Subscription, of } from 'rxjs';
 import { debounceTime, switchMap, catchError, map } from 'rxjs/operators';
@@ -11,16 +12,21 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { TodoListComponent } from '../../components/todo-list/todo-list.component';
 import { HomeCalendarComponent, DiaCalendario, HabitacionResumen, OcupacionHabitacionMes, ReservaResumen, EstadoDiaReserva } from '../../components/home-calendar/home-calendar.component';
 
 import { HabitacionService } from '../../services/habitacion.service';
 import { ReservaService } from '../../services/reserva.service';
 import { DateTimeService } from '../../services/date-time.service';
+import { TareaService } from '../../services/tarea.service';
 import { DetalleReservaModalComponent } from '../../components/detalle-reserva-modal/detalle-reserva-modal.component';
 import { SeleccionReservaSimpleComponent } from '../../components/seleccion-reserva-simple/seleccion-reserva-simple.component';
 import { Reserva } from '../../models/reserva.model';
 import { Habitacion } from '../../models/habitacion.model';
+import { Tarea } from '../../models/tarea.model';
 
 interface EstadisticasDia { total: number; activas: number; checkInsHoy: number; checkOutsHoy: number; canceladasHoy: number; completadasHoy: number; }
 
@@ -29,7 +35,7 @@ interface EstadisticasDia { total: number; activas: number; checkInsHoy: number;
   standalone: true,
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
-  imports: [CommonModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, TodoListComponent, HomeCalendarComponent],
+  imports: [CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule, MatChipsModule, MatFormFieldModule, MatSelectModule, MatPaginatorModule, TodoListComponent, HomeCalendarComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class HomeComponentClean implements OnInit, OnDestroy {
@@ -46,6 +52,20 @@ export class HomeComponentClean implements OnInit, OnDestroy {
   // Propiedad legacy usada por el template
   estadisticas: { ocupacionActual: number; totalHabitaciones: number; porcentajeOcupacion: number; reservasPendientes: number; pagosPendientes: number } = { ocupacionActual: 0, totalHabitaciones: 0, porcentajeOcupacion: 0, reservasPendientes: 0, pagosPendientes: 0 };
   notasPorFecha: { [yyyyMMdd: string]: string[] } = {};
+  tareasCompletadas: Tarea[] = [];
+  tareasCompletadasPaginadas: Tarea[] = [];
+  cargandoTareasCompletadas = false;
+  filtroTipoTarea = '';
+  filtroHabitacion = '';
+  pageIndexTareas = 0;
+  pageSizeTareas = 20;
+  totalTareasCompletadas = 0;
+  tiposTarea = [
+    { valor: 'limpieza', label: 'Limpieza' },
+    { valor: 'mantenimiento', label: 'Mantenimiento' },
+    { valor: 'otro', label: 'Otro' }
+  ];
+  habitacionesFiltro: Habitacion[] = [];
 
   private refrescarEventos$ = new Subject<void>();
   private subs: Subscription[] = [];
@@ -62,7 +82,8 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     private dateTime: DateTimeService,
     private router: Router,
     private dialog: MatDialog,
-    private snack: MatSnackBar
+    private snack: MatSnackBar,
+    public tareaService: TareaService
   ) { }
 
   ngOnInit(): void { this.generarCalendario(); this.suscribirEventos(); this.refrescarDatos(); }
@@ -86,10 +107,12 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     const sub = this.refrescarEventos$.pipe(debounceTime(300)).subscribe(() => {
       this.cargarOcupacion(false);
       this.cargarReservasHoy();
+      this.cargarTareasCompletadas();
     });
     this.subs.push(sub);
     const evSub = this.reservaService.reservaEvents$.pipe(debounceTime(300)).subscribe(() => this.refrescarDatos());
     this.subs.push(evSub);
+    this.cargarHabitacionesFiltro();
   }
 
   refrescarDatos(): void { this.refrescarEventos$.next(); }
@@ -442,6 +465,65 @@ export class HomeComponentClean implements OnInit, OnDestroy {
       this.actualizarEstadisticas(this.reservasHoy);
       this.cargandoReservas = false;
     });
+  }
+
+  private cargarTareasCompletadas(): void {
+    this.cargandoTareasCompletadas = true;
+    const filtros: { estado: string; tipo?: string; habitacion?: string } = { estado: 'completada' };
+    if (this.filtroTipoTarea) filtros.tipo = this.filtroTipoTarea;
+    if (this.filtroHabitacion) filtros.habitacion = this.filtroHabitacion;
+
+    this.tareaService.getTareas(filtros).pipe(
+      map(resp => resp.data || []),
+      catchError(() => {
+        this.mostrarMensaje('Error tareas completadas');
+        return of([] as Tarea[]);
+      })
+    ).subscribe((tareas: Tarea[]) => {
+      this.tareasCompletadas = (tareas || []).sort((a, b) => {
+        const fa = new Date(a.fechaCompletada || a.updatedAt || a.fechaCreacion).getTime();
+        const fb = new Date(b.fechaCompletada || b.updatedAt || b.fechaCreacion).getTime();
+        return fb - fa;
+      });
+      this.totalTareasCompletadas = this.tareasCompletadas.length;
+      this.aplicarPaginacionTareas();
+      this.cargandoTareasCompletadas = false;
+    });
+  }
+
+  private cargarHabitacionesFiltro(): void {
+    this.habitacionService.getHabitaciones(1, 200).subscribe({
+      next: (resp) => {
+        this.habitacionesFiltro = resp.habitaciones || [];
+      },
+      error: () => {
+        this.mostrarMensaje('Error habitaciones');
+      }
+    });
+  }
+
+  onFiltrosTareasChange(): void {
+    this.pageIndexTareas = 0;
+    this.cargarTareasCompletadas();
+  }
+
+  limpiarFiltrosTareas(): void {
+    this.filtroTipoTarea = '';
+    this.filtroHabitacion = '';
+    this.pageIndexTareas = 0;
+    this.cargarTareasCompletadas();
+  }
+
+  onPageChangeTareas(event: PageEvent): void {
+    this.pageIndexTareas = event.pageIndex;
+    this.pageSizeTareas = event.pageSize;
+    this.aplicarPaginacionTareas();
+  }
+
+  private aplicarPaginacionTareas(): void {
+    const inicio = this.pageIndexTareas * this.pageSizeTareas;
+    const fin = inicio + this.pageSizeTareas;
+    this.tareasCompletadasPaginadas = this.tareasCompletadas.slice(inicio, fin);
   }
 
   mostrarOpcionesCheckIn(reserva: ReservaResumen): void {

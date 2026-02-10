@@ -62,8 +62,8 @@ export class LoginComponent implements OnInit, OnDestroy {
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
 
-    // Obtener la URL de retorno de los parámetros de consulta o por defecto a '/'
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    // Forzar Home como pagina inicial
+    this.returnUrl = '/';
     
     // Validación en tiempo real
     this.loginForm.valueChanges.subscribe(() => {
@@ -128,8 +128,8 @@ export class LoginComponent implements OnInit, OnDestroy {
             panelClass: ['success-snackbar']
           });
           
-          // Navegar a la URL de retorno o a la página de inicio
-          this.router.navigateByUrl(this.returnUrl);
+          // Navegar siempre a la pagina de inicio
+          this.router.navigateByUrl('/');
         },
         error: error => {
           this.loading = false;

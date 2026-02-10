@@ -89,6 +89,75 @@
           </app-home-calendar>
         </mat-card-content>
       </mat-card>
+
+      <!-- Tareas Completadas -->
+      <mat-card class="content-card completed-tasks-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>task_alt</mat-icon>
+            Tareas Completadas
+          </mat-card-title>
+          <mat-card-subtitle>Historial de tareas finalizadas</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="tareas-filtros">
+            <mat-form-field appearance="outline" class="tareas-filtro">
+              <mat-label>Tipo</mat-label>
+              <mat-select [(ngModel)]="filtroTipoTarea" (selectionChange)="onFiltrosTareasChange()">
+                <mat-option value="">Todos</mat-option>
+                <mat-option *ngFor="let tipo of tiposTarea" [value]="tipo.valor">{{ tipo.label }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="tareas-filtro">
+              <mat-label>Habitacion</mat-label>
+              <mat-select [(ngModel)]="filtroHabitacion" (selectionChange)="onFiltrosTareasChange()">
+                <mat-option value="">Todas</mat-option>
+                <mat-option *ngFor="let hab of habitacionesFiltro" [value]="hab._id">Habitacion {{ hab.numero }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <button mat-stroked-button color="primary" class="btn-limpiar-filtros" (click)="limpiarFiltrosTareas()">
+              <mat-icon>clear</mat-icon>
+              Limpiar filtros
+            </button>
+          </div>
+
+          <div class="tareas-loading" *ngIf="cargandoTareasCompletadas">Cargando tareas completadas...</div>
+
+          <div class="tareas-completadas-list" *ngIf="!cargandoTareasCompletadas && tareasCompletadasPaginadas.length > 0; else sinTareasCompletadas">
+            <div class="tarea-completada-item" *ngFor="let tarea of tareasCompletadasPaginadas">
+              <div class="tarea-icon">
+                <mat-icon [style.color]="tareaService.obtenerColorTipo(tarea.tipo)">{{ tareaService.obtenerIconoTipo(tarea.tipo) }}</mat-icon>
+              </div>
+              <div class="tarea-info">
+                <div class="tarea-titulo">{{ tarea.descripcion }}</div>
+                <div class="tarea-meta">Habitación {{ tarea.habitacion?.numero || 'N/A' }} · {{ tarea.tipo | titlecase }}</div>
+              </div>
+              <div class="tarea-fecha">
+                <div class="tarea-fecha-label">Completada</div>
+                <div class="tarea-fecha-valor">{{ tarea.fechaCompletada | date:'short' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #sinTareasCompletadas>
+            <div class="tareas-vacias">
+              <mat-icon>event_available</mat-icon>
+              <p>No hay tareas completadas para mostrar.</p>
+            </div>
+          </ng-template>
+
+          <mat-paginator
+            *ngIf="!cargandoTareasCompletadas && totalTareasCompletadas > 0"
+            [length]="totalTareasCompletadas"
+            [pageSize]="pageSizeTareas"
+            [pageIndex]="pageIndexTareas"
+            [pageSizeOptions]="[10, 20, 50]"
+            (page)="onPageChangeTareas($event)">
+          </mat-paginator>
+        </mat-card-content>
+      </mat-card>
     </div> <!-- Cierre del desktop-layout -->
 
   </div>

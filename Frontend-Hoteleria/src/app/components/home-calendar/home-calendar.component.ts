@@ -113,9 +113,7 @@ export class HomeCalendarComponent implements OnInit {
     }
 
     private chequearResolucion(): void {
-        if (window.innerWidth < 768) {
-            this.vista = 'lista';
-        }
+        this.vista = 'grid';
     }
 
     // Drag & Drop Handlers
