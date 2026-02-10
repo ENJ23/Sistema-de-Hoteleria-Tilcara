@@ -301,8 +301,6 @@ export class FormularioHabitacionComponent implements OnInit {
             return '💰 El precio base debe ser mayor a $0';
           case 'piso':
             return '🏢 El piso es obligatorio';
-          case 'estado':
-            return '📋 El estado de la habitación es obligatorio';
           case 'servicios':
             return '🛎️ Debe seleccionar al menos un servicio';
           default:
@@ -388,8 +386,7 @@ export class FormularioHabitacionComponent implements OnInit {
       { control: 'tipo', nombre: 'Tipo de Habitación' },
       { control: 'capacidad', nombre: 'Capacidad' },
       { control: 'precioBase', nombre: 'Precio Base' },
-      { control: 'piso', nombre: 'Piso' },
-      { control: 'estado', nombre: 'Estado' }
+      { control: 'piso', nombre: 'Piso' }
     ];
     
     camposObligatorios.forEach(campo => {

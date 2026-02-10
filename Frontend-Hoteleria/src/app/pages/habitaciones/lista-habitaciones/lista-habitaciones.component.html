@@ -153,6 +153,10 @@
               <button mat-icon-button (click)="editarHabitacion(habitacion._id)" matTooltip="Editar">
                 <mat-icon class="action-icon text-muted">edit</mat-icon>
               </button>
+              <button mat-icon-button color="warn" *ngIf="!habitacion.activa"
+                (click)="confirmarEliminacion(habitacion)" matTooltip="Eliminar">
+                <mat-icon class="action-icon">delete</mat-icon>
+              </button>
               <button mat-icon-button [color]="habitacion.activa ? 'warn' : 'primary'"
                 (click)="cambiarDisponibilidad(habitacion, !habitacion.activa)"
                 matTooltip="Cambiar Disponibilidad">
