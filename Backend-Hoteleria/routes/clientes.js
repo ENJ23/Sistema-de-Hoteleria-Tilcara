@@ -26,7 +26,8 @@ router.get('/', [
         const clientes = await Cliente.find(query)
             .limit(limit * 1)
             .skip((page - 1) * limit)
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean(); // ⚠️ REDUCCIÓN DE MEMORIA: Evitar instanciar documentos Mongoose
             
         const total = await Cliente.countDocuments(query);
         
@@ -47,7 +48,7 @@ router.get('/:id', [
     isUsuarioValido
 ], async (req, res) => {
     try {
-        const cliente = await Cliente.findById(req.params.id);
+        const cliente = await Cliente.findById(req.params.id).lean(); // ⚠️ REDUCCIÓN DE MEMORIA
         if (!cliente) {
             return res.status(404).json({ message: 'Cliente no encontrado' });
         }

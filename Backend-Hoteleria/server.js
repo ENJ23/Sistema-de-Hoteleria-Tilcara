@@ -47,52 +47,64 @@ const allowedOrigins = [
     'https://sistema-de-hoteleria-tilcara-ph88hmdim-enj23s-projects.vercel.app'
 ];
 
-app.use(cors({
-    origin: function (origin, callback) {
-        // Permitir requests sin origin (como mobile apps o curl)
-        if (!origin) return callback(null, true);
-        
-        // Permitir localhost en desarrollo
-        if (origin.includes('localhost')) {
-            return callback(null, true);
-        }
-        
-        // Permitir ngrok en desarrollo
-        if (origin.includes('ngrok.io') || origin.includes('ngrok-free.app')) {
-            console.log(`🌐 Permitido origen ngrok: ${origin}`);
-            return callback(null, true);
-        }
-        
-        // Permitir IPs locales (para desarrollo móvil)
-        if (origin.match(/^http:\/\/192\.168\.\d+\.\d+:\d+$/) || 
-            origin.match(/^http:\/\/10\.\d+\.\d+\.\d+:\d+$/) ||
-            origin.match(/^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:\d+$/)) {
-            console.log(`📱 Permitido origen móvil: ${origin}`);
-            return callback(null, true);
-        }
-        
-        // Permitir todos los subdominios de vercel.app
-        if (origin.includes('.vercel.app')) {
-            return callback(null, true);
-        }
-        
-        // Verificar si está en la lista de orígenes permitidos
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            console.warn(`🚨 Origen no permitido por CORS: ${origin}`);
-            callback(new Error('No permitido por CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token'],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 200
-}));
+// ⚠️ REDUCCIÓN DE MEMORIA: CORS estático en producción
+const corsOptions = process.env.NODE_ENV === 'production' 
+    ? {
+        origin: allowedOrigins,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token'],
+        credentials: true,
+        maxAge: 86400 // Cache preflight requests for 24 hours
+    }
+    : {
+        origin: function (origin, callback) {
+            // Permitir requests sin origin (como mobile apps o curl)
+            if (!origin) return callback(null, true);
+            
+            // Permitir localhost en desarrollo
+            if (origin.includes('localhost')) {
+                return callback(null, true);
+            }
+            
+            // Permitir ngrok en desarrollo
+            if (origin.includes('ngrok.io') || origin.includes('ngrok-free.app')) {
+                console.log(`🌐 Permitido origen ngrok: ${origin}`);
+                return callback(null, true);
+            }
+            
+            // Permitir IPs locales (para desarrollo móvil)
+            if (origin.match(/^http:\/\/192\.168\.\d+\.\d+:\d+$/) || 
+                origin.match(/^http:\/\/10\.\d+\.\d+\.\d+:\d+$/) ||
+                origin.match(/^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+:\d+$/)) {
+                console.log(`📱 Permitido origen móvil: ${origin}`);
+                return callback(null, true);
+            }
+            
+            // Permitir todos los subdominios de vercel.app
+            if (origin.includes('.vercel.app')) {
+                return callback(null, true);
+            }
+            
+            // Verificar si está en la lista de orígenes permitidos
+            if (allowedOrigins.indexOf(origin) !== -1) {
+                callback(null, true);
+            } else {
+                console.warn(`🚨 Origen no permitido por CORS: ${origin}`);
+                callback(new Error('No permitido por CORS'));
+            }
+        },
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token'],
+        credentials: true,
+        preflightContinue: false,
+        optionsSuccessStatus: 200
+    };
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cors(corsOptions));
+
+// ⚠️ REDUCCIÓN DE MEMORIA: Limitar payload JSON a 1MB (antes 10MB)
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Configuración de cabeceras adicionales (solo si es necesario)
 app.use((req, res, next) => {
@@ -141,25 +153,27 @@ if (global.gc) {
     }, 10 * 60 * 1000);
 }
 
-// Logger periódico de memoria (cada 5 minutos)
-setInterval(() => {
-    const used = process.memoryUsage();
-    const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
-    const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
-    const heapPercentage = Math.round((used.heapUsed / used.heapTotal) * 100);
-    
-    console.log(`📊 Memory Monitor - Used: ${heapUsedMB}MB / ${heapTotalMB}MB (${heapPercentage}%) | Uptime: ${Math.round(process.uptime() / 60)}m`);
-    
-    // Alerta si el uso de memoria es crítico (>80% para permitir GC)
-    if (heapPercentage > 80) {
-        console.warn(`⚠️ MEMORY WARNING: Heap usage at ${heapPercentage}%! Potential memory leak detected.`);
-    }
-}, 5 * 60 * 1000); // Cada 5 minutos
+// Logger periódico de memoria (cada 5 minutos) - SOLO EN DESARROLLO
+if (process.env.NODE_ENV !== 'production') {
+    setInterval(() => {
+        const used = process.memoryUsage();
+        const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
+        const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
+        const heapPercentage = Math.round((used.heapUsed / used.heapTotal) * 100);
+        
+        console.log(`📊 Memory Monitor - Used: ${heapUsedMB}MB / ${heapTotalMB}MB (${heapPercentage}%) | Uptime: ${Math.round(process.uptime() / 60)}m`);
+        
+        // Alerta si el uso de memoria es crítico (>80% para permitir GC)
+        if (heapPercentage > 80) {
+            console.warn(`⚠️ MEMORY WARNING: Heap usage at ${heapPercentage}%! Potential memory leak detected.`);
+        }
+    }, 5 * 60 * 1000); // Cada 5 minutos
 
-// Logger de conexiones activas cada 10 minutos
-setInterval(() => {
-    console.log(`🔌 Active Connections - DB State: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
-}, 10 * 60 * 1000);
+    // Logger de conexiones activas cada 10 minutos
+    setInterval(() => {
+        console.log(`🔌 Active Connections - DB State: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+    }, 10 * 60 * 1000);
+}
 
 // ======== CONEXIÓN A MONGODB ========
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hoteleria';

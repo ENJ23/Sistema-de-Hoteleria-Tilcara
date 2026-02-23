@@ -89,7 +89,7 @@ router.get('/disponibles', async (req, res) => {
             _id: { $nin: habitacionesOcupadasIds }
         };
 
-        const habitaciones = await Habitacion.find(query).sort({ numero: 1 });
+        const habitaciones = await Habitacion.find(query).sort({ numero: 1 }).lean(); // ⚠️ REDUCCIÓN DE MEMORIA
 
         res.json(habitaciones);
     } catch (error) {
@@ -126,7 +126,7 @@ router.get('/estado-dinamico', async (req, res) => {
 // GET - Obtener una habitación por ID (acceso público, pero con datos limitados si no está autenticado)
 router.get('/:id', async (req, res) => {
     try {
-        const habitacion = await Habitacion.findById(req.params.id);
+        const habitacion = await Habitacion.findById(req.params.id).lean(); // ⚠️ REDUCCIÓN DE MEMORIA
         if (!habitacion) {
             return res.status(404).json({ message: 'Habitación no encontrada' });
         }

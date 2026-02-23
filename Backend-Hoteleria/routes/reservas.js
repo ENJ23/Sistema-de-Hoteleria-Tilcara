@@ -514,7 +514,8 @@ router.get('/cliente/:clienteId', [
     try {
         const reservas = await Reserva.find({ cliente: req.params.clienteId })
             .populate('habitacion', 'numero tipo precioActual')
-            .sort({ fechaCreacion: -1 });
+            .sort({ fechaCreacion: -1 })
+            .lean(); // ⚠️ REDUCCIÓN DE MEMORIA
 
         res.json(reservas);
     } catch (error) {
@@ -530,7 +531,8 @@ router.get('/habitacion/:habitacionId', [
     try {
         const reservas = await Reserva.find({ habitacion: req.params.habitacionId })
             .populate('habitacion', 'numero tipo precioActual')
-            .sort({ fechaEntrada: 1 });
+            .sort({ fechaEntrada: 1 })
+            .lean(); // ⚠️ REDUCCIÓN DE MEMORIA
 
         res.json(reservas);
     } catch (error) {
@@ -765,7 +767,8 @@ router.get('/cancelaciones', [
 
         const cancelaciones = await CancelacionReserva.find(query)
             .sort({ fechaCancelacion: -1 })
-            .limit(100);
+            .limit(100)
+            .lean(); // ⚠️ REDUCCIÓN DE MEMORIA
 
         res.json({
             cancelaciones,

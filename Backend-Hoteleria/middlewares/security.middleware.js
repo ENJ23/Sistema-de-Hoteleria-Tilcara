@@ -72,12 +72,12 @@ const securityMiddleware = {
     // Middleware para limitar tamaño de payload
     limitPayload: (req, res, next) => {
         const contentLength = parseInt(req.headers['content-length'], 10);
-        const maxSize = 10 * 1024 * 1024; // 10MB
+        const maxSize = 1 * 1024 * 1024; // 1MB (REDUCCIÓN DE MEMORIA)
         
         if (contentLength > maxSize) {
             return res.status(413).json({
                 success: false,
-                message: 'Payload demasiado grande. Máximo 10MB permitido.'
+                message: 'Payload demasiado grande. Máximo 1MB permitido.'
             });
         }
         next();
