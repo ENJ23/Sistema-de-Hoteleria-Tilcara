@@ -34,6 +34,11 @@ export class TareaService {
     return this.http.get<TareaResponse>(`${this.apiUrl}/pendientes`);
   }
 
+  // Obtener solo tareas completadas
+  getTareasCompletadas(): Observable<TareaResponse> {
+    return this.http.get<TareaResponse>(`${this.apiUrl}/completadas`);
+  }
+
   // Crear nueva tarea
   crearTarea(tarea: TareaCreate): Observable<TareaResponse> {
     return this.http.post<TareaResponse>(this.apiUrl, tarea);

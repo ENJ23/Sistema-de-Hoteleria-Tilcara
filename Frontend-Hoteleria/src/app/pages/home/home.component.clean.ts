@@ -471,6 +471,25 @@ export class HomeComponentClean implements OnInit, OnDestroy {
 
   private cargarTareasCompletadas(): void {
     this.cargandoTareasCompletadas = true;
+    
+    // Si no hay filtros, usar el endpoint optimizado
+    if (!this.filtroTipoTarea && !this.filtroHabitacion) {
+      this.tareaService.getTareasCompletadas().pipe(
+        map(resp => resp.data || []),
+        catchError(() => {
+          this.mostrarMensaje('Error tareas completadas');
+          return of([] as Tarea[]);
+        })
+      ).subscribe((tareas: Tarea[]) => {
+        this.tareasCompletadas = tareas;
+        this.totalTareasCompletadas = this.tareasCompletadas.length;
+        this.aplicarPaginacionTareas();
+        this.cargandoTareasCompletadas = false;
+      });
+      return;
+    }
+
+    // Si hay filtros, usar el endpoint general
     const filtros: { estado: string; tipo?: string; habitacion?: string } = { estado: 'completada' };
     if (this.filtroTipoTarea) filtros.tipo = this.filtroTipoTarea;
     if (this.filtroHabitacion) filtros.habitacion = this.filtroHabitacion;
