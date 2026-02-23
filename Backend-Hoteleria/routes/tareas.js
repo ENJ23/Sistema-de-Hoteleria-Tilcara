@@ -50,7 +50,19 @@ const validarCompletarTarea = [
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Observaciones debe tener máximo 500 caracteres')
+    .withMessage('Observaciones debe tener máximo 500 caracteres'),
+  body('configuracionCamas')
+    .optional()
+    .isArray()
+    .withMessage('configuracionCamas debe ser un array'),
+  body('configuracionCamas.*.tipo')
+    .optional()
+    .isIn(['matrimonial', 'single', 'doble', 'queen', 'king'])
+    .withMessage('Tipo de cama inválido'),
+  body('configuracionCamas.*.cantidad')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Cantidad debe ser un número mayor a 0')
 ];
 
 // GET /api/tareas - Obtener todas las tareas
@@ -126,7 +138,8 @@ router.get('/pendientes', authJwt.verifyToken, async (req, res) => {
         estado: tarea.habitacion.estado
       },
       fechaCreacion: tarea.fechaCreacion,
-      creadoPor: tarea.creadoPor
+      creadoPor: tarea.creadoPor,
+      configuracionCamas: tarea.configuracionCamas
     }));
     
     res.json({

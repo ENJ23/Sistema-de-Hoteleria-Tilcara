@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, Subscription, of } from 'rxjs';
-import { debounceTime, switchMap, catchError, map } from 'rxjs/operators';
+import { debounceTime, switchMap, catchError, map, takeUntil } from 'rxjs/operators';
 
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -90,6 +90,7 @@ export class HomeComponentClean implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.limpiarEstilosDinamicos();
+    this.cacheOcupacion.clear();
     this.subs.forEach(s => s.unsubscribe());
   }
 
@@ -453,7 +454,8 @@ export class HomeComponentClean implements OnInit, OnDestroy {
     const filtros = { fechaInicio: hoy, fechaFin: manana };
     this.reservaService.getReservasAll(filtros, 50, true).pipe(
       map(resp => resp.reservas || []),
-      catchError(() => { this.mostrarMensaje('Error reservas día'); return of([] as Reserva[]); })
+      catchError(() => { this.mostrarMensaje('Error reservas día'); return of([] as Reserva[]); }),
+      takeUntil(this.refrescarEventos$)
     ).subscribe((rs: Reserva[]) => {
       this.reservasHoy = (rs || []).map(r => {
         const h = r.habitacion;
@@ -492,7 +494,9 @@ export class HomeComponentClean implements OnInit, OnDestroy {
   }
 
   private cargarHabitacionesFiltro(): void {
-    this.habitacionService.getHabitaciones(1, 200).subscribe({
+    this.habitacionService.getHabitaciones(1, 200).pipe(
+      takeUntil(this.refrescarEventos$)
+    ).subscribe({
       next: (resp) => {
         this.habitacionesFiltro = resp.habitaciones || [];
       },

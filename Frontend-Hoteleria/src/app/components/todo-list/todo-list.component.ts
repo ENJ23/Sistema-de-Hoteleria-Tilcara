@@ -95,7 +95,9 @@ export class TodoListComponent implements OnInit, OnDestroy {
   }
 
   private cargarHabitaciones(): void {
-    this.habitacionService.getHabitaciones(1, 200).subscribe({
+    this.habitacionService.getHabitaciones(1, 200).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (response) => {
         this.habitaciones = response.habitaciones || [];
       },
@@ -154,7 +156,9 @@ export class TodoListComponent implements OnInit, OnDestroy {
         data: { tarea }
       });
 
-      dialogRef.afterClosed().subscribe(result => {
+      dialogRef.afterClosed().pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(result => {
         if (result) {
           this.ejecutarCompletarTarea(tarea, result.observaciones, result.configuracionCamas);
         }
