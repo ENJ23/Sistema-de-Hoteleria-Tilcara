@@ -132,7 +132,21 @@
               </div>
               <div class="tarea-info">
                 <div class="tarea-titulo">{{ tarea.descripcion }}</div>
-                <div class="tarea-meta">Habitación {{ tarea.habitacion?.numero || 'N/A' }} · {{ tarea.tipo | titlecase }}</div>
+                <div class="tarea-meta">
+                  Habitacion {{ tarea.habitacion?.numero || 'N/A' }} · {{ tarea.tipo | titlecase }}
+                </div>
+                <div *ngIf="tarea.configuracionCamas && tarea.configuracionCamas.length > 0" class="tarea-camas-container">
+                  <mat-icon class="cama-icon">bed</mat-icon>
+                  <span class="tarea-camas">
+                    <span *ngFor="let cama of tarea.configuracionCamas; let last = last">
+                      {{ cama.cantidad }} {{ cama.tipo | titlecase }}{{ !last ? ', ' : '' }}
+                    </span>
+                  </span>
+                </div>
+                <div *ngIf="tarea.observaciones" class="tarea-observaciones">
+                  <mat-icon class="obs-icon">notes</mat-icon>
+                  <span>{{ tarea.observaciones }}</span>
+                </div>
               </div>
               <div class="tarea-fecha">
                 <div class="tarea-fecha-label">Completada</div>

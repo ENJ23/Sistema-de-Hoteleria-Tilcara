@@ -87,6 +87,7 @@ router.get('/', authJwt.verifyToken, async (req, res) => {
       creadoPor: tarea.creadoPor,
       completadoPor: tarea.completadoPor,
       observaciones: tarea.observaciones,
+      configuracionCamas: tarea.configuracionCamas,
       createdAt: tarea.createdAt,
       updatedAt: tarea.updatedAt
     }));
@@ -190,7 +191,7 @@ router.post('/', authJwt.verifyToken, validarCrearTarea, validarErrores, async (
 router.patch('/:id/completar', authJwt.verifyToken, validarCompletarTarea, validarErrores, async (req, res) => {
   try {
     const { id } = req.params;
-    const { completadoPor, observaciones } = req.body;
+    const { completadoPor, observaciones, configuracionCamas } = req.body;
     
     // Verificar que la tarea existe
     const tarea = await Tarea.findById(id);
@@ -214,6 +215,9 @@ router.patch('/:id/completar', authJwt.verifyToken, validarCompletarTarea, valid
     tarea.fechaCompletada = new Date();
     tarea.completadoPor = completadoPor || req.userId.nombre || 'Usuario';
     if (observaciones) tarea.observaciones = observaciones;
+    if (configuracionCamas && Array.isArray(configuracionCamas)) {
+      tarea.configuracionCamas = configuracionCamas;
+    }
     
     await tarea.save();
     

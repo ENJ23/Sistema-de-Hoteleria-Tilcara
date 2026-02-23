@@ -1,13 +1,6 @@
 import { Routes } from '@angular/router';
 // Legacy HomeComponent eliminado del build activo
 import { HomeComponentClean } from './pages/home/home.component.clean';
-import { CalendarioComponent } from './pages/calendario/calendario.component';
-import { LoginComponent } from './pages/login/login.component';
-import { RegisterComponent } from './pages/register/register.component';
-import { NuevaReservaComponent } from './pages/nueva-reserva/nueva-reserva.component';
-import { ReservasComponent } from './pages/reservas/reservas.component';
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { AuditoriaCancelacionesComponent } from './pages/auditoria-cancelaciones/auditoria-cancelaciones.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -21,11 +14,11 @@ export const routes: Routes = [
   // Autenticación
   { 
     path: 'login', 
-    component: LoginComponent
+    loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent)
   },
   { 
     path: 'register', 
-    component: RegisterComponent,
+    loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent),
     canActivate: [AuthGuard],
     data: { roles: ['admin'] }
   },
@@ -41,35 +34,35 @@ export const routes: Routes = [
   // Calendario de ocupación
   {
     path: 'calendario',
-    component: CalendarioComponent,
+    loadComponent: () => import('./pages/calendario/calendario.component').then(m => m.CalendarioComponent),
     canActivate: [AuthGuard]
   },
   
   // Nueva Reserva
   {
     path: 'nueva-reserva',
-    component: NuevaReservaComponent,
+    loadComponent: () => import('./pages/nueva-reserva/nueva-reserva.component').then(m => m.NuevaReservaComponent),
     canActivate: [AuthGuard]
   },
   
   // Gestión de Reservas
   {
     path: 'reservas',
-    component: ReservasComponent,
+    loadComponent: () => import('./pages/reservas/reservas.component').then(m => m.ReservasComponent),
     canActivate: [AuthGuard]
   },
   
   // Dashboard de Ingresos
   {
     path: 'dashboard',
-    component: DashboardComponent,
+    loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [AuthGuard]
   },
   
   // Auditoría de Cancelaciones
   {
     path: 'auditoria-cancelaciones',
-    component: AuditoriaCancelacionesComponent,
+    loadComponent: () => import('./pages/auditoria-cancelaciones/auditoria-cancelaciones.component').then(m => m.AuditoriaCancelacionesComponent),
     canActivate: [AuthGuard]
   },
   

@@ -1,3 +1,5 @@
+import { CamaInfo } from './reserva.model';
+
 export interface HabitacionEmbedded {
   _id: string;
   numero: string;
@@ -16,6 +18,7 @@ export interface Tarea {
   creadoPor: string;
   completadoPor?: string;
   observaciones?: string;
+  configuracionCamas?: CamaInfo[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +33,7 @@ export interface TareaCreate {
 export interface TareaCompletar {
   completadoPor?: string;
   observaciones?: string;
+  configuracionCamas?: CamaInfo[];
 }
 
 export interface TareaResponse {

@@ -407,4 +407,10 @@ reservaSchema.methods.recalcularPagos = async function () {
     return this.save();
 };
 
+// Índices para optimizar consultas frecuentes
+reservaSchema.index({ fechaEntrada: 1, fechaSalida: 1 });
+reservaSchema.index({ estado: 1 });
+reservaSchema.index({ habitacion: 1 });
+reservaSchema.index({ 'cliente.documento': 1 });
+
 module.exports = mongoose.model('Reserva', reservaSchema); 

@@ -660,6 +660,27 @@
 .tarea-meta {
   font-size: 13px;
   color: #6c757d;
+  margin-bottom: 4px;
+}
+
+.tarea-camas-container, .tarea-observaciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #495057;
+  margin-top: 4px;
+}
+
+.cama-icon, .obs-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #6c757d;
+}
+
+.tarea-camas {
+  font-weight: 500;
 }
 
 .tarea-fecha {

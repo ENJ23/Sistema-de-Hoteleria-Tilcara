@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -44,7 +44,8 @@ export interface OcupacionHabitacionMes { habitacion: HabitacionResumen; ocupaci
     standalone: true,
     imports: [CommonModule, MatIconModule, MatButtonModule, MatTooltipModule, DragDropModule],
     templateUrl: './home-calendar.component.html',
-    styleUrls: ['./home-calendar.component.css']
+    styleUrls: ['./home-calendar.component.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeCalendarComponent implements OnInit {
     @Input() diasCalendario: DiaCalendario[] = [];

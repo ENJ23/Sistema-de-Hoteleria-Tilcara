@@ -43,7 +43,19 @@ const tareaSchema = new mongoose.Schema({
   observaciones: {
     type: String,
     default: null
-  }
+  },
+  configuracionCamas: [{
+    tipo: {
+      type: String,
+      enum: ['matrimonial', 'single', 'doble', 'queen', 'king'],
+      required: true
+    },
+    cantidad: {
+      type: Number,
+      required: true,
+      min: 1
+    }
+  }]
 }, {
   timestamps: true
 });

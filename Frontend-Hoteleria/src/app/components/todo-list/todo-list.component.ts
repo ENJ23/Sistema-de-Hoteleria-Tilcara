@@ -10,12 +10,14 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subject, takeUntil } from 'rxjs';
 
 import { TareaService } from '../../services/tarea.service';
 import { Tarea } from '../../models/tarea.model';
 import { HabitacionService } from '../../services/habitacion.service';
 import { Habitacion } from '../../models/habitacion.model';
+import { CompletarLimpiezaDialogComponent } from './completar-limpieza-dialog.component';
 
 @Component({
   selector: 'app-todo-list',
@@ -30,7 +32,8 @@ import { Habitacion } from '../../models/habitacion.model';
     MatProgressSpinnerModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    MatDialogModule
   ],
   templateUrl: './todo-list.component.html',
   styleUrls: ['./todo-list.component.scss']
@@ -50,7 +53,8 @@ export class TodoListComponent implements OnInit, OnDestroy {
     private tareaService: TareaService,
     private habitacionService: HabitacionService,
     private snackBar: MatSnackBar,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private dialog: MatDialog
   ) {
     this.tareaForm = this.fb.group({
       tipo: ['otro', Validators.required],
@@ -144,11 +148,29 @@ export class TodoListComponent implements OnInit, OnDestroy {
       return; // Ya se está completando
     }
 
+    if (tarea.tipo === 'limpieza') {
+      const dialogRef = this.dialog.open(CompletarLimpiezaDialogComponent, {
+        width: '400px',
+        data: { tarea }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result) {
+          this.ejecutarCompletarTarea(tarea, result.observaciones, result.configuracionCamas);
+        }
+      });
+    } else {
+      this.ejecutarCompletarTarea(tarea, 'Tarea completada desde el dashboard');
+    }
+  }
+
+  private ejecutarCompletarTarea(tarea: Tarea, observaciones: string, configuracionCamas?: any[]): void {
     this.completando.add(tarea._id);
 
     this.tareaService.completarTarea(tarea._id, {
       completadoPor: 'Usuario',
-      observaciones: 'Tarea completada desde el dashboard'
+      observaciones: observaciones,
+      configuracionCamas: configuracionCamas
     })
     .pipe(takeUntil(this.destroy$))
     .subscribe({
