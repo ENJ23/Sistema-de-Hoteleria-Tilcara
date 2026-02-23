@@ -118,6 +118,19 @@ app.use((req, res, next) => {
 });
 
 // ======== MONITOREO DE MEMORIA Y RECURSOS ========
+// Forzar garbage collection cada 10 minutos
+if (global.gc) {
+    setInterval(() => {
+        console.log('🧹 Ejecutando garbage collection...');
+        global.gc();
+        const used = process.memoryUsage();
+        const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
+        const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
+        const heapPercentage = Math.round((used.heapUsed / used.heapTotal) * 100);
+        console.log(`📊 Después de GC - Used: ${heapUsedMB}MB / ${heapTotalMB}MB (${heapPercentage}%)`);
+    }, 10 * 60 * 1000);
+}
+
 // Logger periódico de memoria (cada 5 minutos)
 setInterval(() => {
     const used = process.memoryUsage();
@@ -127,8 +140,8 @@ setInterval(() => {
     
     console.log(`📊 Memory Monitor - Used: ${heapUsedMB}MB / ${heapTotalMB}MB (${heapPercentage}%) | Uptime: ${Math.round(process.uptime() / 60)}m`);
     
-    // Alerta si el uso de memoria es crítico (>85%)
-    if (heapPercentage > 85) {
+    // Alerta si el uso de memoria es crítico (>80% para permitir GC)
+    if (heapPercentage > 80) {
         console.warn(`⚠️ MEMORY WARNING: Heap usage at ${heapPercentage}%! Potential memory leak detected.`);
     }
 }, 5 * 60 * 1000); // Cada 5 minutos
@@ -144,9 +157,11 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hotele
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    maxPoolSize: 10,
+    maxPoolSize: 3,
+    minPoolSize: 1,
     serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000
+    socketTimeoutMS: 45000,
+    maxIdleTimeMS: 30000
 })
 .then(() => console.log('✅ Conectado a MongoDB'))
 .catch(err => console.error('❌ Error conectando a MongoDB:', err));

@@ -7,7 +7,13 @@ const Tarea = require('../models/Tarea');
 const CancelacionReserva = require('../models/CancelacionReserva');
 const { body, validationResult, query } = require('express-validator');
 const { verifyToken, isEncargado, isUsuarioValido } = require('../middlewares/authJwt');
-const {
+
+// Helper para loguear solo en desarrollo
+const devLog = (message, data) => {
+    if (process.env.NODE_ENV === 'development') {
+        console.log(message, data || '');
+    }
+};
     validateEditPayment,
     validateAddPayment,
     checkPaymentPermissions,
@@ -336,7 +342,7 @@ router.get('/', [
     manejarErroresValidacion
 ], async (req, res) => {
     try {
-        console.log('🔍 Backend recibió petición GET /reservas con query:', req.query);
+        devLog('🔍 Backend recibió petición GET /reservas con query:', req.query);
 
         const {
             page = 1,
@@ -425,7 +431,7 @@ router.get('/', [
                     }
                 ]
             });
-            console.log('🔍 Backend - Filtro de fechas aplicado (solapamiento):', { fechaInicio, fechaFin });
+            devLog('🔍 Backend - Filtro de fechas aplicado (solapamiento):', { fechaInicio, fechaFin });
         }
 
         // Combinar todas las condiciones con $and
@@ -433,7 +439,7 @@ router.get('/', [
             query = { $and: conditions };
         }
 
-        console.log('🔍 Backend - Query final:', JSON.stringify(query, null, 2));
+        devLog('🔍 Backend - Query final:', Object.keys(query).length > 0 ? 'Applied' : 'None');
 
         const populateOptions = [
             { path: 'habitacion', select: 'numero tipo precioActual' }
@@ -451,9 +457,8 @@ router.get('/', [
         // OPTIMIZADO: Usar countDocuments con el mismo query para consistencia
         const total = await Reserva.countDocuments(query);
 
-        console.log('🔍 Backend - Reservas encontradas:', reservas.length);
-        console.log('🔍 Backend - Total en BD:', total);
-        console.log('🔍 Backend - Estados de reservas encontradas:', reservas.map(r => r.estado));
+        devLog('🔍 Backend - Reservas encontradas:', reservas.length);
+        devLog('🔍 Backend - Total en BD:', total);
 
         // OPTIMIZADO: Calcular campos en una sola pasada
         const reservasConCalculos = reservas.map(reserva => {
@@ -469,7 +474,7 @@ router.get('/', [
             };
         });
 
-        console.log('📊 Backend devolviendo:', {
+        devLog('📊 Backend devolviendo:', {
             reservas: reservasConCalculos.length,
             totalPages: Math.ceil(total / limit),
             currentPage: page,

@@ -40,14 +40,14 @@ router.get('/', async (req, res) => {
     }
 
     // Alerta de memory leak: si el heap está al 80%+ de uso
-    if (heapPercentage >= 80) {
+    if (heapPercentage >= 85) {
       console.warn(`⚠️ HEALTH CHECK ALERT: Memory usage at ${heapPercentage}% (${heapUsedMB}MB/${heapTotalMB}MB)`);
       healthCheck.status = 'DEGRADED';
       healthCheck.warning = 'High memory usage - potential memory leak';
     }
     
-    // CRÍTICO: si llega al 95%, responder con error para que Render reinicie
-    if (heapPercentage >= 95) {
+    // Crítico: si llega al 90%, responder con error para que Render reinicie
+    if (heapPercentage >= 90) {
       console.error(`🔴 CRITICAL: Memory usage at ${heapPercentage}%! Returning 503 to trigger restart.`);
       return res.status(503).json({
         status: 'CRITICAL',

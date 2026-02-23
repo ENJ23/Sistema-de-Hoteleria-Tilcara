@@ -115,7 +115,7 @@ const securityMiddleware = {
             });
         }
 
-        // Log de todas las solicitudes en desarrollo
+        // Solo log de solicitudes en desarrollo
         if (process.env.NODE_ENV === 'development') {
             console.log(`📝 ${timestamp} - ${method} ${url} - IP: ${ip}`);
         }
