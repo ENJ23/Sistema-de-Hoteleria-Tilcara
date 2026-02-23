@@ -14,6 +14,8 @@ const devLog = (message, data) => {
         console.log(message, data || '');
     }
 };
+
+const {
     validateEditPayment,
     validateAddPayment,
     checkPaymentPermissions,
