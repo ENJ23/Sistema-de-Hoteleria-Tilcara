@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const compression = require('compression');
 const dotenv = require('dotenv');
 const path = require('path');
 const securityMiddleware = require('./middlewares/security.middleware');
@@ -31,7 +32,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 app.use(securityMiddleware.additionalHeaders);
 // ⚠️ CRITICAL: Usar compression solo para responses grandes (>1KB)
-app.use(securityMiddleware.compression({ threshold: 1024 }));
+app.use(compression({ threshold: 1024 }));
 
 // ⚠️ Aplicar rate limiting general (solo en producción para ahorrar memoria)
 if (process.env.NODE_ENV === 'production') {
