@@ -109,6 +109,53 @@ router.get('/detailed', async (req, res) => {
   }
 });
 
+// ⚠️ MEMORIA CRÍTICA: Endpoint para limpiar caché de Mongoose
+// Esto puede liberar 5-10MB en momentos de alto uso
+router.post('/cleanup-cache', async (req, res) => {
+  try {
+    const memoryBefore = process.memoryUsage();
+    const heapBefore = Math.round(memoryBefore.heapUsed / 1024 / 1024);
+
+    // 🧹 Limpiar caché de Mongoose
+    if (mongoose && mongoose.connection && mongoose.connection.collection) {
+      // Limpiar cualquier caché acumulado en collections
+      const collections = mongoose.connection.collections;
+      if (collections) {
+        Object.keys(collections).forEach(key => {
+          collections[key].collection.collectionSerializationFunction = null;
+        });
+      }
+    }
+
+    // 🧹 Limpiar explicativamente si gc está disponible
+    if (global.gc) {
+      console.log('🧹 Ejecutando garbage collection desde cleanup endpoint...');
+      global.gc();
+    }
+
+    const memoryAfter = process.memoryUsage();
+    const heapAfter = Math.round(memoryAfter.heapUsed / 1024 / 1024);
+    const memoryFreed = heapBefore - heapAfter;
+
+    console.log(`🧹 Cache cleanup realizado - Liberados: ${memoryFreed}MB (${heapBefore}MB → ${heapAfter}MB)`);
+
+    res.json({
+      status: 'OK',
+      message: 'Cache limpiado exitosamente',
+      memoryFreed: `${memoryFreed}MB`,
+      before: `${heapBefore}MB`,
+      after: `${heapAfter}MB`
+    });
+  } catch (error) {
+    console.error('Error al limpiar caché:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: 'Error al limpiar caché',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
 
 

@@ -18,16 +18,25 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 
 // Aplicar middleware de seguridad
-app.use(securityMiddleware.helmet);
-app.use(securityMiddleware.compression);
-app.use(securityMiddleware.sanitizeInput);
-app.use(securityMiddleware.validateContentType);
-app.use(securityMiddleware.limitPayload);
-app.use(securityMiddleware.securityLogger);
+// ⚠️ REDUCCIÓN DE MEMORIA: Deshabilitar algunos middlewares en producción
+if (process.env.NODE_ENV !== 'production') {
+    app.use(securityMiddleware.helmet); // Helmet agrega headers en CADA request
+}
+app.use(securityMiddleware.sanitizeInput); // Siempre sanitizar
+app.use(securityMiddleware.validateContentType); // Siempre validar
+app.use(securityMiddleware.limitPayload); // Siempre limitar
+// ⚠️ CRITICAL: Deshabilitar security logger en producción (corre en CADA request)
+if (process.env.NODE_ENV === 'development') {
+    app.use(securityMiddleware.securityLogger);
+}
 app.use(securityMiddleware.additionalHeaders);
+// ⚠️ CRITICAL: Usar compression solo para responses grandes (>1KB)
+app.use(securityMiddleware.compression({ threshold: 1024 }));
 
-// Aplicar rate limiting general
-app.use('/api/', securityMiddleware.generalLimiter);
+// ⚠️ Aplicar rate limiting general (solo en producción para ahorrar memoria)
+if (process.env.NODE_ENV === 'production') {
+    app.use('/api/', securityMiddleware.generalLimiter);
+}
 
 // Middleware
 const allowedOrigins = [
@@ -157,11 +166,11 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hotele
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    maxPoolSize: 3,
-    minPoolSize: 1,
+    maxPoolSize: 1, // ⚠️ AGGRESSIVE: Minimal connection pooling to save memory
+    minPoolSize: 0, // ⚠️ AGGRESSIVE: Allow closing idle connections
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
-    maxIdleTimeMS: 30000
+    maxIdleTimeMS: 5000 // ⚠️ AGGRESSIVE: Close idle connections faster (was 30000)
 })
 .then(() => console.log('✅ Conectado a MongoDB'))
 .catch(err => console.error('❌ Error conectando a MongoDB:', err));

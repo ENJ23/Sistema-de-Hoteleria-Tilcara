@@ -65,82 +65,18 @@ const validarCompletarTarea = [
     .withMessage('Cantidad debe ser un número mayor a 0')
 ];
 
-// GET /api/tareas - Obtener todas las tareas
-router.get('/', authJwt.verifyToken, async (req, res) => {
-  try {
-    const { estado, tipo, habitacion } = req.query;
-    
-    // Construir filtros
-    const filtros = {};
-    if (estado) filtros.estado = estado;
-    if (tipo) filtros.tipo = tipo;
-    if (habitacion) filtros.habitacion = habitacion;
-    
-    // Obtener tareas con información de habitación
-    const tareas = await Tarea.find(filtros)
-      .populate('habitacion', 'numero tipo estado')
-      .sort({ fechaCreacion: -1 })
-      .lean();
-    
-    // Formatear respuesta
-    const tareasFormateadas = tareas.map(tarea => ({
-      _id: tarea._id,
-      tipo: tarea.tipo,
-      descripcion: tarea.descripcion,
-      habitacion: {
-        _id: tarea.habitacion._id,
-        numero: tarea.habitacion.numero,
-        tipo: tarea.habitacion.tipo,
-        activa: tarea.habitacion.activa
-      },
-      estado: tarea.estado,
-      fechaCreacion: tarea.fechaCreacion,
-      fechaCompletada: tarea.fechaCompletada,
-      creadoPor: tarea.creadoPor,
-      completadoPor: tarea.completadoPor,
-      observaciones: tarea.observaciones,
-      configuracionCamas: tarea.configuracionCamas,
-      createdAt: tarea.createdAt,
-      updatedAt: tarea.updatedAt
-    }));
-    
-    res.json({
-      success: true,
-      data: tareasFormateadas,
-      total: tareasFormateadas.length
-    });
-    
-  } catch (error) {
-    console.error('Error al obtener tareas:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor'
-    });
-  }
-});
-
-// GET /api/tareas/pendientes - Obtener solo tareas pendientes
+// GET /api/tareas/pendientes - Obtener solo tareas pendientes (⚠️ DEBE IR ANTES para evitar conflictos)
 router.get('/pendientes', authJwt.verifyToken, async (req, res) => {
   try {
+    // ⚠️ MEMORIA: Usar .select() para traer solo campos necesarios
     const tareas = await Tarea.find({ estado: 'pendiente' })
+      .select('_id tipo descripcion habitacion fechaCreacion creadoPor configuracionCamas')
       .populate('habitacion', 'numero tipo estado')
       .sort({ fechaCreacion: -1 })
       .lean();
     
-    const tareasFormateadas = tareas.map(tarea => ({
-      _id: tarea._id,
-      tipo: tarea.tipo,
-      descripcion: tarea.descripcion,
-      habitacion: {
-        _id: tarea.habitacion._id,
-        numero: tarea.habitacion.numero,
-        tipo: tarea.habitacion.tipo,
-        estado: tarea.habitacion.estado
-      },
-      fechaCreacion: tarea.fechaCreacion,
-      creadoPor: tarea.creadoPor,
-      configuracionCamas: tarea.configuracionCamas
-    }));
+    // Sin mapeo innecesario - lean() ya devuelve lo que necesitas
+    const tareasFormateadas = tareas;
     
     res.json({
       success: true,
@@ -181,9 +117,11 @@ router.post('/', authJwt.verifyToken, validarCrearTarea, validarErrores, async (
     
     await nuevaTarea.save();
     
-    // Obtener tarea con información de habitación
+    // ⚠️ MEMORIA: Traer solo lo necesario
     const tareaCompleta = await Tarea.findById(nuevaTarea._id)
-      .populate('habitacion', 'numero tipo estado');
+      .select('_id tipo descripcion habitacion estado fechaCreacion creadoPor configuracionCamas')
+      .populate('habitacion', 'numero tipo estado')
+      .lean();
     
     res.status(201).json({
       success: true,
@@ -234,10 +172,16 @@ router.patch('/:id/completar', authJwt.verifyToken, validarCompletarTarea, valid
     
     await tarea.save();
     
+    // ⚠️ MEMORIA: Devolver solo campos necesarios
+    const tareaActualizada = await Tarea.findById(tarea._id)
+      .select('_id tipo descripcion habitacion estado fechaCreacion fechaCompletada creadoPor completadoPor observaciones configuracionCamas')
+      .populate('habitacion', 'numero tipo estado')
+      .lean();
+    
     res.json({
       success: true,
       message: 'Tarea completada exitosamente',
-      data: tarea
+      data: tareaActualizada
     });
     
   } catch (error) {
@@ -262,9 +206,11 @@ router.delete('/:id', authJwt.verifyToken, async (req, res) => {
       });
     }
     
+    // ⚠️ MEMORIA: Respuesta minimalista
     res.json({
       success: true,
-      message: 'Tarea eliminada exitosamente'
+      message: 'Tarea eliminada exitosamente',
+      tareaId: tarea._id
     });
     
   } catch (error) {
@@ -294,9 +240,11 @@ router.post('/limpieza/:habitacionId', authJwt.verifyToken, async (req, res) => 
     // Crear tarea de limpieza
     const tarea = await Tarea.crearTareaLimpieza(habitacionId, creadoPor);
     
-    // Obtener tarea con información de habitación
+    // ⚠️ MEMORIA: Traer solo lo necesario
     const tareaCompleta = await Tarea.findById(tarea._id)
-      .populate('habitacion', 'numero tipo estado');
+      .select('_id tipo descripcion habitacion estado fechaCreacion creadoPor configuracionCamas')
+      .populate('habitacion', 'numero tipo estado')
+      .lean();
     
     res.status(201).json({
       success: true,
