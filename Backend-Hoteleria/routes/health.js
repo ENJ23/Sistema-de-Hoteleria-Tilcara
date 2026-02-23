@@ -2,20 +2,26 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 
-// Endpoint de salud del servidor
+// Endpoint de salud del servidor (usado por Render para monitoreo)
 router.get('/', async (req, res) => {
   try {
+    const memoryUsage = process.memoryUsage();
+    const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+    const heapTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
+    const heapPercentage = Math.round((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100);
+    
     const healthCheck = {
       status: 'OK',
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
+      uptime: Math.round(process.uptime() / 60), // en minutos
       environment: process.env.NODE_ENV || 'development',
       version: process.env.npm_package_version || '1.0.0',
       services: {
         database: 'unknown',
         memory: {
-          used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
-          total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
+          used: `${heapUsedMB} MB`,
+          total: `${heapTotalMB} MB`,
+          percentage: `${heapPercentage}%`
         }
       }
     };
@@ -31,6 +37,24 @@ router.get('/', async (req, res) => {
     } catch (dbError) {
       healthCheck.services.database = 'error';
       healthCheck.status = 'DEGRADED';
+    }
+
+    // Alerta de memory leak: si el heap está al 80%+ de uso
+    if (heapPercentage >= 80) {
+      console.warn(`⚠️ HEALTH CHECK ALERT: Memory usage at ${heapPercentage}% (${heapUsedMB}MB/${heapTotalMB}MB)`);
+      healthCheck.status = 'DEGRADED';
+      healthCheck.warning = 'High memory usage - potential memory leak';
+    }
+    
+    // CRÍTICO: si llega al 95%, responder con error para que Render reinicie
+    if (heapPercentage >= 95) {
+      console.error(`🔴 CRITICAL: Memory usage at ${heapPercentage}%! Returning 503 to trigger restart.`);
+      return res.status(503).json({
+        status: 'CRITICAL',
+        timestamp: new Date().toISOString(),
+        error: 'Memory usage critical - initiating restart',
+        memory: healthCheck.services.memory
+      });
     }
 
     // Determinar código de estado HTTP

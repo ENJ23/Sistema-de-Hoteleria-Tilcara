@@ -117,15 +117,48 @@ app.use((req, res, next) => {
     next();
 });
 
-// Conexión a MongoDB
+// ======== MONITOREO DE MEMORIA Y RECURSOS ========
+// Logger periódico de memoria (cada 5 minutos)
+setInterval(() => {
+    const used = process.memoryUsage();
+    const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
+    const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
+    const heapPercentage = Math.round((used.heapUsed / used.heapTotal) * 100);
+    
+    console.log(`📊 Memory Monitor - Used: ${heapUsedMB}MB / ${heapTotalMB}MB (${heapPercentage}%) | Uptime: ${Math.round(process.uptime() / 60)}m`);
+    
+    // Alerta si el uso de memoria es crítico (>85%)
+    if (heapPercentage > 85) {
+        console.warn(`⚠️ MEMORY WARNING: Heap usage at ${heapPercentage}%! Potential memory leak detected.`);
+    }
+}, 5 * 60 * 1000); // Cada 5 minutos
+
+// Logger de conexiones activas cada 10 minutos
+setInterval(() => {
+    console.log(`🔌 Active Connections - DB State: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'}`);
+}, 10 * 60 * 1000);
+
+// ======== CONEXIÓN A MONGODB ========
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hoteleria';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000
 })
 .then(() => console.log('✅ Conectado a MongoDB'))
 .catch(err => console.error('❌ Error conectando a MongoDB:', err));
+
+// Manejo de desconexión de MongoDB
+mongoose.connection.on('disconnected', () => {
+    console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+});
+
+mongoose.connection.on('connected', () => {
+    console.log('✅ MongoDB reconnected');
+});
 
 // Rutas de API
 const apiRouter = express.Router();
