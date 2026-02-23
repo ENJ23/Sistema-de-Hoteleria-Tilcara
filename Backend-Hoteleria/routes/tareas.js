@@ -65,6 +65,39 @@ const validarCompletarTarea = [
     .withMessage('Cantidad debe ser un número mayor a 0')
 ];
 
+// GET /api/tareas - Obtener todas las tareas con filtros
+router.get('/', authJwt.verifyToken, async (req, res) => {
+  try {
+    const { estado, tipo, habitacion } = req.query;
+    let query = {};
+
+    if (estado) query.estado = estado;
+    if (tipo) query.tipo = tipo;
+    if (habitacion) query.habitacion = habitacion;
+
+    // ⚠️ MEMORIA: Usar .select() para traer solo campos necesarios
+    const tareas = await Tarea.find(query)
+      .select('_id tipo descripcion habitacion estado fechaCreacion fechaCompletada creadoPor completadoPor observaciones configuracionCamas')
+      .populate('habitacion', 'numero tipo estado')
+      .sort({ fechaCreacion: -1 })
+      .limit(100) // Limitar para no saturar memoria
+      .lean();
+    
+    res.json({
+      success: true,
+      data: tareas,
+      total: tareas.length
+    });
+    
+  } catch (error) {
+    console.error('Error al obtener tareas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
 // GET /api/tareas/pendientes - Obtener solo tareas pendientes (⚠️ DEBE IR ANTES para evitar conflictos)
 router.get('/pendientes', authJwt.verifyToken, async (req, res) => {
   try {
