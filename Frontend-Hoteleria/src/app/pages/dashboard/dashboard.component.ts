@@ -255,7 +255,7 @@ export class DashboardComponent implements OnInit {
     return new Date(this.mesActual.getFullYear(), this.mesActual.getMonth() + 1, 0);
   }
 
-  private cargarDatos(): void {
+  cargarDatos(): void {
     this.loading = true;
     const filtros = this.filtrosForm.value;
 
