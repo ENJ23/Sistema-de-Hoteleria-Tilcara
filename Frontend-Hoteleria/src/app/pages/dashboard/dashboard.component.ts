@@ -16,6 +16,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -51,6 +52,7 @@ interface IngresosResumen {
   promedioPorReserva: number;
   ingresosPorDia: { fecha: string, ingresos: number }[];
   reservasRecientes: Reserva[];
+  reservasPendientesPeriodo?: Reserva[];
 }
 
 interface IngresosPorTipo {
@@ -111,6 +113,7 @@ interface ResumenAnual {
     MatInputModule,
     MatExpansionModule,
     MatProgressBarModule,
+    MatSlideToggleModule,
     FormsModule,
     ReactiveFormsModule
   ],
@@ -134,7 +137,8 @@ export class DashboardComponent implements OnInit {
     reservasSinPago: 0,
     promedioPorReserva: 0,
     ingresosPorDia: [],
-    reservasRecientes: []
+    reservasRecientes: [],
+    reservasPendientesPeriodo: []
   };
 
   resumenAnual: ResumenAnual = {
@@ -152,6 +156,7 @@ export class DashboardComponent implements OnInit {
   searchPagosText: string = ''; // Texto de búsqueda para pagos
 
   // Estados
+  ocultarCanceladasNoShow: boolean = true;
   loading = false;
   loadingAnual = false;
   fechaActual = new Date();
@@ -418,7 +423,8 @@ export class DashboardComponent implements OnInit {
       reservasSinPago: 0,
       promedioPorReserva: reservasPeriodo.length > 0 ? totalIngresos / reservasPeriodo.length : 0,
       ingresosPorDia: [],
-      reservasRecientes: reservasRecientes
+      reservasRecientes: reservasRecientes,
+      reservasPendientesPeriodo: []
     };
 
     // Calcular estado de pagos de reservas
@@ -428,13 +434,23 @@ export class DashboardComponent implements OnInit {
     let ingresosCompletos = 0;
     let ingresosParciales = 0;
     let pendientePeriodo = 0;
+    const reservasPendientesLista: Reserva[] = [];
 
     reservasPeriodo.forEach(r => {
+      // Filtrar Canceladas o No Show si el switch está activado
+      if (this.ocultarCanceladasNoShow && (r.estado === 'Cancelada' || r.estado === 'No Show')) {
+        return; // Saltar esta reserva
+      }
+
       const montoPagado = r.montoPagado || 0;
       const precioTotal = r.precioTotal || 0;
 
       const pendiente = Math.max(0, precioTotal - montoPagado);
       pendientePeriodo += pendiente;
+
+      if (pendiente > 0) {
+        reservasPendientesLista.push(r);
+      }
 
       if (r.estaCompletamentePagado) {
         reservasCompletas++;
@@ -455,7 +471,8 @@ export class DashboardComponent implements OnInit {
       reservasCompletas,
       reservasParciales,
       reservasSinPago,
-      pendientePeriodo
+      pendientePeriodo,
+      reservasPendientesPeriodo: reservasPendientesLista
     };
 
     console.log('✅ Resumen procesado:', this.resumen);
@@ -826,5 +843,24 @@ export class DashboardComponent implements OnInit {
       return (reserva.habitacion as any).tipo || 'N/A';
     }
     return 'N/A';
+  }
+
+  obtenerNumeroHabitacion(habitacion: any): string {
+    if (!habitacion) return 'N/A';
+    if (typeof habitacion === 'string') return habitacion;
+    return habitacion.numero || 'N/A';
+  }
+
+  getBadgeClass(estado: string | undefined): string {
+    if (!estado) return '';
+    const estadoMap: { [key: string]: string } = {
+      'Confirmada': 'badge-confirmada',
+      'Pendiente': 'badge-pendiente',
+      'En curso': 'badge-encurso',
+      'Cancelada': 'badge-cancelada',
+      'No Show': 'badge-noshow',
+      'Finalizada': 'badge-finalizada'
+    };
+    return estadoMap[estado] || '';
   }
 }

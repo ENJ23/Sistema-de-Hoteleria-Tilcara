@@ -173,6 +173,96 @@
           <mat-panel-title>
             <div class="panel-title-content">
               <div class="icon-badge">
+                <mat-icon>pending_actions</mat-icon>
+              </div>
+              <span class="panel-label">Reservas con saldo pendiente</span>
+              <span class="panel-count">{{ resumen.reservasPendientesPeriodo?.length || 0 }}</span>
+            </div>
+          </mat-panel-title>
+          <mat-panel-description>
+            <span class="description-text">Ver desglose detallado de lo que falta cobrar</span>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="filter-toggle-container">
+          <mat-slide-toggle 
+            [(ngModel)]="ocultarCanceladasNoShow" 
+            (change)="cargarDatos()">
+            Ocultar Canceladas y No Show
+          </mat-slide-toggle>
+        </div>
+
+        <div class="pagos-list-container" *ngIf="(resumen.reservasPendientesPeriodo?.length || 0) > 0; else sinPendientes">
+          <mat-accordion multi="true" class="inner-payments-accordion">
+            <mat-expansion-panel *ngFor="let reserva of resumen.reservasPendientesPeriodo" class="payment-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <div class="payment-header-title">
+                    <mat-icon class="text-warning">person</mat-icon>
+                    <span>{{ reserva.cliente?.nombre }} {{ reserva.cliente?.apellido }}</span>
+                  </div>
+                </mat-panel-title>
+                <mat-panel-description>
+                  <div class="payment-header-desc">
+                    <span class="room-chip">Hab {{ obtenerNumeroHabitacion(reserva.habitacion) }}</span>
+                    <span class="amount-highlight text-warning">Falta: {{ formatearPrecio((reserva.precioTotal || 0) - (reserva.montoPagado || 0)) }}</span>
+                  </div>
+                </mat-panel-description>
+              </mat-expansion-panel-header>
+
+              <div class="payment-detail-grid">
+                <!-- Info Cliente -->
+                <div class="detail-item">
+                  <div class="detail-icon"><mat-icon>phone</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Teléfono / Email</span>
+                    <span class="value">{{ reserva.cliente?.telefono || 'N/A' }} <br/> <small>{{ reserva.cliente?.email || 'N/A' }}</small></span>
+                  </div>
+                </div>
+
+                <!-- Info Habitación y Estado -->
+                <div class="detail-item">
+                  <div class="detail-icon"><mat-icon>hotel</mat-icon></div>
+                  <div class="detail-content">
+                    <span class="label">Fechas - Estado</span>
+                    <span class="value">{{ formatearFecha(reserva.fechaEntrada) }} al {{ formatearFecha(reserva.fechaSalida) }}</span>
+                    <span class="estado-badge" [ngClass]="getBadgeClass(reserva.estado)">{{ reserva.estado }}</span>
+                  </div>
+                </div>
+
+                <!-- Montos -->
+                <div class="detail-item full-width highlight-box warning-box" style="display: flex; justify-content: space-between; text-align: center;">
+                  <div>
+                    <span class="label">Precio Total</span>
+                    <span class="value">{{ formatearPrecio(reserva.precioTotal || 0) }}</span>
+                  </div>
+                  <div>
+                    <span class="label">Monto Pagado</span>
+                    <span class="value">{{ formatearPrecio(reserva.montoPagado || 0) }}</span>
+                  </div>
+                  <div>
+                    <span class="label text-warning" style="font-weight: bold;">Falta Pagar</span>
+                    <span class="value large-amount text-warning">{{ formatearPrecio((reserva.precioTotal || 0) - (reserva.montoPagado || 0)) }}</span>
+                  </div>
+                </div>
+              </div>
+            </mat-expansion-panel>
+          </mat-accordion>
+        </div>
+
+        <ng-template #sinPendientes>
+          <div class="no-data">
+            <mat-icon>check_circle</mat-icon>
+            <p>No hay reservas con saldo pendiente en este período</p>
+          </div>
+        </ng-template>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel [expanded]="false" class="pagos-main-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <div class="panel-title-content">
+              <div class="icon-badge">
                 <mat-icon>payments</mat-icon>
               </div>
               <span class="panel-label">Pagos en el rango</span>
